@@ -17,12 +17,12 @@ const FullWCategory = () => {
           }}
         >
           <Link href={cat.link}>
-            <p className="absolute inset-0 flex flex-col justify-end p-7 text-white">
+            <span className="absolute inset-0 flex flex-col justify-end p-7 text-white">
               <h2 className="text-3xl font-bold underline">{cat.title}</h2>
               <p className="text-[18px]">{cat.para}</p>
               <ArrowRight size={40} />
 
-            </p>
+            </span>
           </Link>
         </div>
       ))}

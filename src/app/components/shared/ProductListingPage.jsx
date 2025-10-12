@@ -1,8 +1,11 @@
 "use client";
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
+import OptimizedImage from './OptimizedImage';
 import { Heart, ShoppingCart, Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
+import { useSearch } from '../../context/SearchContext';
+import { useCart } from '../../context/CartContext';
+import { ProductGridSkeleton } from './LoadingSkeletons';
 
 const ProductListingPage = () => {
   const [activeFilters, setActiveFilters] = useState({
@@ -13,8 +16,11 @@ const ProductListingPage = () => {
     collection: false,
     category: false
   });
+  
+  const { searchResults, isSearching, filters, updateFilters } = useSearch();
+  const { addToCart, isInCart } = useCart();
 
-  const products = [
+  const products = searchResults.length > 0 ? searchResults : [
     {
       id: 1,
       title: "City Lounge 2 Seater",
@@ -120,6 +126,11 @@ const ProductListingPage = () => {
     }));
   };
 
+  // Show loading skeleton while searching
+  if (isSearching) {
+    return <ProductGridSkeleton count={12} />;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -188,7 +199,7 @@ const ProductListingPage = () => {
                 <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition">
                   <Heart size={20} />
                 </button>
-                <Image
+                <OptimizedImage
                   src={product.image}
                   alt={product.title}
                   width={300}
@@ -202,9 +213,11 @@ const ProductListingPage = () => {
               </div>
 
               <div className="p-4">
-                <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
-                  {product.title}
-                </h3>
+                <Link href={`/products/${product.id}`}>
+                  <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
+                    {product.title}
+                  </h3>
+                </Link>
 
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-gray-500 line-through text-sm">${product.originalPrice}.00</span>
@@ -237,9 +250,19 @@ const ProductListingPage = () => {
                     <Search size={16} />
                     Quick Shop
                   </button>
-                  <button className="flex-1 py-2.5 bg-[#0B4866] text-white rounded-lg text-sm font-medium hover:bg-[#094058] flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => addToCart(product)}
+                    disabled={!product.inStock}
+                    className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+                      !product.inStock 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : isInCart(product.id) 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'bg-[#0B4866] hover:bg-[#094058]'
+                    }`}
+                  >
                     <ShoppingCart size={16} />
-                    Add to cart
+                    {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}
                   </button>
                 </div>
               </div>
@@ -297,3 +320,4 @@ const ProductListingPage = () => {
 };
 
 export default ProductListingPage;
+

@@ -1,0 +1,267 @@
+import axios from 'axios';
+
+// Create axios instance with base configuration
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// API endpoints
+export const apiEndpoints = {
+  // Authentication
+  auth: {
+    login: '/auth/login',
+    register: '/auth/register',
+    logout: '/auth/logout',
+    refresh: '/auth/refresh',
+    profile: '/auth/profile',
+  },
+  
+  // Products
+  products: {
+    list: '/products',
+    detail: (id) => `/products/${id}`,
+    search: '/products/search',
+    suggestions: '/products/suggestions',
+    categories: '/products/categories',
+    featured: '/products/featured',
+  },
+  
+  // Cart
+  cart: {
+    get: '/cart',
+    add: '/cart/add',
+    update: '/cart/update',
+    remove: '/cart/remove',
+    clear: '/cart/clear',
+  },
+  
+  // Orders
+  orders: {
+    list: '/orders',
+    create: '/orders',
+    detail: (id) => `/orders/${id}`,
+    update: (id) => `/orders/${id}`,
+  },
+  
+  // User
+  user: {
+    profile: '/user/profile',
+    addresses: '/user/addresses',
+    wishlist: '/user/wishlist',
+  },
+};
+
+// API service functions
+export const apiService = {
+  // Authentication
+  auth: {
+    async login(credentials) {
+      const response = await api.post(apiEndpoints.auth.login, credentials);
+      return response.data;
+    },
+    
+    async register(userData) {
+      const response = await api.post(apiEndpoints.auth.register, userData);
+      return response.data;
+    },
+    
+    async logout() {
+      const response = await api.post(apiEndpoints.auth.logout);
+      return response.data;
+    },
+    
+    async getProfile() {
+      const response = await api.get(apiEndpoints.auth.profile);
+      return response.data;
+    },
+    
+    async refreshToken() {
+      const response = await api.post(apiEndpoints.auth.refresh);
+      return response.data;
+    },
+  },
+  
+  // Products
+  products: {
+    async getAll(params = {}) {
+      const response = await api.get(apiEndpoints.products.list, { params });
+      return response.data;
+    },
+    
+    async getById(id) {
+      const response = await api.get(apiEndpoints.products.detail(id));
+      return response.data;
+    },
+    
+    async search(query, filters = {}) {
+      const response = await api.get(apiEndpoints.products.search, {
+        params: { q: query, ...filters }
+      });
+      return response.data;
+    },
+    
+    async getSuggestions(query, limit = 10) {
+      const response = await api.get(apiEndpoints.products.suggestions, {
+        params: { q: query, limit }
+      });
+      return response.data;
+    },
+    
+    async getCategories() {
+      const response = await api.get(apiEndpoints.products.categories);
+      return response.data;
+    },
+    
+    async getFeatured() {
+      const response = await api.get(apiEndpoints.products.featured);
+      return response.data;
+    },
+  },
+  
+  // Cart
+  cart: {
+    async get() {
+      const response = await api.get(apiEndpoints.cart.get);
+      return response.data;
+    },
+    
+    async addItem(productId, quantity = 1) {
+      const response = await api.post(apiEndpoints.cart.add, {
+        productId,
+        quantity
+      });
+      return response.data;
+    },
+    
+    async updateItem(productId, quantity) {
+      const response = await api.put(apiEndpoints.cart.update, {
+        productId,
+        quantity
+      });
+      return response.data;
+    },
+    
+    async removeItem(productId) {
+      const response = await api.delete(apiEndpoints.cart.remove, {
+        data: { productId }
+      });
+      return response.data;
+    },
+    
+    async clear() {
+      const response = await api.delete(apiEndpoints.cart.clear);
+      return response.data;
+    },
+  },
+  
+  // Orders
+  orders: {
+    async getAll() {
+      const response = await api.get(apiEndpoints.orders.list);
+      return response.data;
+    },
+    
+    async create(orderData) {
+      const response = await api.post(apiEndpoints.orders.create, orderData);
+      return response.data;
+    },
+    
+    async getById(id) {
+      const response = await api.get(apiEndpoints.orders.detail(id));
+      return response.data;
+    },
+    
+    async update(id, orderData) {
+      const response = await api.put(apiEndpoints.orders.update(id), orderData);
+      return response.data;
+    },
+  },
+  
+  // User
+  user: {
+    async getProfile() {
+      const response = await api.get(apiEndpoints.user.profile);
+      return response.data;
+    },
+    
+    async updateProfile(profileData) {
+      const response = await api.put(apiEndpoints.user.profile, profileData);
+      return response.data;
+    },
+    
+    async getAddresses() {
+      const response = await api.get(apiEndpoints.user.addresses);
+      return response.data;
+    },
+    
+    async addAddress(addressData) {
+      const response = await api.post(apiEndpoints.user.addresses, addressData);
+      return response.data;
+    },
+    
+    async updateAddress(id, addressData) {
+      const response = await api.put(`${apiEndpoints.user.addresses}/${id}`, addressData);
+      return response.data;
+    },
+    
+    async deleteAddress(id) {
+      const response = await api.delete(`${apiEndpoints.user.addresses}/${id}`);
+      return response.data;
+    },
+    
+    async getWishlist() {
+      const response = await api.get(apiEndpoints.user.wishlist);
+      return response.data;
+    },
+    
+    async addToWishlist(productId) {
+      const response = await api.post(apiEndpoints.user.wishlist, { productId });
+      return response.data;
+    },
+    
+    async removeFromWishlist(productId) {
+      const response = await api.delete(apiEndpoints.user.wishlist, {
+        data: { productId }
+      });
+      return response.data;
+    },
+  },
+};
+
+export default api;
+
+

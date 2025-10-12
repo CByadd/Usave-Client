@@ -1,15 +1,22 @@
 "use client";
 import React, { useState } from "react";
 import { Search } from 'lucide-react';
+import { useSearch } from '../../context/SearchContext';
+import { useRouter } from 'next/navigation';
 
 const SearchBar = ({ placeholder = "What You looking For.." }) => {
-  const [query, setQuery] = useState("");
+  const [localQuery, setLocalQuery] = useState("");
+  const { searchQuery, setSearchQuery, performSearch, isSearching } = useSearch();
+  const router = useRouter();
 
-  const handleChange = (e) => setQuery(e.target.value);
+  const handleChange = (e) => setLocalQuery(e.target.value);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Search query:", query);
+    if (localQuery.trim()) {
+      setSearchQuery(localQuery);
+      performSearch(localQuery);
+    }
   };
 
   return (
@@ -26,10 +33,11 @@ const SearchBar = ({ placeholder = "What You looking For.." }) => {
 
       <input
         type="text"
-        value={query}
+        value={localQuery}
         onChange={handleChange}
         placeholder={placeholder}
         className="flex-1 px-4 py-2 bg-white placeholder-black/40 focus:outline-none text-sm md:text-base"
+        disabled={isSearching}
       />
     
     </form>

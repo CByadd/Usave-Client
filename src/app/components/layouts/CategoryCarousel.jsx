@@ -44,7 +44,7 @@ const CategoryCarousel = () => {
   }, []);
 
   return (
-    <div className="relative w-full ">
+    <div className="relative w-full  ">
       {/* Left Arrow */}
       {showLeftArrow && (
         <button

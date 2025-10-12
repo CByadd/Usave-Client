@@ -20,7 +20,7 @@ const Hero = () => {
 
       {/* Overlay Content */}
       <div className="max-w-3xl mx-auto px-6 mt-32 text-white">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+        <h1 className="text-4xl md:text-6xl font-medium mb-4 drop-shadow-lg font-serifx">
           Discover
         </h1>
         <p className="text-lg md:text-xl w-[500px] mb-8 opacity-90">

@@ -21,17 +21,17 @@
   },
   {
     "name": "Bookshelves",
-    "img": "/images/bookshelf.png",
+    "img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/EuropeanStyle_LinenBethbed_head_695x695_1_1_ctjlw7.jpg",
     "bgColor": "#EBF5FB"
   },
   {
-    "name": "Bookshelves",
-    "img": "/images/bookshelf.png",
+    "name": "Storage",
+    "img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264113/Usave/Beko2Freestanding_Stainless_SteelcaseDishwasher_695x695_1_1_utypor.jpg",
     "bgColor": "#EBF5FB"
   },
   {
     "name": "Armchairs",
-    "img": "/images/armchair.png",
+    "img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/MelroseChair_2_600x600_1_1_oh7jmb.jpg",
     "bgColor": "#F5EEF8"
   }
 ]

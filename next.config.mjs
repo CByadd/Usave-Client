@@ -5,11 +5,22 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
-        port: "",        // leave empty unless you use a non-standard port
-        pathname: "/**"  // allow all paths on this domain
+        port: "",
+        pathname: "/**"
       }
-    ]
-  }
+    ],
+    formats: ['image/webp', 'image/avif'],
+  },
+  
+  // Enable experimental features for better performance
+  experimental: {
+    // optimizeCss: true, // Disabled due to critters dependency issue
+  },
+  
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
 };
 
 export default nextConfig;

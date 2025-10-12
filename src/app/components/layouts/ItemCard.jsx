@@ -2,10 +2,13 @@
 import React from "react";
 import Image from "next/image";
 import { Heart, ShoppingCart, Search } from "lucide-react";
+import { useCart } from "../../context/CartContext";
 
 const ItemCard = ({ item }) => {
+  const { addToCart, isInCart } = useCart();
+
   return (
-    <div className="w-[28dvw]  relative  hover:shadow-lg transition flex flex-col items-center rounded-2xl "
+    <div className="w-[48vw] sm:w-[45vw] md:w-[28dvw] relative hover:shadow-lg transition flex flex-col items-center rounded-2xl "
     style={{ backgroundColor: item.bg }}>
     <div className="w-full flex items-center justify-center flex-col" >
           {/* Top Seller Badge */}
@@ -79,9 +82,19 @@ const ItemCard = ({ item }) => {
             <Search size={16} />
             Quick Shop
           </button>
-          <button className="flex-1 bg-blue-900 text-white rounded-2xl py-2 flex items-center justify-center gap-2 hover:bg-blue-800">
+          <button 
+            onClick={() => addToCart(item)}
+            disabled={!item.inStock}
+            className={`flex-1 rounded-2xl py-2 flex items-center justify-center gap-2 ${
+              !item.inStock 
+                ? 'bg-gray-400 cursor-not-allowed text-white' 
+                : isInCart(item.id) 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-blue-900 hover:bg-blue-800 text-white'
+            }`}
+          >
             <ShoppingCart size={16} />
-            Add to cart
+            {!item.inStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
           </button>
         </div>
       </div>
