@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-// import heroBg from '../assets/hero-bg.jpg'; // 👈 Replace with your background image path
+import Link from 'next/link';
 import { HERO_IMG } from '@/app/constant/constant';
 
 const Hero = () => {
@@ -26,9 +26,11 @@ const Hero = () => {
         <p className="text-lg md:text-xl w-[500px] mb-8 opacity-90">
          Experience a uniquely curated selection of furniture, lighting, flooring, and designed objects in a distinctive space.
         </p>
-        <button className="px-8 py-3 border-white border transition-all rounded-full font-semibold shadow-lg w-[199px]">
-          Shop Now
-        </button>
+        <Link href="/products">
+          <button className="px-8 py-3 border-white border transition-all rounded-full font-semibold shadow-lg w-[199px] hover:bg-white hover:text-gray-800">
+            Shop Now
+          </button>
+        </Link>
       </div>
     </section>
   );
