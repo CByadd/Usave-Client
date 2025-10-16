@@ -219,3 +219,8 @@ The application now follows proper Next.js 13+ App Router conventions, providing
 
 
 
+
+
+
+
+

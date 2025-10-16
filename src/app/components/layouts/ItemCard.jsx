@@ -3,12 +3,23 @@ import React from "react";
 import Image from "next/image";
 import { Heart, ShoppingCart, Search } from "lucide-react";
 import { useCart } from "../../context/CartContext";
+import { useUI } from "../../context/UIContext";
+import { useRouter } from "next/navigation";
 
 const ItemCard = ({ item }) => {
   const { addToCart, isInCart } = useCart();
+  const { openCart } = useUI();
+  const router = useRouter();
+
+  const goToProduct = () => router.push(`/products/${item.id}`);
+  const goToWishlist = () => router.push('/wishlist');
+  const quickShop = async () => {
+    await addToCart(item);
+    router.push('/cart');
+  };
 
   return (
-    <div className="w-[48vw] sm:w-[45vw] md:w-[28dvw] relative hover:shadow-lg transition flex flex-col items-center rounded-2xl "
+    <div className="min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative hover:shadow-lg transition flex flex-col items-center rounded-2xl "
     style={{ backgroundColor: item.bg }}>
     <div className="w-full flex items-center justify-center flex-col" >
           {/* Top Seller Badge */}
@@ -19,14 +30,18 @@ const ItemCard = ({ item }) => {
       )}
 
       {/* Wishlist icon */}
-      <button className="absolute top-3 right-3 text-gray-500 hover:text-red-500">
+      <button
+        onClick={goToWishlist}
+        aria-label="Add to wishlist"
+        className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
+      >
         <Heart size={22} />
       </button>
 
       {/* Image Section with inline bg color */}
       <div
-        className="flex justify-center items-center w-full h-[300px] rounded-2xl"
-        
+        onClick={goToProduct}
+        className="flex justify-center items-center w-full h-[220px] sm:h-[300px] rounded-2xl cursor-pointer"
       >
         <Image
           src={item.image}
@@ -38,7 +53,10 @@ const ItemCard = ({ item }) => {
       </div>
 
       {/* Quick View Button */}
-      <button className="w-[70%] mt-3 mb-4 h-[50px] py-2 text-sm text-gray-700 border hover:bg-gray-100 flex items-center justify-center gap-2 rounded-xl">
+      <button
+        onClick={goToProduct}
+        className="w-[80%] sm:w-[70%] mt-3 mb-4 h-[44px] sm:h-[50px] py-2 text-sm text-gray-700 border hover:bg-gray-100 flex items-center justify-center gap-2 rounded-xl"
+      >
         <Search size={16} />
         Quick View
       </button>
@@ -47,7 +65,7 @@ const ItemCard = ({ item }) => {
       {/* Product Info */}
       <div className="w-full bg-white">
      <div className="p-3">
-           <h3 className="mt-3 font-medium text-gray-800">{item.title}</h3>
+           <h3 onClick={goToProduct} className="mt-3 font-medium text-gray-800 hover:text-[#0B4866] cursor-pointer">{item.title}</h3>
 
         <div className="mt-1 text-sm text-gray-600">
           <span className="line-through mr-2">${item.originalPrice}</span>
@@ -78,14 +96,17 @@ const ItemCard = ({ item }) => {
 
         {/* Buttons */}
         <div className="mt-4 flex gap-3">
-          <button className="flex-1 border rounded-2xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100">
+          <button
+            onClick={quickShop}
+            className="flex-1 border rounded-2xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100"
+          >
             <Search size={16} />
             Quick Shop
           </button>
           <button 
-            onClick={() => addToCart(item)}
+            onClick={() => { addToCart(item); openCart(); }}
             disabled={!item.inStock}
-            className={`flex-1 rounded-2xl py-2 flex items-center justify-center gap-2 ${
+            className={` md:hidden hidden lg:flex flex-1 rounded-2xl py-2  items-center justify-center gap-2 ${
               !item.inStock 
                 ? 'bg-gray-400 cursor-not-allowed text-white' 
                 : isInCart(item.id) 

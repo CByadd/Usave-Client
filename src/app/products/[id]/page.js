@@ -7,6 +7,7 @@ import { Heart, ShoppingCart, Star, ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
+import { useUI } from '../../context/UIContext';
 import productService from '../../services/productService';
 
 export default function ProductDetailPage() {
@@ -18,6 +19,7 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addToCart, isInCart, getItemQuantity } = useCart();
+  const { openCart } = useUI();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -188,7 +190,7 @@ export default function ProductDetailPage() {
 
             <div className="flex gap-4">
               <button 
-                onClick={() => addToCart(product, quantity)}
+                onClick={() => { addToCart(product, quantity); openCart(); }}
                 disabled={!product.inStock}
                 className={`flex-1 py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 ${
                   !product.inStock 

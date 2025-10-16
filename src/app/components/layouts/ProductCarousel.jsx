@@ -1,10 +1,8 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
-import Image from "next/image";
-import categories from "./../../data/categories.json";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const CategoryCarousel = () => {
+const ProductCarousel = ({ children, className = "" }) => {
   const scrollRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -44,7 +42,7 @@ const CategoryCarousel = () => {
   }, []);
 
   return (
-    <div className="relative w-full  ">
+    <div className={`relative w-full ${className}`}>
       {/* Left Arrow */}
       {showLeftArrow && (
         <button
@@ -57,30 +55,10 @@ const CategoryCarousel = () => {
 
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide "
-        style={{ gap: "2.5rem", padding: "0 0.5rem" }}
+        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide pb-1"
+        style={{ gap: "0.5rem", padding: "0 0.5rem" }}
       >
-        {categories.map((cat, index) => (
-          <div
-            key={index}
-            className="snap-center shadow-md flex flex-col items-center justify-center p-5 cursor-pointer  h-[336px] min-w-[250px]"
-            style={{
-              backgroundColor: cat.bgColor,
-              flex: "0 0 calc((100% - 3rem)/4)", // show 4 items with gap 1rem between
-            }}
-          >
-            <div className="w-24 h-24 relative mb-4">
-              <Image
-                src={cat.img}
-                alt={cat.name}
-                fill
-                sizes="(max-width: 640px) 96px, 96px"
-                className="object-contain"
-              />
-            </div>
-            <p className="text-lg font-medium text-gray-700">{cat.name}</p>
-          </div>
-        ))}
+        {children}
       </div>
 
       {/* Right Arrow */}
@@ -96,4 +74,4 @@ const CategoryCarousel = () => {
   );
 };
 
-export default CategoryCarousel;
+export default ProductCarousel;

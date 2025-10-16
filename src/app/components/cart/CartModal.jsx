@@ -27,18 +27,15 @@ const CartModal = memo(({ isOpen, onClose }) => {
     router.push('/');
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className={`fixed inset-0 z-50 ${isOpen ? '' : 'pointer-events-none'}`}>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
-      
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+      {/* Drawer */}
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-[420px] lg:w-[40dvw] bg-white shadow-xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-semibold text-gray-900">
@@ -53,7 +50,7 @@ const CartModal = memo(({ isOpen, onClose }) => {
         </div>
 
         {/* Body */}
-        <div className="flex flex-col max-h-[calc(90vh-140px)]">
+        <div className="flex flex-col h-[calc(100vh-72px)]">
           {error && (
             <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}

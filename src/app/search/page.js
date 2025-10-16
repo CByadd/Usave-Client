@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect, Suspense } from 'react';
 import OptimizedImage from '../components/shared/OptimizedImage';
-import { Heart, ShoppingCart, Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Heart, ShoppingCart, ChevronDown, SlidersHorizontal, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useSearch } from '../context/SearchContext';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import { useUI } from '../context/UIContext';
 import { ProductGridSkeleton } from '../components/shared/LoadingSkeletons';
 
 function SearchPageContent() {
@@ -25,13 +26,10 @@ function SearchPageContent() {
     filters, 
     updateFilters, 
     performSearch,
-    suggestions,
-    showSuggestions,
-    hasSearched,
-    getSuggestions,
-    hideSuggestions
+    hasSearched
   } = useSearch();
   const { addToCart, isInCart } = useCart();
+  const { openCart } = useUI();
   const searchParams = useSearchParams();
 
   // Initialize search when component mounts
@@ -167,30 +165,9 @@ function SearchPageContent() {
     updateFilters({ inStock });
   };
 
-  const handleSearchInputChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    
-    if (value.length > 0) {
-      getSuggestions(value);
-    } else {
-      hideSuggestions();
-    }
-  };
+  // Remove local search input; rely solely on Navbar search bar
 
-  const handleSuggestionClick = (suggestion) => {
-    setSearchQuery(suggestion);
-    hideSuggestions();
-    performSearch(suggestion);
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    hideSuggestions();
-    performSearch(searchQuery);
-  };
-
-  // Close dropdowns when clicking outside
+  // Close filter dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.filter-dropdown')) {
@@ -203,16 +180,13 @@ function SearchPageContent() {
           category: false
         });
       }
-      if (!event.target.closest('.search-container')) {
-        hideSuggestions();
-      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [hideSuggestions]);
+  }, []);
 
   // Show loading skeleton while searching
   if (isSearching) {
@@ -231,39 +205,7 @@ function SearchPageContent() {
           </p>
         </div>
 
-        {/* Search Input with Suggestions */}
-        <div className="relative search-container mb-6">
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchInputChange}
-              placeholder="Search for products..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0B4866] pr-12"
-            />
-            <button
-              type="submit"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0B4866]"
-            >
-              <Search size={20} />
-            </button>
-          </form>
-          
-          {/* Search Suggestions Dropdown */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Search input removed; use Navbar search bar */}
 
         <div className="flex flex-wrap gap-2 md:gap-3 mb-6 md:mb-8 items-center overflow-x-auto pb-2 scrollbar-hide">
           <div className="relative filter-dropdown">
@@ -535,7 +477,7 @@ function SearchPageContent() {
                     Quick Shop
                   </button>
                   <button 
-                    onClick={() => addToCart(product)}
+                    onClick={() => { addToCart(product); openCart(); }}
                     disabled={!product.inStock}
                     className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
                       !product.inStock 

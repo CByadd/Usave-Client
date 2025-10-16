@@ -3,147 +3,138 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { LOGO_WHITE_BG } from '../constant/constant';
 import Image from 'next/image';
-import SearchBar from './layouts/Searchbar';
-import { ShoppingCart, Heart, UserRound, ChevronDown, LogOut } from 'lucide-react';
+import { ShoppingCart, Heart, UserRound, ChevronDown, Search, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useUI } from '../context/UIContext';
+import LoginModal from './auth/LoginModal';
+import RegisterModal from './auth/RegisterModal';
+import CartModal from './cart/CartModal';
+import AccountDrawer from './auth/AccountDrawer';
+import SearchBar from './layouts/Searchbar';
 
 const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   const { user, isAuthenticated, logout } = useAuth();
   const { totals } = useCart();
+  const { isCartOpen, openCart, closeCart, isLoginOpen, openLogin, closeLogin, isRegisterOpen, openRegister, closeRegister, isAccountOpen, openAccount, closeAccount } = useUI();
 
   const toggleMobile = () => setIsMobileOpen((prev) => !prev);
   const closeMobile = () => setIsMobileOpen(false);
+  const toggleSearch = () => setIsSearchExpanded((prev) => !prev);
+  const closeSearch = () => setIsSearchExpanded(false);
 
   return (
     <>
-    <header className="top-0 z-50 w-full">
-      <div className="mx-auto flex h-[70px] w-[90%] items-center justify-between px-4 sm:px-6 lg:px-8 ">
-       <div className="flex items-center gap-6 w-[60%]">
-         <div className="flex items-center gap-2 ">
+    {/* Backdrop blur for content behind navbar */}
+    <div className="fixed top-0 left-0 right-0 h-max z-40 " />
+    
+    <header className="fixed top-0 left-0 right-0 z-[50] w-full bg-white">
+      {/* Top bar */}
+      <div className="mx-auto flex h-[64px] w-[95%] items-center justify-between px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Left: Mobile menu toggle */}
+        <button
+          className="md:hidden p-2 -ml-2 text-primary hover:text-blue-500 transition-colors"
+          aria-label="Toggle menu"
+          onClick={toggleMobile}
+        >
+          <span className="block h-0.5 w-5 bg-current mb-1" />
+          <span className="block h-0.5 w-5 bg-current mb-1" />
+          <span className="block h-0.5 w-5 bg-current" />
+        </button>
+
+        {/* Center: Logo */}
+        <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2" onClick={closeMobile}>
-          
-          <Image
-            src={LOGO_WHITE_BG}
-            alt="Logo"
-            width={200}
-            height={60}
-            priority
-          />
-          
+            <Image
+              src={LOGO_WHITE_BG}
+              alt="Logo"
+              width={160}
+              height={48}
+              priority
+            />
           </Link>
         </div>
-<SearchBar/>
-       </div>
 
-  <nav className="hidden md:flex gap-4 text-sm font-medium text-primary items-center">
+        {/* Desktop Search Bar */}
+        <div className="hidden md:block flex-1 max-w-[600px] mx-8">
+          <SearchBar />
+        </div>
+
+         <div className="hidden md:block">
+        <div className="mx-auto flex h-[50px] w-[100%] items-center justify-center px-4 sm:px-6 lg:px-8">
+          <nav className="flex gap-6 text-sm font-medium text-primary items-center">
             <Link href="/" className="hover:text-blue-500 transition-colors text-[16px]">PRODUCTS</Link>
             <Link href="/" className="hover:text-blue-500 transition-colors text-[16px]">BLOGS</Link>
             <Link href="/" className="hover:text-blue-500 transition-colors text-[16px]">ABOUT US</Link>
             <Link href="/contact" className="hover:text-blue-500 transition-colors text-[16px]">CONTACT US</Link>
-            
-            {/* Cart Icon */}
-            <Link
-              href="/cart"
-              className="relative hover:text-blue-500 transition-colors"
-            >
-              <ShoppingCart size={20} />
-              {totals.itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#0B4866] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totals.itemCount}
-                </span>
-              )}
-            </Link>
-            
-            {/* Wishlist Icon */}
-            <button className="hover:text-blue-500 transition-colors">
-              <Heart size={20} />
-            </button>
-            
-            {/* User Icon */}
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="hover:text-blue-500 transition-colors"
-              >
-                <UserRound size={20} />
-              </button>
-              
-              {/* User Dropdown */}
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  {isAuthenticated ? (
-                    <>
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-600">{user?.email}</p>
-                      </div>
-                      <Link
-                        href="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        My Profile
-                      </Link>
-                      <Link
-                        href="/orders"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        My Orders
-                      </Link>
-                      <Link
-                        href="/wishlist"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Wishlist
-                      </Link>
-                      <div className="border-t border-gray-100 mt-2 pt-2">
-                        <button
-                          onClick={() => {
-                            logout();
-                            setShowUserMenu(false);
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <LogOut size={16} />
-                          Sign Out
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/login"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Sign In
-                      </Link>
-                      <Link
-                        href="/register"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Sign Up
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
           </nav>
+        </div>
       </div>
 
+        {/* Right: Icons */}
+        <div className="flex items-center gap-4">
+          {/* Search Icon - Mobile Only */}
+          <button 
+            className="md:hidden hover:text-blue-500 transition-colors" 
+            aria-label="Search"
+            onClick={toggleSearch}
+          >
+            <Search size={20} />
+          </button>
+          
+          {/* Cart Icon - Desktop Only */}
+          <button
+            onClick={openCart}
+            className="hidden md:block relative hover:text-blue-500 transition-colors"
+            aria-label="Open cart"
+          >
+            <ShoppingCart size={20} />
+            {totals.itemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#0B4866] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {totals.itemCount}
+              </span>
+            )}
+          </button>
+          
+          {/* Heart Icon - Desktop Only */}
+          <button className="hidden md:block hover:text-blue-500 transition-colors" aria-label="Wishlist">
+            <Heart size={20} />
+          </button>
+          
+          {/* Account Icon */}
+          <button
+            onClick={openAccount}
+            className="hover:text-blue-500 transition-colors"
+            aria-label="Account"
+          >
+            <UserRound size={20} />
+          </button>
+        </div>
+      </div>
 
- <div className="mx-auto flex h-[70px] w-[95%] items-center justify-center px-4 sm:px-6 lg:px-8 border-gray-300 border-t border-b shadow-[0_4px_12px_rgba(0,0,0,0.08)] bg-white/70 backdrop-blur-md ">
-  <nav className="hidden md:flex items-center gap-6 text-sm font-extralight text-primary">
+      {/* Mobile Search Bar - Expandable */}
+    {isSearchExpanded && (
+  <div className="md:hidden w-full  flex justify-center items-center pb-3">
+    <div className="w-full   max-w-md px-4 flex justify-center">
+      <SearchBar 
+        placeholder="What You looking For.." 
+        isMobile={true} 
+        isExpanded={isSearchExpanded}
+        onToggle={toggleSearch}
+      />
+    </div>
+  </div>
+)}
+
+      {/* Desktop Navigation Links */}
+     
+
+      {/* Desktop categories bar */}
+      <div className="hidden md:flex mx-auto h-[56px] w-[95%] items-center justify-center px-4 sm:px-6 lg:px-8 border-gray-300 border-t border-b shadow-[0_4px_12px_rgba(0,0,0,0.08)] bg-white/80 backdrop-blur-lg">
+        <nav className="flex items-center gap-6 text-sm font-extralight text-primary">
     {[
       { name: "LIVING", href: "/categories/living" },
       { name: "DINING", href: "/categories/dining" },
@@ -165,11 +156,86 @@ const Navbar = () => {
         </Link>
       </div>
     ))}
-  </nav>
-</div>
+        </nav>
+      </div>
+
+      {/* Mobile Drawer */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={closeMobile}
+          />
+          
+          {/* Drawer */}
+          <div className="fixed inset-y-0 left-0 w-80 bg-white shadow-xl transform transition-transform duration-300">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <Image
+                  src={LOGO_WHITE_BG}
+                  alt="Logo"
+                  width={120}
+                  height={36}
+                  priority
+                />
+                <button
+                  onClick={closeMobile}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              
+              {/* Navigation */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <nav className="flex flex-col space-y-4">
+                  <Link href="/" className="text-lg font-medium text-gray-700 hover:text-[#0B4866] transition-colors" onClick={closeMobile}>
+                    PRODUCTS
+                  </Link>
+                  <Link href="/" className="text-lg font-medium text-gray-700 hover:text-[#0B4866] transition-colors" onClick={closeMobile}>
+                    BLOGS
+                  </Link>
+                  <Link href="/" className="text-lg font-medium text-gray-700 hover:text-[#0B4866] transition-colors" onClick={closeMobile}>
+                    ABOUT US
+                  </Link>
+                  <Link href="/contact" className="text-lg font-medium text-gray-700 hover:text-[#0B4866] transition-colors" onClick={closeMobile}>
+                    CONTACT US
+                  </Link>
+                  
+                  <div className="border-t border-gray-200 my-4" />
+                  
+                  {[
+                    { name: "LIVING", href: "/categories/living" },
+                    { name: "DINING", href: "/categories/dining" },
+                    { name: "BEDROOM", href: "/categories/bedroom" },
+                    { name: "KITCHEN", href: "/categories/kitchen" },
+                    { name: "ELECTRONICS", href: "/categories/electronics" },
+                    { name: "SHOP BY PLACES", href: "/search" },
+                  ].map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="text-lg font-medium text-gray-700 hover:text-[#0B4866] transition-colors"
+                      onClick={closeMobile}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
      
     </header>
+    <CartModal isOpen={isCartOpen} onClose={closeCart} />
+    <LoginModal isOpen={isLoginOpen} onClose={closeLogin} onSwitchToRegister={() => { closeLogin(); openRegister(); }} />
+    <RegisterModal isOpen={isRegisterOpen} onClose={closeRegister} onSwitchToLogin={() => { closeRegister(); openLogin(); }} />
+    <AccountDrawer isOpen={isAccountOpen} onClose={closeAccount} />
   </>
   );
 }

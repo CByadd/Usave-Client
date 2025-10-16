@@ -5,6 +5,7 @@ import CategoryCarousel from '../components/layouts/CategoryCarousel'
 import FullWCategory from '../components/layouts/FullWCategory'
 import InfoCat from '../components/layouts/InfoCat'
 import DesignCat from '../components/layouts/DesignCat'
+import ProductCarousel from '../components/layouts/ProductCarousel'
 import { Cat } from 'lucide-react'
 import ItemCard from '../components/layouts/ItemCard'
 import items from '../data/items.json';
@@ -46,32 +47,32 @@ export default function LandingPage() {
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
   <CatHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
-  <div className="flex gap-2 sm:gap-3 md:gap-14 w-full overflow-scroll">
+  <ProductCarousel>
      {items.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}
-  </div>
+  </ProductCarousel>
 </section>
 
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
   <CatHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
-  <div className="flex gap-2 sm:gap-3 md:gap-14 w-full overflow-scroll">
+  <ProductCarousel>
      {Aitems.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}
-  </div>
+  </ProductCarousel>
 </section>
 
 
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
   <CatHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
-  <div className="flex gap-2 sm:gap-3 md:gap-14 w-full overflow-scroll">
+  <ProductCarousel>
      {Bitems.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}
-  </div>
+  </ProductCarousel>
 </section>
 
 <section className="w-[90dvw] h-screen mx-auto mt-20 mb-20 overflow-hidden">

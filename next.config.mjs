@@ -21,6 +21,17 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  async redirects() {
+    return [
+      { source: '/bedroom', destination: '/categories/bedroom', permanent: false },
+      { source: '/office', destination: '/categories/electronics', permanent: false },
+      { source: '/designs/kitchen', destination: '/categories/kitchen', permanent: false },
+      { source: '/designs/outdoor', destination: '/categories/dining', permanent: false },
+      { source: '/designs/livingroom', destination: '/categories/living', permanent: false },
+      { source: '/designs/bathroom', destination: '/categories/kitchen', permanent: false },
+      { source: '/designs/office', destination: '/categories/electronics', permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
