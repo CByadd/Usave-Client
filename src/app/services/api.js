@@ -206,60 +206,68 @@ export const apiService = {
       return response.data;
     },
     
-    async update(id, orderData) {
-      const response = await api.put(apiEndpoints.orders.update(id), orderData);
+    async approve(id, approvalNotes) {
+      const response = await api.put(`/orders/${id}/approve`, { approvalNotes });
+      return response.data;
+    },
+    
+    async reject(id, approvalNotes) {
+      const response = await api.put(`/orders/${id}/reject`, { approvalNotes });
+      return response.data;
+    },
+    
+    async requestReapproval(id, notes) {
+      const response = await api.put(`/orders/${id}/request-reapproval`, { notes });
       return response.data;
     },
   },
   
-  // User
-  user: {
-    async getProfile() {
-      const response = await api.get(apiEndpoints.user.profile);
-      return response.data;
-    },
-    
-    async updateProfile(profileData) {
-      const response = await api.put(apiEndpoints.user.profile, profileData);
-      return response.data;
-    },
-    
-    async getAddresses() {
-      const response = await api.get(apiEndpoints.user.addresses);
-      return response.data;
-    },
-    
-    async addAddress(addressData) {
-      const response = await api.post(apiEndpoints.user.addresses, addressData);
-      return response.data;
-    },
-    
-    async updateAddress(id, addressData) {
-      const response = await api.put(`${apiEndpoints.user.addresses}/${id}`, addressData);
-      return response.data;
-    },
-    
-    async deleteAddress(id) {
-      const response = await api.delete(`${apiEndpoints.user.addresses}/${id}`);
-      return response.data;
-    },
-    
-    async getWishlist() {
-      const response = await api.get(apiEndpoints.user.wishlist);
-      return response.data;
-    },
-    
-    async addToWishlist(productId) {
-      const response = await api.post(apiEndpoints.user.wishlist, { productId });
-      return response.data;
-    },
-    
-    async removeFromWishlist(productId) {
-      const response = await api.delete(apiEndpoints.user.wishlist, {
-        data: { productId }
-      });
-      return response.data;
-    },
+  // Admin
+  admin: {
+    products: {
+      async getAll(params = {}) {
+        const response = await api.get('/admin/products', { params });
+        return response.data;
+      },
+      
+      async getById(id) {
+        const response = await api.get(`/admin/products/${id}`);
+        return response.data;
+      },
+      
+      async create(productData) {
+        const response = await api.post('/admin/products', productData);
+        return response.data;
+      },
+      
+      async update(id, productData) {
+        const response = await api.put(`/admin/products/${id}`, productData);
+        return response.data;
+      },
+      
+      async delete(id) {
+        const response = await api.delete(`/admin/products/${id}`);
+        return response.data;
+      },
+      
+      async bulkUpdate(productIds, updateData) {
+        const response = await api.put('/admin/products/bulk', {
+          productIds,
+          updateData
+        });
+        return response.data;
+      },
+      
+      async getCategories() {
+        const response = await api.get('/admin/products/categories');
+        return response.data;
+      },
+      
+      async getStats() {
+        const response = await api.get('/admin/products/stats');
+        return response.data;
+      }
+    }
   },
 };
 

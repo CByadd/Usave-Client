@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
@@ -16,6 +17,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   
   // Check if we should use mock API (for development)
   const useMockAPI = process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_API_URL;
@@ -25,14 +27,14 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const initializeCart = async () => {
       try {
-        if (useMockAPI) {
-          // Use localStorage for mock API
+        if (useMockAPI || !isAuthenticated) {
+          // Use localStorage for mock API or guest users
           const savedCart = localStorage.getItem('cartItems');
           if (savedCart) {
             setCartItems(JSON.parse(savedCart));
           }
         } else {
-          // Load cart from API
+          // Load cart from API for authenticated users
           const response = await apiService.cart.get();
           if (response.success) {
             setCartItems(response.data.items || []);
@@ -41,22 +43,29 @@ export const CartProvider = ({ children }) => {
       } catch (error) {
         console.error('Error loading cart:', error);
         setError('Failed to load cart');
+        // Fallback to localStorage
+        const savedCart = localStorage.getItem('cartItems');
+        if (savedCart) {
+          setCartItems(JSON.parse(savedCart));
+        }
       } finally {
         setIsInitialized(true);
       }
     };
 
     initializeCart();
-  }, [useMockAPI]);
+  }, [useMockAPI, isAuthenticated, user]);
 
-  // Save cart to localStorage whenever cartItems changes
+  // Save cart to localStorage whenever cartItems changes (for guest users)
   useEffect(() => {
-    try {
-      localStorage.setItem('cartItems', JSON.stringify(cartItems));
-    } catch (error) {
-      console.error('Error saving cart to localStorage:', error);
+    if (!isAuthenticated) {
+      try {
+        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+      } catch (error) {
+        console.error('Error saving cart to localStorage:', error);
+      }
     }
-  }, [cartItems]);
+  }, [cartItems, isAuthenticated]);
 
   // Calculate cart totals
   const calculateTotals = () => {
@@ -279,6 +288,22 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Get cart count
+  const getCartCount = () => {
+    return cartItems.reduce((count, item) => count + item.quantity, 0);
+  };
+
+  // Get cart total
+  const getCartTotal = () => {
+    return cartItems.reduce((total, item) => {
+      return total + (item.discountedPrice * item.quantity);
+    }, 0);
+  };
+
+  // Remove item from cart (alias for removeFromCart)
+  const removeItem = removeFromCart;
+
+  // Clear error
   const clearError = () => {
     setError(null);
   };
@@ -293,10 +318,13 @@ export const CartProvider = ({ children }) => {
     // Actions
     addToCart,
     removeFromCart,
+    removeItem,
     updateQuantity,
     clearCart,
     isInCart,
     getItemQuantity,
+    getCartCount,
+    getCartTotal,
     validateCart,
     applyDiscountCode,
     clearError
@@ -308,4 +336,5 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
+
 

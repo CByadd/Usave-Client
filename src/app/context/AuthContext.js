@@ -2,13 +2,29 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiService } from '../services/api';
+import logger from '../utils/logger';
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return a default context during static generation
+    return {
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      error: null,
+      login: () => Promise.resolve({ success: false }),
+      register: () => Promise.resolve({ success: false }),
+      logout: () => {},
+      updateProfile: () => Promise.resolve({ success: false }),
+      changePassword: () => Promise.resolve({ success: false }),
+      forgotPassword: () => Promise.resolve({ success: false }),
+      resetPassword: () => Promise.resolve({ success: false }),
+      checkAuthStatus: () => {},
+      clearError: () => {}
+    };
   }
   return context;
 };
@@ -20,189 +36,114 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  // Initialize auth state from localStorage
+  // Check if user is logged in on mount
   useEffect(() => {
-    const initializeAuth = () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const userData = localStorage.getItem('userData');
-        
-        if (token && userData) {
-          const parsedUserData = JSON.parse(userData);
-          setUser(parsedUserData);
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        // Clear invalid data
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
+    checkAuthStatus();
   }, []);
 
-  // Check if we should use mock API (for development)
-  const useMockAPI = process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_API_URL;
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
 
-  // Mock API calls for development
-  const mockApiCall = async (endpoint, data) => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock responses based on endpoint
-    switch (endpoint) {
-      case 'login':
-        if (data.email === 'demo@usave.com' && data.password === 'password123') {
-          return {
-            success: true,
-            token: 'mock-jwt-token-' + Date.now(),
-            user: {
-              id: 1,
-              email: data.email,
-              firstName: 'John',
-              lastName: 'Doe',
-              phone: '+61 4XX XXX XXX',
-              role: 'customer',
-              createdAt: new Date().toISOString(),
-              addresses: [
-                {
-                  id: 1,
-                  type: 'home',
-                  street: '123 Main Street',
-                  city: 'Cairns',
-                  state: 'QLD',
-                  postcode: '4870',
-                  country: 'Australia',
-                  isDefault: true
-                }
-              ]
-            }
-          };
-        } else {
-          return {
-            success: false,
-            error: 'Invalid email or password'
-          };
-        }
-        
-      case 'register':
-        // Check if email already exists
-        if (data.email === 'demo@usave.com') {
-          return {
-            success: false,
-            error: 'Email already exists'
-          };
-        }
-        
-        return {
-          success: true,
-          token: 'mock-jwt-token-' + Date.now(),
-          user: {
-            id: Date.now(),
-            email: data.email,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone || '',
-            role: 'customer',
-            createdAt: new Date().toISOString(),
-            addresses: []
-          }
-        };
-        
-      case 'verify-token':
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          return {
-            success: true,
-            user: JSON.parse(localStorage.getItem('userData'))
-          };
-        }
-        return {
-          success: false,
-          error: 'Invalid token'
-        };
-        
-      default:
-        return {
-          success: false,
-          error: 'Unknown endpoint'
-        };
+      const response = await apiService.auth.getProfile();
+      if (response.success) {
+        setUser(response.data);
+        setIsAuthenticated(true);
+      } else {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const login = async (email, password) => {
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      let response;
+      setIsLoading(true);
+      setError(null);
       
-      if (useMockAPI) {
-        response = await mockApiCall('login', { email, password });
-      } else {
-        response = await apiService.auth.login({ email, password });
-      }
+      logger.apiRequest('POST', '/api/auth/login', { email });
+      const response = await apiService.auth.login({ email, password });
       
       if (response.success) {
-        const { token, user } = response;
+        const { user: userData, token } = response.data;
         
-        // Store in localStorage
         localStorage.setItem('authToken', token);
-        localStorage.setItem('userData', JSON.stringify(user));
+        localStorage.setItem('userData', JSON.stringify(userData));
         
-        setUser(user);
+        setUser(userData);
         setIsAuthenticated(true);
         
-        return { success: true };
+        logger.authLogin(email, true);
+        logger.log('AUTH', 'User logged in successfully', { userId: userData.id, email });
+        
+        return { success: true, user: userData };
       } else {
-        setError(response.error);
-        return { success: false, error: response.error };
+        const errorMessage = response.message || 'Login failed';
+        setError(errorMessage);
+        logger.authLogin(email, false);
+        logger.error('AUTH', 'Login failed', { email, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Login failed';
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      logger.authLogin(email, false);
+      logger.error('AUTH', 'Login error', { email, error: errorMessage });
+      return { 
+        success: false, 
+        error: errorMessage
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
   const register = async (userData) => {
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      let response;
+      setIsLoading(true);
       
-      if (useMockAPI) {
-        response = await mockApiCall('register', userData);
-      } else {
-        response = await apiService.auth.register(userData);
-      }
+      logger.apiRequest('POST', '/api/auth/register', { email: userData.email });
+      const response = await apiService.auth.register(userData);
       
       if (response.success) {
-        const { token, user } = response;
+        const { user: newUser, token } = response.data;
         
-        // Store in localStorage
         localStorage.setItem('authToken', token);
-        localStorage.setItem('userData', JSON.stringify(user));
+        localStorage.setItem('userData', JSON.stringify(newUser));
         
-        setUser(user);
+        setUser(newUser);
         setIsAuthenticated(true);
         
-        return { success: true };
+        logger.authRegister(userData.email, true);
+        logger.log('AUTH', 'User registered successfully', { userId: newUser.id, email: userData.email });
+        
+        return { success: true, user: newUser };
       } else {
-        setError(response.error);
-        return { success: false, error: response.error };
+        const errorMessage = response.message || 'Registration failed';
+        logger.authRegister(userData.email, false);
+        logger.error('AUTH', 'Registration failed', { email: userData.email, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      console.error('Registration error:', error);
+      const errorMessage = error.response?.data?.message || 'Registration failed';
+      logger.authRegister(userData.email, false);
+      logger.error('AUTH', 'Registration error', { email: userData.email, error: errorMessage });
+      return { 
+        success: false, 
+        error: errorMessage
+      };
     } finally {
       setIsLoading(false);
     }
@@ -210,142 +151,87 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Call logout API if not using mock
-      if (!useMockAPI) {
-        await apiService.auth.logout();
-      }
+      logger.apiRequest('POST', '/api/auth/logout');
+      await apiService.auth.logout();
+      logger.authLogout();
+      logger.log('AUTH', 'User logged out successfully');
     } catch (error) {
-      console.error('Logout API error:', error);
+      console.error('Logout error:', error);
+      logger.error('AUTH', 'Logout error', { error: error.message });
     } finally {
-      // Clear localStorage
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
-      localStorage.removeItem('cartItems'); // Clear cart on logout
-      
-      // Reset state
       setUser(null);
       setIsAuthenticated(false);
-      setError(null);
-      
-      // Redirect to home
       router.push('/');
     }
   };
 
-  const updateProfile = async (updatedData) => {
-    setIsLoading(true);
-    setError(null);
-    
+  const updateProfile = async (profileData) => {
     try {
-      // Mock API call for profile update
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await apiService.auth.updateProfile(profileData);
       
-      const updatedUser = { ...user, ...updatedData };
-      
-      // Update localStorage
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      
-      return { success: true };
+      if (response.success) {
+        const updatedUser = response.data;
+        localStorage.setItem('userData', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        return { success: true, user: updatedUser };
+      } else {
+        return { success: false, error: response.message || 'Profile update failed' };
+      }
     } catch (error) {
-      const errorMessage = 'Profile update failed. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
+      console.error('Profile update error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Profile update failed' 
+      };
     }
   };
 
-  const addAddress = async (addressData) => {
-    setIsLoading(true);
-    setError(null);
-    
+  const changePassword = async (currentPassword, newPassword) => {
     try {
-      // Mock API call for adding address
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await apiService.auth.changePassword({
+        currentPassword,
+        newPassword
+      });
       
-      const newAddress = {
-        id: Date.now(),
-        ...addressData,
-        isDefault: !user.addresses || user.addresses.length === 0
-      };
-      
-      const updatedUser = {
-        ...user,
-        addresses: [...(user.addresses || []), newAddress]
-      };
-      
-      // Update localStorage
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      
-      return { success: true };
+      if (response.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: response.message || 'Password change failed' };
+      }
     } catch (error) {
-      const errorMessage = 'Failed to add address. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
+      console.error('Password change error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Password change failed' 
+      };
     }
   };
 
-  const updateAddress = async (addressId, addressData) => {
-    setIsLoading(true);
-    setError(null);
-    
+  const forgotPassword = async (email) => {
     try {
-      // Mock API call for updating address
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const updatedAddresses = user.addresses.map(addr =>
-        addr.id === addressId ? { ...addr, ...addressData } : addr
-      );
-      
-      const updatedUser = {
-        ...user,
-        addresses: updatedAddresses
-      };
-      
-      // Update localStorage
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      
-      return { success: true };
+      const response = await apiService.auth.forgotPassword({ email });
+      return { success: true, message: response.message };
     } catch (error) {
-      const errorMessage = 'Failed to update address. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
+      console.error('Forgot password error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Request failed' 
+      };
     }
   };
 
-  const deleteAddress = async (addressId) => {
-    setIsLoading(true);
-    setError(null);
-    
+  const resetPassword = async (token, password) => {
     try {
-      // Mock API call for deleting address
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const updatedAddresses = user.addresses.filter(addr => addr.id !== addressId);
-      
-      const updatedUser = {
-        ...user,
-        addresses: updatedAddresses
-      };
-      
-      // Update localStorage
-      localStorage.setItem('userData', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      
-      return { success: true };
+      const response = await apiService.auth.resetPassword({ token, password });
+      return { success: true, message: response.message };
     } catch (error) {
-      const errorMessage = 'Failed to delete address. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
+      console.error('Reset password error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Reset failed' 
+      };
     }
   };
 
@@ -354,20 +240,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = {
-    // State
     user,
     isLoading,
     isAuthenticated,
     error,
-    
-    // Actions
     login,
     register,
     logout,
     updateProfile,
-    addAddress,
-    updateAddress,
-    deleteAddress,
+    changePassword,
+    forgotPassword,
+    resetPassword,
+    checkAuthStatus,
     clearError
   };
 
@@ -377,4 +261,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-

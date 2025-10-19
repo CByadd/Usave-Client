@@ -7,6 +7,10 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { CheckoutProvider } from "./context/CheckoutContext";
 import { UIProvider } from "./context/UIContext";
+import LoginModal from "./components/auth/LoginModal";
+import RegisterModal from "./components/auth/RegisterModal";
+import CartDrawer from "./components/cart/CartDrawer";
+import LoggingToggle from "./components/debug/LoggingToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +41,14 @@ export default function RootLayout({ children }) {
                   <Navbar />
                   {children}
                   <Footer/>
+                  
+                  {/* Modals and Drawers */}
+                  <LoginModal />
+                  <RegisterModal />
+                  <CartDrawer />
+                  
+                  {/* Debug Tools */}
+                  <LoggingToggle />
                 </SearchProviderWrapper>
               </UIProvider>
             </CheckoutProvider>

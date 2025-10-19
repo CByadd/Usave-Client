@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from 'react';
+
+export const dynamic = 'force-dynamic';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 
 export default function ContactPage() {
@@ -225,6 +227,7 @@ export default function ContactPage() {
     </div>
   );
 }
+
 
 
 

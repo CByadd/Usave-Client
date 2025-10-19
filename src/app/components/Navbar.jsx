@@ -7,10 +7,6 @@ import { ShoppingCart, Heart, UserRound, ChevronDown, Search, X } from 'lucide-r
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useUI } from '../context/UIContext';
-import LoginModal from './auth/LoginModal';
-import RegisterModal from './auth/RegisterModal';
-import CartModal from './cart/CartModal';
-import AccountDrawer from './auth/AccountDrawer';
 import SearchBar from './layouts/Searchbar';
 
 const Navbar = () => {
@@ -18,8 +14,18 @@ const Navbar = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   const { user, isAuthenticated, logout } = useAuth();
-  const { totals } = useCart();
-  const { isCartOpen, openCart, closeCart, isLoginOpen, openLogin, closeLogin, isRegisterOpen, openRegister, closeRegister, isAccountOpen, openAccount, closeAccount } = useUI();
+  const { getCartCount } = useCart();
+  const { 
+    isCartDrawerOpen, 
+    openCartDrawer, 
+    closeCartDrawer, 
+    isLoginModalOpen, 
+    openLoginModal, 
+    closeLoginModal, 
+    isRegisterModalOpen, 
+    openRegisterModal, 
+    closeRegisterModal 
+  } = useUI();
 
   const toggleMobile = () => setIsMobileOpen((prev) => !prev);
   const closeMobile = () => setIsMobileOpen(false);
@@ -87,14 +93,14 @@ const Navbar = () => {
           
           {/* Cart Icon - Desktop Only */}
           <button
-            onClick={openCart}
+            onClick={openCartDrawer}
             className="hidden md:block relative hover:text-blue-500 transition-colors"
             aria-label="Open cart"
           >
             <ShoppingCart size={20} />
-            {totals.itemCount > 0 && (
+            {getCartCount() > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#0B4866] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {totals.itemCount}
+                {getCartCount()}
               </span>
             )}
           </button>
@@ -105,13 +111,41 @@ const Navbar = () => {
           </button>
           
           {/* Account Icon */}
-          <button
-            onClick={openAccount}
-            className="hover:text-blue-500 transition-colors"
-            aria-label="Account"
-          >
-            <UserRound size={20} />
-          </button>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Welcome, {user?.firstName}</span>
+              <Link
+                href="/orders"
+                className="text-sm text-gray-600 hover:text-blue-500 transition-colors"
+              >
+                Orders
+              </Link>
+              <button
+                onClick={logout}
+                className="text-sm text-gray-600 hover:text-blue-500 transition-colors"
+                aria-label="Logout"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={openLoginModal}
+                className="text-sm text-gray-600 hover:text-blue-500 transition-colors"
+                aria-label="Login"
+              >
+                Login
+              </button>
+              <button
+                onClick={openRegisterModal}
+                className="text-sm bg-[#0B4866] text-white px-3 py-1 rounded hover:bg-[#094058] transition-colors"
+                aria-label="Sign Up"
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -232,10 +266,6 @@ const Navbar = () => {
 
      
     </header>
-    <CartModal isOpen={isCartOpen} onClose={closeCart} />
-    <LoginModal isOpen={isLoginOpen} onClose={closeLogin} onSwitchToRegister={() => { closeLogin(); openRegister(); }} />
-    <RegisterModal isOpen={isRegisterOpen} onClose={closeRegister} onSwitchToLogin={() => { closeRegister(); openLogin(); }} />
-    <AccountDrawer isOpen={isAccountOpen} onClose={closeAccount} />
   </>
   );
 }

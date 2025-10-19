@@ -21,6 +21,10 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  
+  // Output configuration
+  output: 'standalone',
+  
   async redirects() {
     return [
       { source: '/bedroom', destination: '/categories/bedroom', permanent: false },

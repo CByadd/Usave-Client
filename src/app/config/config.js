@@ -2,7 +2,9 @@
 export const config = {
   // API Configuration
   api: {
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+    // baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://usave-server.vercel.app/api',
+
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000,
@@ -72,6 +74,7 @@ export const config = {
 };
 
 export default config;
+
 
 
 

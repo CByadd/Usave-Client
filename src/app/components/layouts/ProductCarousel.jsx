@@ -75,3 +75,4 @@ const ProductCarousel = ({ children, className = "" }) => {
 };
 
 export default ProductCarousel;
+
