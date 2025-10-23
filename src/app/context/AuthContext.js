@@ -149,23 +149,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      logger.apiRequest('POST', '/api/auth/logout');
-      await apiService.auth.logout();
-      logger.authLogout();
-      logger.log('AUTH', 'User logged out successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      logger.error('AUTH', 'Logout error', { error: error.message });
-    } finally {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      setUser(null);
-      setIsAuthenticated(false);
+ const logout = async () => {
+  try {
+    logger.apiRequest('POST', '/api/auth/logout');
+    await apiService.auth.logout();
+    logger.authLogout();
+    logger.log('AUTH', 'User logged out successfully');
+  } catch (error) {
+    console.error('Logout error:', error);
+    logger.error('AUTH', 'Logout error', { error: error.message });
+  } finally {
+    // Clear local storage first
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+
+    // Reset context state
+    setUser(null);
+    setIsAuthenticated(false);
+
+    // Use a small delay to ensure state updates before navigation
+    setTimeout(() => {
       router.push('/');
-    }
-  };
+      router.refresh(); // ✅ ensures full revalidation of page and auth state
+    }, 50);
+  }
+};
+
 
   const updateProfile = async (profileData) => {
     try {

@@ -19,15 +19,18 @@ const ItemCard = ({ item }) => {
   };
 
   return (
-    <div className="min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative hover:shadow-lg transition flex flex-col items-center rounded-2xl "
-    style={{ backgroundColor: item.bg }}>
-    <div className="w-full flex items-center justify-center flex-col" >
-          {/* Top Seller Badge */}
-      {item.topSeller && (
-        <div className="absolute top-[-12px] left-3 bg-pink-600 text-white text-xs font-semibold px-2 py-1 rounded">
+    <div>
+   {item.topSeller && (
+        <div className="absolute top-[-12px] left-6 bg-pink-600 text-white text-xs font-semibold px-2 py-1 rounded">
           Top seller
         </div>
       )}
+    
+    <div className="min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative hover:shadow-lg transition flex flex-col items-center rounded-2xl overflow-visible"
+    style={{ backgroundColor: item.bg }}>
+    <div className="w-full flex items-center justify-center flex-col relative" >
+          {/* Top Seller Badge */}
+   
 
       {/* Wishlist icon */}
       <button
@@ -119,6 +122,7 @@ const ItemCard = ({ item }) => {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 };
