@@ -226,11 +226,22 @@ export default function OrdersPage() {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(order.status)}
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                          {order.status.replace('_', ' ')}
-                        </span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(order.status)}
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                            {order.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        {order.paymentStatus && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 
+                            order.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            Payment: {order.paymentStatus}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">Order #{order.orderNumber}</h3>
@@ -239,8 +250,16 @@ export default function OrdersPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-lg font-semibold text-gray-900">
-                        ${order.totalAmount.toFixed(2)}
+                        ${order.total?.toFixed(2) || order.totalAmount}
                       </span>
+                      {order.status === 'APPROVED' && order.paymentStatus === 'PENDING' && !isAdmin && (
+                        <a
+                          href={`/payment/${order.id}`}
+                          className="ml-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                        >
+                          Pay Now
+                        </a>
+                      )}
                       <button
                         onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
                         className="p-2 text-gray-400 hover:text-gray-600 transition-colors"

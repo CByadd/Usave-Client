@@ -217,7 +217,40 @@ export const apiService = {
     },
     
     async requestReapproval(id, notes) {
-      const response = await api.put(`/orders/${id}/request-reapproval`, { notes });
+      const response = await api.put(`/orders/${id}/resubmit`, { notes });
+      return response.data;
+    },
+
+    // Admin order item management
+    async addItemToOrder(orderId, productId, quantity) {
+      const response = await api.post(`/orders/${orderId}/items`, { productId, quantity });
+      return response.data;
+    },
+
+    async removeItemFromOrder(orderId, itemId) {
+      const response = await api.delete(`/orders/${orderId}/items/${itemId}`);
+      return response.data;
+    },
+
+    async updateOrderItemQuantity(orderId, itemId, quantity) {
+      const response = await api.put(`/orders/${orderId}/items/${itemId}`, { quantity });
+      return response.data;
+    },
+
+    // User order editing (rejected orders)
+    async editOrderItems(orderId, items) {
+      const response = await api.put(`/orders/${orderId}/edit-items`, { items });
+      return response.data;
+    },
+
+    async editOrderAddresses(orderId, shippingAddress, billingAddress) {
+      const response = await api.put(`/orders/${orderId}/edit-addresses`, { shippingAddress, billingAddress });
+      return response.data;
+    },
+
+    // Payment processing
+    async processPayment(orderId, paymentMethod, paymentIntentId) {
+      const response = await api.put(`/orders/${orderId}/payment`, { paymentMethod, paymentIntentId });
       return response.data;
     },
   },

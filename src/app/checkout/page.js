@@ -7,6 +7,8 @@ import { CheckoutPageSkeleton } from '../components/shared/LoadingSkeletons';
 import { CreditCard, MapPin, User, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import { apiService } from '../services/api';
+import AdminOrderEditor from '../components/admin/AdminOrderEditor';
+import RejectedOrderEditor from '../components/orders/RejectedOrderEditor';
 
 const CheckoutPage = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
@@ -122,7 +124,8 @@ const CheckoutPage = () => {
         shippingAddress,
         billingAddress: sameAsShipping ? shippingAddress : billingAddress,
         paymentMethod,
-        notes
+        notes,
+        items: (cartItems || []).map(ci => ({ productId: ci.id, quantity: ci.quantity }))
       };
 
       const response = await apiService.orders.create(orderData);
@@ -148,7 +151,7 @@ const CheckoutPage = () => {
     
     setIsApproving(true);
     try {
-      const response = await apiService.orders.approve(order.id, { approvalNotes });
+      const response = await apiService.orders.approve(order.id, approvalNotes);
       if (response.success) {
         setOrder(response.data);
         setSuccess('Order approved successfully!');
@@ -172,7 +175,7 @@ const CheckoutPage = () => {
     
     setIsApproving(true);
     try {
-      const response = await apiService.orders.reject(order.id, { approvalNotes });
+      const response = await apiService.orders.reject(order.id, approvalNotes);
       if (response.success) {
         setOrder(response.data);
         setSuccess('Order rejected');
@@ -193,7 +196,7 @@ const CheckoutPage = () => {
     
     setIsProcessing(true);
     try {
-      const response = await apiService.orders.requestReapproval(order.id, { notes });
+      const response = await apiService.orders.requestReapproval(order.id, notes);
       if (response.success) {
         setOrder(response.data);
         setSuccess('Order submitted for re-approval');
@@ -583,9 +586,20 @@ const CheckoutPage = () => {
                     {getStatusIcon(order.status)}
                     <span className="ml-2">Order Review</span>
                   </h2>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                    {order.status.replace('_', ' ')}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                      {order.status.replace('_', ' ')}
+                    </span>
+                    {order.paymentStatus && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 
+                        order.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        Payment: {order.paymentStatus}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Order Details */}
@@ -615,6 +629,14 @@ const CheckoutPage = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Admin Order Editor */}
+                {isAdmin && (order.status === 'PENDING_APPROVAL' || order.status === 'REJECTED') && (
+                  <AdminOrderEditor 
+                    order={order} 
+                    onOrderUpdate={(updatedOrder) => setOrder(updatedOrder)}
+                  />
+                )}
 
                 {/* Admin Approval Section */}
                 {isAdmin && order.status === 'PENDING_APPROVAL' && (
@@ -651,34 +673,34 @@ const CheckoutPage = () => {
                   </div>
                 )}
 
-                {/* User Re-approval Section */}
+                {/* User Rejected Order Editor */}
                 {!isAdmin && order.status === 'REJECTED' && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <h4 className="font-medium text-red-800 mb-3">Order Rejected</h4>
-                    {order.approvalNotes && (
-                      <p className="text-sm text-red-700 mb-3">
-                        <strong>Reason:</strong> {order.approvalNotes}
-                      </p>
-                    )}
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
-                        <textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
-                          placeholder="Add any additional notes for re-approval..."
-                        />
-                      </div>
-                      <button
-                        onClick={handleRequestReapproval}
-                        disabled={isProcessing}
-                        className="bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#094058] disabled:opacity-50"
-                      >
-                        {isProcessing ? 'Submitting...' : 'Request Re-approval'}
-                      </button>
+                  <RejectedOrderEditor
+                    order={order}
+                    onOrderUpdate={(updatedOrder) => setOrder(updatedOrder)}
+                    onResubmit={(updatedOrder) => {
+                      setOrder(updatedOrder);
+                      setSuccess('Order resubmitted for approval');
+                    }}
+                  />
+                )}
+
+                {/* Payment Section for Approved Orders */}
+                {order.status === 'APPROVED' && order.paymentStatus === 'PENDING' && !isAdmin && (
+                  <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-3 mb-4">
+                      <CheckCircle className="text-green-600" size={24} />
+                      <h4 className="font-semibold text-green-900">Order Approved! Complete Payment</h4>
                     </div>
+                    <p className="text-sm text-green-700 mb-4">
+                      Your order has been approved. Please proceed to payment to complete your purchase.
+                    </p>
+                    <Link
+                      href={`/payment/${order.id}`}
+                      className="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold text-center hover:bg-green-700 transition-colors"
+                    >
+                      Proceed to Payment - ${order.total.toFixed(2)}
+                    </Link>
                   </div>
                 )}
 
@@ -686,25 +708,32 @@ const CheckoutPage = () => {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Order Items</h4>
                   <div className="space-y-3">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
-                        <OptimizedImage
-                          src={item.product.image}
-                          alt={item.product.title}
-                          width={60}
-                          height={60}
-                          className="w-15 h-15 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <h5 className="font-medium text-gray-900">{item.product.title}</h5>
-                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                    {order.items.map((item) => {
+                      const product = item.product || {};
+                      return (
+                        <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
+                          {product.image ? (
+                            <OptimizedImage
+                              src={product.image}
+                              alt={product.title || 'Product'}
+                              width={60}
+                              height={60}
+                              className="w-15 h-15 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-15 h-15 bg-gray-100 rounded" />
+                          )}
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-900">{product.title || 'Item'}</h5>
+                            <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-gray-900">${(item.price || 0).toFixed(2)}</p>
+                            <p className="text-sm text-gray-600">Total: ${(((item.price || 0) * item.quantity) || 0).toFixed(2)}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">${item.price.toFixed(2)}</p>
-                          <p className="text-sm text-gray-600">Total: ${(item.price * item.quantity).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>

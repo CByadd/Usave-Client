@@ -19,26 +19,17 @@ export const CartProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const { isAuthenticated, user } = useAuth();
   
-  // Check if we should use mock API (for development)
-  const useMockAPI = process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_API_URL;
+  // Force local cart storage for all users per requirements
+  const useServerCart = false;
   const [error, setError] = useState(null);
 
-  // Initialize cart from localStorage or API
+  // Initialize cart from localStorage
   useEffect(() => {
     const initializeCart = async () => {
       try {
-        if (useMockAPI || !isAuthenticated) {
-          // Use localStorage for mock API or guest users
-          const savedCart = localStorage.getItem('cartItems');
-          if (savedCart) {
-            setCartItems(JSON.parse(savedCart));
-          }
-        } else {
-          // Load cart from API for authenticated users
-          const response = await apiService.cart.get();
-          if (response.success) {
-            setCartItems(response.data.items || []);
-          }
+        const savedCart = localStorage.getItem('cartItems');
+        if (savedCart) {
+          setCartItems(JSON.parse(savedCart));
         }
       } catch (error) {
         console.error('Error loading cart:', error);
@@ -54,16 +45,14 @@ export const CartProvider = ({ children }) => {
     };
 
     initializeCart();
-  }, [useMockAPI, isAuthenticated, user]);
+  }, [isAuthenticated, user]);
 
-  // Save cart to localStorage whenever cartItems changes (for guest users)
+  // Save cart to localStorage whenever cartItems changes
   useEffect(() => {
-    if (!isAuthenticated) {
-      try {
-        localStorage.setItem('cartItems', JSON.stringify(cartItems));
-      } catch (error) {
-        console.error('Error saving cart to localStorage:', error);
-      }
+    try {
+      localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
     }
   }, [cartItems, isAuthenticated]);
 
@@ -94,7 +83,7 @@ export const CartProvider = ({ children }) => {
     setError(null);
     
     try {
-      if (useMockAPI) {
+      if (!useServerCart) {
         // Mock API behavior
         const existingItemIndex = cartItems.findIndex(
           item => item.id === product.id
@@ -132,13 +121,7 @@ export const CartProvider = ({ children }) => {
           setCartItems([...cartItems, cartItem]);
         }
       } else {
-        // Real API call
-        const response = await apiService.cart.addItem(product.id, quantity);
-        if (response.success) {
-          setCartItems(response.data.items || []);
-        } else {
-          setError(response.error || 'Failed to add item to cart');
-        }
+        // Server cart disabled by requirement
       }
       
       return { success: true };
@@ -152,12 +135,17 @@ export const CartProvider = ({ children }) => {
   };
 
   // Remove item from cart
-  const removeFromCart = (productId) => {
+  const removeFromCart = async (productId) => {
     setError(null);
-    
     try {
-      setCartItems(cartItems.filter(item => item.id !== productId));
-      return { success: true };
+      if (!useServerCart) {
+        setCartItems(cartItems.filter(item => item.id !== productId));
+        return { success: true };
+      } else {
+        // Server cart disabled by requirement
+        setCartItems(cartItems.filter(item => item.id !== productId));
+        return { success: true };
+      }
     } catch (error) {
       const errorMessage = 'Failed to remove item from cart. Please try again.';
       setError(errorMessage);
@@ -166,28 +154,32 @@ export const CartProvider = ({ children }) => {
   };
 
   // Update item quantity
-  const updateQuantity = (productId, newQuantity) => {
+  const updateQuantity = async (productId, newQuantity) => {
     setError(null);
-    
     try {
       if (newQuantity <= 0) {
         return removeFromCart(productId);
       }
 
-      const updatedCart = cartItems.map(item => {
-        if (item.id === productId) {
-          // Check if quantity exceeds max available
-          if (item.maxQuantity && newQuantity > item.maxQuantity) {
-            setError(`Maximum quantity available: ${item.maxQuantity}`);
-            return { ...item, quantity: item.maxQuantity };
+      if (!useServerCart) {
+        const updatedCart = cartItems.map(item => {
+          if (item.id === productId) {
+            if (item.maxQuantity && newQuantity > item.maxQuantity) {
+              setError(`Maximum quantity available: ${item.maxQuantity}`);
+              return { ...item, quantity: item.maxQuantity };
+            }
+            return { ...item, quantity: newQuantity };
           }
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-
-      setCartItems(updatedCart);
-      return { success: true };
+          return item;
+        });
+        setCartItems(updatedCart);
+        return { success: true };
+      } else {
+        // Server cart disabled by requirement
+        const updatedCart = cartItems.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item);
+        setCartItems(updatedCart);
+        return { success: true };
+      }
     } catch (error) {
       const errorMessage = 'Failed to update quantity. Please try again.';
       setError(errorMessage);
@@ -196,11 +188,11 @@ export const CartProvider = ({ children }) => {
   };
 
   // Clear entire cart
-  const clearCart = () => {
+  const clearCart = async () => {
     setError(null);
-    
     try {
       setCartItems([]);
+      localStorage.removeItem('cartItems');
       return { success: true };
     } catch (error) {
       const errorMessage = 'Failed to clear cart. Please try again.';
