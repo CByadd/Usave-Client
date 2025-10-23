@@ -39,7 +39,7 @@ const Navbar = () => {
     
     <header className="fixed top-0 left-0 right-0 z-[50] w-full bg-white">
       {/* Top bar */}
-      <div className="mx-auto flex h-[64px] w-[95%] items-center justify-between px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="mx-auto flex h-[64px] w-[100dvw] items-center justify-between px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Left: Mobile menu toggle */}
         <button
           className="md:hidden p-2 -ml-2 text-primary hover:text-blue-500 transition-colors"
@@ -167,7 +167,7 @@ const Navbar = () => {
      
 
       {/* Desktop categories bar */}
-      <div className="hidden md:flex mx-auto h-[56px] w-[95%] items-center justify-center px-4 sm:px-6 lg:px-8 border-gray-300 border-t border-b shadow-[0_4px_12px_rgba(0,0,0,0.08)] bg-white/80 backdrop-blur-lg">
+      <div className="hidden md:flex mx-auto h-[56px] w-[100dvw] items-center justify-center px-4 sm:px-6 lg:px-8 border-gray-300 border-t border-b shadow-[0_4px_12px_rgba(0,0,0,0.08)] bg-white/80 backdrop-blur-lg">
         <nav className="flex items-center gap-6 text-sm font-extralight text-primary">
     {[
       { name: "LIVING", href: "/categories/living" },
