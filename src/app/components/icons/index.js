@@ -8,6 +8,7 @@ export { default as FiRrPlusSmallIcon } from "../../assets/icons/fi-rr-plus-smal
 export { default as FiRrSearchIcon } from "../../assets/icons/fi-rr-search.svg";
 export { default as FiRrSettingsSlidersIcon } from "../../assets/icons/fi-rr-settings-sliders.svg";
 export { default as FiRrShoppingBagIcon } from "../../assets/icons/fi-rr-shopping-bag.svg";
+export { default as FiRrShoppingCartAddWIcon } from "../../assets/icons/fi-rr-shopping-cart-add-w.svg";
 export { default as FiRrShoppingCartAddIcon } from "../../assets/icons/fi-rr-shopping-cart-add.svg";
 export { default as FiRrThumbsUpIcon } from "../../assets/icons/fi-rr-thumbs-up.svg";
 export { default as FiRrTimeForwardIcon } from "../../assets/icons/fi-rr-time-forward.svg";

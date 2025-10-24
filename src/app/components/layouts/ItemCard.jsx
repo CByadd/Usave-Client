@@ -5,7 +5,7 @@ import { Heart, ShoppingCart, Search } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useUI } from "../../context/UIContext";
 import { useRouter } from "next/navigation";
-import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from "../icons";
+import { FiRrHeartIcon, FiRrShoppingBagIcon, FiRrShoppingCartAddWIcon } from "../icons";
 
 const ItemCard = ({ item }) => {
   const { addToCart, isInCart } = useCart();
@@ -105,7 +105,8 @@ const ItemCard = ({ item }) => {
             onClick={quickShop}
             className="flex-1 border rounded-2xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100"
           >
-            <Search size={16} />
+            
+             <Image size={16} src={FiRrShoppingBagIcon} alt="Cart" className="text-white"/>
             Quick Shop
           </button>
           <button 
@@ -120,7 +121,7 @@ const ItemCard = ({ item }) => {
             }`}
           >
             {/* <ShoppingCart size={16} /> */}
-            <Image size={16} src={FiRrShoppingCartAddIcon} alt="Cart" className="text-white"/>
+            <Image size={16} src={FiRrShoppingCartAddWIcon} alt="Cart" className="text-white"/>
             {/* <FiRrShoppingCartAddIcon/> */}
             {!item.inStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
           </button>
