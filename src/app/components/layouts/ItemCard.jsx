@@ -5,6 +5,7 @@ import { Heart, ShoppingCart, Search } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useUI } from "../../context/UIContext";
 import { useRouter } from "next/navigation";
+import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from "../icons";
 
 const ItemCard = ({ item }) => {
   const { addToCart, isInCart } = useCart();
@@ -38,7 +39,8 @@ const ItemCard = ({ item }) => {
         aria-label="Add to wishlist"
         className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
       >
-        <Heart size={22} />
+        {/* <Heart size={22} /> */}
+        <Image src={FiRrHeartIcon} alt="Wishlist" width={22} height={22} />
       </button>
 
       {/* Image Section with inline bg color */}
@@ -117,7 +119,9 @@ const ItemCard = ({ item }) => {
                   : 'bg-blue-900 hover:bg-blue-800 text-white'
             }`}
           >
-            <ShoppingCart size={16} />
+            {/* <ShoppingCart size={16} /> */}
+            <Image size={16} src={FiRrShoppingCartAddIcon} alt="Cart" className="text-white"/>
+            {/* <FiRrShoppingCartAddIcon/> */}
             {!item.inStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
           </button>
         </div>

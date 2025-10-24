@@ -19,6 +19,7 @@
     "tailwind-scrollbar-hide": "^4.0.0"
   },
   "devDependencies": {
+    "@svgr/webpack": "^8.1.0",
     "@tailwindcss/postcss": "^4",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",

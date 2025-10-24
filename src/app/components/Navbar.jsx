@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useUI } from '../context/UIContext';
 import SearchBar from './layouts/Searchbar';
+import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from './icons';
 
 const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -97,7 +98,9 @@ const Navbar = () => {
             className="hidden md:block relative hover:text-blue-500 transition-colors"
             aria-label="Open cart"
           >
-            <ShoppingCart size={20} />
+            {/* <ShoppingCart size={20} /> */}
+            {/* <FiRrShoppingCartAddIcon /> */}
+             <Image src={FiRrShoppingCartAddIcon} alt="Wishlist" width={20} height={20} />
             {getCartCount() > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#0B4866] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {getCartCount()}
@@ -107,7 +110,10 @@ const Navbar = () => {
           
           {/* Heart Icon - Desktop Only */}
           <button className="hidden md:block hover:text-blue-500 transition-colors" aria-label="Wishlist">
-            <Heart size={20} />
+            {/* <Heart size={20}  /> */}
+            {/* <FiRrHeartIcon /> */}
+
+            <Image src={FiRrHeartIcon} alt="Wishlist" width={20} height={20} />
           </button>
           
           {/* Account Icon */}
