@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useUI } from '../../context/UIContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useUI } from '../../contexts/UIContext';
 
 const RegisterModal = () => {
   const [formData, setFormData] = useState({

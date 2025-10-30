@@ -1,12 +1,13 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import SearchProviderWrapper from "./components/providers/SearchProviderWrapper";
-import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
-import { CheckoutProvider } from "./context/CheckoutContext";
-import { UIProvider } from "./context/UIContext";
+import "./styles/globals.css";
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
+import SearchProvider from "./components/providers/SearchProvider";
+import { AuthProvider } from "./contexts/AuthContext";
+import { CartProvider } from "./contexts/CartContext";
+import { WishlistProvider } from "./contexts/WishlistContext";
+import { CheckoutProvider } from "./contexts/CheckoutContext";
+import { UIProvider } from "./contexts/UIContext";
 import LoginModal from "./components/auth/LoginModal";
 import RegisterModal from "./components/auth/RegisterModal";
 import CartDrawer from "./components/cart/CartDrawer";
@@ -35,23 +36,25 @@ export default function RootLayout({ children }) {
       >
         <AuthProvider>
           <CartProvider>
-            <CheckoutProvider>
-              <UIProvider>
-                <SearchProviderWrapper>
-                  <Navbar />
-                  {children}
-                  <Footer/>
-                  
-                  {/* Modals and Drawers */}
-                  <LoginModal />
-                  <RegisterModal />
-                  <CartDrawer />
-                  
-                  {/* Debug Tools */}
-                  <LoggingToggle />
-                </SearchProviderWrapper>
-              </UIProvider>
-            </CheckoutProvider>
+            <WishlistProvider>
+              <CheckoutProvider>
+                <UIProvider>
+                  <SearchProvider>
+                    <Navbar />
+                    {children}
+                    <Footer/>
+                    
+                    {/* Modals and Drawers */}
+                    <LoginModal />
+                    <RegisterModal />
+                    <CartDrawer />
+                    
+                    {/* Debug Tools */}
+                    <LoggingToggle />
+                  </SearchProvider>
+                </UIProvider>
+              </CheckoutProvider>
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>

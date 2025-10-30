@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../contexts/CartContext';
 import { useRouter } from 'next/navigation';
 
 const CartModal = memo(({ isOpen, onClose }) => {

@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { X, UserRound } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
 

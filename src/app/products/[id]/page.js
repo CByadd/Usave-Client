@@ -6,8 +6,8 @@ import { ProductDetailSkeleton } from '../../components/shared/LoadingSkeletons'
 import { Heart, ShoppingCart, Star, ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCart } from '../../context/CartContext';
-import { useUI } from '../../context/UIContext';
+import { useCart } from '../../contexts/CartContext';
+import { useUI } from '../../contexts/UIContext';
 import productService from '../../services/productService';
 
 export default function ProductDetailPage() {

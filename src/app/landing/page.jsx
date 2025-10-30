@@ -1,19 +1,19 @@
 import React from 'react'
-import Hero from '../components/layouts/Hero'
-import CatHeader from '../components/layouts/CatHeader'
-import CategoryCarousel from '../components/layouts/CategoryCarousel'
-import FullWCategory from '../components/layouts/FullWCategory'
-import InfoCat from '../components/layouts/InfoCat'
-import DesignCat from '../components/layouts/DesignCat'
-import ProductCarousel from '../components/layouts/ProductCarousel'
+import HeroSection from '../components/home/HeroSection'
+import CategoryHeader from '../components/search/CategoryHeader'
+import CategoryCarousel from '../components/home/CategoryCarousel'
+import FullWCategory from '../components/home/FullWidthCategories'
+import InfoSection from '../components/home/InfoSection'
+import CategoryShowcase from '../components/home/CategoryShowcase'
+import ProductCarousel from '../components/home/ProductCarousel'
 import { Cat } from 'lucide-react'
-import ItemCard from '../components/layouts/ItemCard'
-import items from '../data/items.json';
-import Aitems from '../data/Aitems.json';
-import Bitems from '../data/Bitems.json';
-import Info from '../components/Info'
+import ProductCard from '../components/product/ProductCard'
+import items from '../data/products.json';
+import Aitems from '../data/featuredItemsA.json';
+import Bitems from '../data/featuredItemsB.json';
+import InfoBanner from '../components/shared/InfoBanner'
 import Image from 'next/image'
-import { LandingPageSkeleton } from '../components/shared/LoadingSkeletons'
+import { LandingPageSkeleton } from '../components/shared/LoadingSkeleton'
 
 export default function LandingPage() {
   return (
@@ -24,7 +24,7 @@ export default function LandingPage() {
 
       {/* Explore By Category */}
       <section className='w-full mt-20 mb-20'>
-        <CatHeader title="Living Room" buttonText="Explore All" buttonLink="/living-room"/>
+        <CategoryHeader title="Living Room" buttonText="Explore All" buttonLink="/living-room"/>
         <CategoryCarousel/>
       </section>
 
@@ -33,7 +33,7 @@ export default function LandingPage() {
       {/* Explore By Category */}
       <section className='w-[99dvw] mt-20 mb-20 flex flex-col items-center justify-center overflow-hidden '>
         <div className="w-[90%]">
-          <CatHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
+          <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
         </div>
        <div className="w-[99dvw] overflow-hidden">
         <FullWCategory/>
@@ -42,11 +42,11 @@ export default function LandingPage() {
       </section>
 
 <section className='w-[90dvw] mt-20 mb-20'>
-  <DesignCat/>
+  <CategoryShowcase/>
 </section>
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
-  <CatHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
+  <CategoryHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {items.map((item) => (
         <ItemCard key={item.id} item={item} />
@@ -56,7 +56,7 @@ export default function LandingPage() {
 
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
-  <CatHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
+  <CategoryHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {Aitems.map((item) => (
         <ItemCard key={item.id} item={item} />
@@ -67,7 +67,7 @@ export default function LandingPage() {
 
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
-  <CatHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
+  <CategoryHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {Bitems.map((item) => (
         <ItemCard key={item.id} item={item} />
@@ -76,7 +76,7 @@ export default function LandingPage() {
 </section>
 
 <section className="w-[90dvw] h-screen mx-auto mt-20 mb-20 overflow-hidden">
-  <CatHeader
+  <CategoryHeader
     title="Shop By Design Style"
     buttonText="See All Products"
     buttonLink="/living-room"

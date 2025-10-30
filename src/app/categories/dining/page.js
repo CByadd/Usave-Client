@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from 'react';
-import { useSearch } from '../../context/SearchContext';
+import { useSearch } from '../../contexts/SearchContext';
 import ProductListingPage from '../../components/shared/ProductListingPage';
 
 export default function DiningPage() {

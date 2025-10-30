@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { useUI } from '../context/UIContext';
+import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useUI } from '../../contexts/UIContext';
 import { CheckoutPageSkeleton } from '../components/shared/LoadingSkeletons';
 import { CreditCard, MapPin, User, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import OptimizedImage from '../components/shared/OptimizedImage';

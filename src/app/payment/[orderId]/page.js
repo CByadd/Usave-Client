@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { CreditCard, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import OptimizedImage from '../../components/shared/OptimizedImage';
 import { apiService } from '../../services/api';

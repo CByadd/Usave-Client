@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+@font-face {
+  font-family: 'Inter Custom';
+  src: url('/Fonts/Inter_24pt-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  src: url('/Fonts/SourceSerif4_18pt-Regular.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* 🎨 Custom color palette */
+  --color-primary: #0B4866;   /* soft pink */
+  --color-secondary: #FFC3A0; /* pastel peach */
+  --color-accent: #A7C7E7;    /* baby blue */
+  --color-dark: #2B2B2B;      /* dark gray */
+  --color-light: #FDF6F0;     /* soft white */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* 🎨 Link custom colors to Tailwind system */
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-dark: var(--color-dark);
+  --color-light: var(--color-light);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+
+    /* 🌙 Optional dark mode variants */
+    --color-primary: #0B4866;
+    --color-secondary: #ffd2b5;
+    --color-accent: #b7d5f0;
+    --color-light: #1e1e1e;
+  }
+}
+
+*{
+  font-family: "Inter Custom", "Inter", sans-serif;
+}
+
+/* Custom font classes for specific use cases */
+.font-serifx {
+  font-family: "Source Serif 4", serif;
+
+  
+}
+
+.font-inter-custom {
+  font-family: "Inter Custom", "Inter", sans-serif;
+}
+
+
+/* Hide horizontal scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

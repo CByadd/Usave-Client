@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useCart } from '../../context/CartContext';
-import { useUI } from '../../context/UIContext';
+import { useCart } from '../../contexts/CartContext';
+import { useUI } from '../../contexts/UIContext';
 import OptimizedImage from '../shared/OptimizedImage';
 
 const CartDrawer = () => {

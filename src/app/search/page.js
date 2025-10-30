@@ -3,10 +3,10 @@ import React, { useState, useEffect, Suspense } from 'react';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import { Heart, ShoppingCart, ChevronDown, SlidersHorizontal, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useSearch } from '../context/SearchContext';
+import { useSearch } from '../contexts/SearchContext';
 import { useSearchParams } from 'next/navigation';
-import { useCart } from '../context/CartContext';
-import { useUI } from '../context/UIContext';
+import { useCart } from '../contexts/CartContext';
+import { useUI } from '../contexts/UIContext';
 import { ProductGridSkeleton } from '../components/shared/LoadingSkeletons';
 
 function SearchPageContent() {
