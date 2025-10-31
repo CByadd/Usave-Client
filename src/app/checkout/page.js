@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useCart } from '../../contexts/CartContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { useUI } from '../../contexts/UIContext';
-import { CheckoutPageSkeleton } from '../components/shared/LoadingSkeletons';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '../contexts/UIContext';
+import { CheckoutPageSkeleton } from '../components/shared/LoadingSkeleton';
 import { CreditCard, MapPin, User, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import OptimizedImage from '../components/shared/OptimizedImage';
-import { apiService } from '../services/api';
+import api from '../services/api/apiClient';
 import AdminOrderEditor from '../components/admin/AdminOrderEditor';
 import RejectedOrderEditor from '../components/orders/RejectedOrderEditor';
 
@@ -128,7 +128,7 @@ const CheckoutPage = () => {
         items: (cartItems || []).map(ci => ({ productId: ci.id, quantity: ci.quantity }))
       };
 
-      const response = await apiService.orders.create(orderData);
+      const response = await api.orders.create(orderData);
       
       if (response.success) {
         setOrder(response.data);
@@ -151,7 +151,7 @@ const CheckoutPage = () => {
     
     setIsApproving(true);
     try {
-      const response = await apiService.orders.approve(order.id, approvalNotes);
+      const response = await api.orders.approve(order.id, approvalNotes);
       if (response.success) {
         setOrder(response.data);
         setSuccess('Order approved successfully!');
@@ -175,7 +175,7 @@ const CheckoutPage = () => {
     
     setIsApproving(true);
     try {
-      const response = await apiService.orders.reject(order.id, approvalNotes);
+      const response = await api.orders.reject(order.id, approvalNotes);
       if (response.success) {
         setOrder(response.data);
         setSuccess('Order rejected');
@@ -196,7 +196,7 @@ const CheckoutPage = () => {
     
     setIsProcessing(true);
     try {
-      const response = await apiService.orders.requestReapproval(order.id, notes);
+      const response = await api.orders.requestReapproval(order.id, notes);
       if (response.success) {
         setOrder(response.data);
         setSuccess('Order submitted for re-approval');

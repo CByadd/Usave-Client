@@ -8,8 +8,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
 import { UIProvider } from "./contexts/UIContext";
-import LoginModal from "./components/auth/LoginModal";
-import RegisterModal from "./components/auth/RegisterModal";
+import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
 import LoggingToggle from "./components/debug/LoggingToggle";
 
@@ -31,31 +30,26 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased pt-[80px] lg:pt-[170px]`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <CheckoutProvider>
-                <UIProvider>
-                  <SearchProvider>
+          <UIProvider>
+            <SearchProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <CheckoutProvider>
                     <Navbar />
-                    {children}
-                    <Footer/>
-                    
-                    {/* Modals and Drawers */}
-                    <LoginModal />
-                    <RegisterModal />
+                    <main className="flex-grow pt-16">
+                      {children}
+                    </main>
+                    <Footer />
+                    <AuthDrawer />
                     <CartDrawer />
-                    
-                    {/* Debug Tools */}
                     <LoggingToggle />
-                  </SearchProvider>
-                </UIProvider>
-              </CheckoutProvider>
-            </WishlistProvider>
-          </CartProvider>
+                  </CheckoutProvider>
+                </WishlistProvider>
+              </CartProvider>
+            </SearchProvider>
+          </UIProvider>
         </AuthProvider>
       </body>
     </html>

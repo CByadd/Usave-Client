@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiService } from '../lib/api';
+import { apiService } from '../services/api/apiClient';
 import logger from '../utils/logger';
 
 const AuthContext = createContext();
@@ -49,9 +49,10 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const response = await apiService.auth.getProfile();
-      if (response.success) {
-        setUser(response.data);
+      const response = await apiService.auth.getCurrentUser();
+      if (response?.success) {
+        const userData = response.user || response.data;
+        setUser(userData);
         setIsAuthenticated(true);
       } else {
         localStorage.removeItem('authToken');
@@ -66,40 +67,90 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (emailOrCredentials, password) => {
+    // Initialize email variable in the outer scope
+    let email = '';
+    
     try {
       setIsLoading(true);
       setError(null);
       
-      logger.apiRequest('POST', '/api/auth/login', { email });
-      const response = await apiService.auth.login({ email, password });
-      
-      if (response.success) {
-        const { user: userData, token } = response.data;
-        
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('userData', JSON.stringify(userData));
-        
-        setUser(userData);
-        setIsAuthenticated(true);
-        
-        logger.authLogin(email, true);
-        logger.log('AUTH', 'User logged in successfully', { userId: userData.id, email });
-        
-        return { success: true, user: userData };
+      // Handle both login(email, password) and login({ email, password }) formats
+      let credentials;
+      if (typeof emailOrCredentials === 'object' && emailOrCredentials !== null) {
+        // Handle object parameter: login({ email, password })
+        credentials = emailOrCredentials;
+        email = credentials.email || '';
+        password = credentials.password;
       } else {
-        const errorMessage = response.message || 'Login failed';
+        // Handle separate parameters: login(email, password)
+        email = emailOrCredentials || '';
+        credentials = { email, password };
+      }
+      
+      if (!email || !password) {
+        const errorMsg = 'Email and password are required';
+        setError(errorMsg);
+        logger.error('AUTH', 'Validation error', { error: errorMsg });
+        return { success: false, error: errorMsg };
+      }
+      
+      logger.apiRequest('POST', '/auth/login', { email });
+      
+      try {
+        const response = await apiService.auth.login(credentials);
+        
+        // Check if response is valid and contains user data and token
+        if (response && response.success && response.user && response.token) {
+          const { user: userData, token } = response;
+          
+          // Store authentication data
+          localStorage.setItem('authToken', token);
+          localStorage.setItem('userData', JSON.stringify(userData));
+          
+          // Update auth state
+          setUser(userData);
+          setIsAuthenticated(true);
+          
+          // Log successful login
+          logger.authLogin(email, true);
+          logger.log('AUTH', 'User logged in successfully', { 
+            userId: userData.id, 
+            email 
+          });
+          
+          return { success: true, user: userData };
+        }
+        
+        // Handle invalid response format
+        const invalidFormatError = 'Invalid response format from server';
+        logger.error('AUTH', invalidFormatError, { response: response.data });
+        throw new Error(invalidFormatError);
+        
+      } catch (apiError) {
+        // Handle API errors
+        const errorMessage = apiError.response?.data?.message || apiError.message || 'Login failed. Please check your credentials and try again.';
+        const errorData = {
+          email,
+          error: errorMessage,
+          status: apiError.response?.status || 'unknown',
+          details: apiError.response?.data || {}
+        };
+
+        logger.error('AUTH', 'Login error', errorData);
         setError(errorMessage);
-        logger.authLogin(email, false);
-        logger.error('AUTH', 'Login failed', { email, error: errorMessage });
-        return { success: false, error: errorMessage };
+        return { success: false, error: errorMessage, details: errorData };
       }
     } catch (error) {
-      console.error('Login error:', error);
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      console.error('Unexpected login error:', error);
+      const errorMessage = error.message || 'An unexpected error occurred during login';
+      logger.error('AUTH', 'Unexpected login error', { 
+        email: email || 'unknown',
+        error: errorMessage,
+        stack: error.stack
+      });
+      
       setError(errorMessage);
-      logger.authLogin(email, false);
-      logger.error('AUTH', 'Login error', { email, error: errorMessage });
       return { 
         success: false, 
         error: errorMessage
@@ -110,36 +161,48 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    let email = '';
+    
     try {
       setIsLoading(true);
+      setError(null);
       
-      logger.apiRequest('POST', '/api/auth/register', { email: userData.email });
-      const response = await apiService.auth.register(userData);
+      // Ensure userData is an object with required fields
+      const registrationData = typeof userData === 'object' && userData !== null 
+        ? userData 
+        : { name: '', email: '', password: '' };
+      
+      email = registrationData.email || '';
+      
+      logger.apiRequest('POST', '/auth/register', { email });
+      const response = await apiService.auth.register(registrationData);
       
       if (response.success) {
-        const { user: newUser, token } = response.data;
+        const { user: registeredUser, token } = response;
         
         localStorage.setItem('authToken', token);
-        localStorage.setItem('userData', JSON.stringify(newUser));
+        localStorage.setItem('userData', JSON.stringify(registeredUser));
         
-        setUser(newUser);
+        setUser(registeredUser);
         setIsAuthenticated(true);
         
-        logger.authRegister(userData.email, true);
-        logger.log('AUTH', 'User registered successfully', { userId: newUser.id, email: userData.email });
+        logger.authRegister(email, true);
+        logger.log('AUTH', 'User registered successfully', { userId: registeredUser.id, email });
         
-        return { success: true, user: newUser };
+        return { success: true, user: registeredUser };
       } else {
         const errorMessage = response.message || 'Registration failed';
-        logger.authRegister(userData.email, false);
-        logger.error('AUTH', 'Registration failed', { email: userData.email, error: errorMessage });
+        setError(errorMessage);
+        logger.authRegister(email, false);
+        logger.error('AUTH', 'Registration failed', { email, error: errorMessage });
         return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Registration error:', error);
       const errorMessage = error.response?.data?.message || 'Registration failed';
-      logger.authRegister(userData.email, false);
-      logger.error('AUTH', 'Registration error', { email: userData.email, error: errorMessage });
+      setError(errorMessage);
+      logger.authRegister(email, false);
+      logger.error('AUTH', 'Registration error', { email, error: errorMessage });
       return { 
         success: false, 
         error: errorMessage
@@ -151,7 +214,7 @@ export const AuthProvider = ({ children }) => {
 
  const logout = async () => {
   try {
-    logger.apiRequest('POST', '/api/auth/logout');
+    logger.apiRequest('POST', '/auth/logout');
     await apiService.auth.logout();
     logger.authLogout();
     logger.log('AUTH', 'User logged out successfully');

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { Plus, Minus, Trash2, AlertCircle } from 'lucide-react';
-import { apiService } from '../../services/api';
+import api from '../../services/api/apiClient';
 import OptimizedImage from '../shared/OptimizedImage';
 
 const RejectedOrderEditor = ({ order, onOrderUpdate, onResubmit }) => {
@@ -45,7 +45,7 @@ const RejectedOrderEditor = ({ order, onOrderUpdate, onResubmit }) => {
         quantity: item.quantity
       }));
       
-      const response = await apiService.orders.editOrderItems(order.id, items);
+      const response = await api.orders.editOrderItems(order.id, items);
       if (response.success) {
         onOrderUpdate(response.data);
         setSuccess('Order items updated successfully');
@@ -61,7 +61,7 @@ const RejectedOrderEditor = ({ order, onOrderUpdate, onResubmit }) => {
     setError('');
     setSuccess('');
     try {
-      const response = await apiService.orders.editOrderAddresses(
+      const response = await api.orders.editOrderAddresses(
         order.id,
         shippingAddress,
         billingAddress
@@ -81,7 +81,7 @@ const RejectedOrderEditor = ({ order, onOrderUpdate, onResubmit }) => {
     setIsSubmitting(true);
     setError('');
     try {
-      const response = await apiService.orders.requestReapproval(order.id, notes);
+      const response = await api.orders.requestReapproval(order.id, notes);
       if (response.success) {
         onResubmit(response.data);
       } else {

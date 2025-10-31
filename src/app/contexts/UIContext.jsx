@@ -17,10 +17,30 @@ export const UIProvider = ({ children }) => {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [isWishlistDrawerOpen, setIsWishlistDrawerOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [authDrawerTab, setAuthDrawerTab] = useState('login');
+
+  const openAuthDrawer = (tab = 'login') => {
+    setAuthDrawerTab(tab);
+    setIsAuthDrawerOpen(true);
+    // Close any other auth-related modals
+    setIsLoginModalOpen(false);
+    setIsRegisterModalOpen(false);
+  };
+
+  const closeAuthDrawer = () => {
+    setIsAuthDrawerOpen(false);
+  };
+
+  const setAuthDrawerTabState = (tab) => {
+    setAuthDrawerTab(tab);
+  };
 
   const openLoginModal = () => {
     setIsLoginModalOpen(true);
     setIsRegisterModalOpen(false);
+    // Close auth drawer if open
+    setIsAuthDrawerOpen(false);
   };
 
   const closeLoginModal = () => {
@@ -30,6 +50,8 @@ export const UIProvider = ({ children }) => {
   const openRegisterModal = () => {
     setIsRegisterModalOpen(true);
     setIsLoginModalOpen(false);
+    // Close auth drawer if open
+    setIsAuthDrawerOpen(false);
   };
 
   const closeRegisterModal = () => {
@@ -60,29 +82,34 @@ export const UIProvider = ({ children }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const value = {
-    // Modal states
-    isLoginModalOpen,
-    isRegisterModalOpen,
-    isCartDrawerOpen,
-    isWishlistDrawerOpen,
-    isMobileMenuOpen,
-    
-    // Modal actions
-    openLoginModal,
-    closeLoginModal,
-    openRegisterModal,
-    closeRegisterModal,
-    openCartDrawer,
-    closeCartDrawer,
-    openWishlistDrawer,
-    closeWishlistDrawer,
-    toggleMobileMenu,
-    closeMobileMenu
-  };
-
   return (
-    <UIContext.Provider value={value}>
+    <UIContext.Provider
+      value={{
+        // Modal states
+        isLoginModalOpen,
+        isRegisterModalOpen,
+        isCartDrawerOpen,
+        isWishlistDrawerOpen,
+        isMobileMenuOpen,
+        isAuthDrawerOpen,
+        authDrawerTab,
+        
+        // Modal handlers
+        openLoginModal,
+        closeLoginModal,
+        openRegisterModal,
+        closeRegisterModal,
+        openCartDrawer,
+        closeCartDrawer,
+        openWishlistDrawer,
+        closeWishlistDrawer,
+        toggleMobileMenu,
+        closeMobileMenu,
+        openAuthDrawer,
+        closeAuthDrawer,
+        setAuthDrawerTab: setAuthDrawerTabState,
+      }}
+    >
       {children}
     </UIContext.Provider>
   );

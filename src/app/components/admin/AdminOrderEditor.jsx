@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import { Plus, Minus, Trash2, Search, X } from 'lucide-react';
-import { apiService } from '../../services/api';
-import productService from '../../services/productService';
+import api from '../../services/api/apiClient';
+import productService from '../../services/api/productService';
 import OptimizedImage from '../shared/OptimizedImage';
 
 const AdminOrderEditor = ({ order, onOrderUpdate }) => {
@@ -35,7 +35,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
     setError('');
     setSuccess('');
     try {
-      const response = await apiService.orders.addItemToOrder(order.id, product.id, 1);
+      const response = await api.orders.addItemToOrder(order.id, product.id, 1);
       if (response.success) {
         onOrderUpdate(response.data);
         setSuccess(`Added ${product.title} to order`);

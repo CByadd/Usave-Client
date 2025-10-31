@@ -46,7 +46,8 @@
     "isFeatured": true,
     "tags": ["living", "sofa", "comfortable", "modern"],
     "createdAt": "2024-01-15T10:00:00Z",
-    "updatedAt": "2024-01-15T10:00:00Z"
+    "updatedAt": "2024-01-15T10:00:00Z",
+     "bg": "#E8F8F5"
   },
   {
     "id": 2,
@@ -60,6 +61,7 @@
     ],
     "originalPrice": 1200,
     "discountedPrice": 999,
+     "bg": "#E8F8F5",
     "rating": 4.7,
     "reviews": 8,
     "inStock": true,
@@ -99,6 +101,8 @@
   },
   {
     "id": 3,
+
+     "bg": "#E8F8F5",
     "title": "Hasting 3 Seater Lounge with Chaise",
     "slug": "hasting-3-seater-lounge-chaise",
     "description": "Spacious 3-seater with chaise for ultimate relaxation. Perfect for large living rooms with its generous seating and premium comfort.",
@@ -150,6 +154,7 @@
     "id": 4,
     "title": "Rose Accent Chair",
     "slug": "rose-accent-chair",
+     "bg": "#E8F8F5",
     "description": "Elegant accent chair with rose-colored upholstery. Perfect for adding a pop of color to any room while providing comfortable seating.",
     "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
     "images": [
@@ -198,6 +203,7 @@
   {
     "id": 5,
     "title": "Melrose Dining Chair",
+     "bg": "#E8F8F5",
     "slug": "melrose-dining-chair",
     "description": "Stylish dining chair perfect for modern kitchens and dining rooms. Features ergonomic design and premium materials for comfort.",
     "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/MelroseChair_2_600x600_1_1_oh7jmb.jpg",
@@ -248,7 +254,8 @@
     "id": 6,
     "title": "European Style Linen Bed",
     "slug": "european-style-linen-bed",
-    "description": "Elegant European-style bed with linen headboard. Perfect for creating a sophisticated bedroom with premium comfort and style.",
+     "bg": "#E8F8F5",
+         "description": "Elegant European-style bed with linen headboard. Perfect for creating a sophisticated bedroom with premium comfort and style.",
     "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/EuropeanStyle_LinenBethbed_head_695x695_1_1_ctjlw7.jpg",
     "images": [
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/EuropeanStyle_LinenBethbed_head_695x695_1_1_ctjlw7.jpg",
@@ -296,6 +303,7 @@
   {
     "id": 7,
     "title": "Beko Stainless Steel Dishwasher",
+     "bg": "#E8F8F5",
     "slug": "beko-stainless-steel-dishwasher",
     "description": "Energy-efficient stainless steel dishwasher with advanced cleaning technology. Perfect for modern kitchens with its sleek design and powerful performance.",
     "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264113/Usave/Beko2Freestanding_Stainless_SteelcaseDishwasher_695x695_1_1_utypor.jpg",
@@ -353,6 +361,7 @@
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
     ],
     "originalPrice": 1299,
+     "bg": "#E8F8F5",
     "discountedPrice": 1099,
     "rating": 4.7,
     "reviews": 22,

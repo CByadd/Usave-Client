@@ -1,5 +1,6 @@
 // Base API service for making HTTP requests
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+// Remove /api from the end since Next.js routes already include it
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export const apiService = {
   // Generic request handler
@@ -13,7 +14,7 @@ export const apiService = {
     };
 
     // Add auth token if available
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -24,20 +25,48 @@ export const apiService = {
         headers,
       });
 
-      // Handle non-2xx responses
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || 'Something went wrong');
-      }
-
       // Handle 204 No Content responses
       if (response.status === 204) {
-        return null;
+        return { success: true };
       }
 
-      return await response.json();
+      // Parse response as JSON if possible
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json().catch(() => ({}));
+      } else {
+        responseData = await response.text();
+      }
+
+      // Handle non-2xx responses
+      if (!response.ok) {
+        const error = new Error(
+          (responseData && responseData.message) || 
+          `Request failed with status ${response.status}`
+        );
+        error.status = response.status;
+        error.data = responseData;
+        throw error;
+      }
+
+      // For successful responses, ensure consistent format
+      if (typeof responseData === 'object' && responseData !== null) {
+        return { ...responseData, success: true };
+      }
+      
+      return { data: responseData, success: true };
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error(`API request to ${endpoint} failed:`, error);
+      
+      // Ensure the error has a message
+      if (!error.message) {
+        error.message = 'Network error: Could not connect to the server';
+      }
+      
+      // Add a flag to indicate this is an API error
+      error.isApiError = true;
       throw error;
     }
   },

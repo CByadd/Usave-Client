@@ -2,24 +2,24 @@ import React from 'react'
 import HeroSection from '../components/home/HeroSection'
 import CategoryHeader from '../components/search/CategoryHeader'
 import CategoryCarousel from '../components/home/CategoryCarousel'
-import FullWCategory from '../components/home/FullWidthCategories'
+import FullWidthCategory from '../components/home/FullWidthCategories'
 import InfoSection from '../components/home/InfoSection'
 import CategoryShowcase from '../components/home/CategoryShowcase'
 import ProductCarousel from '../components/home/ProductCarousel'
 import { Cat } from 'lucide-react'
-import ProductCard from '../components/product/ProductCard'
+import ItemCard from '../components/product/ProductCard'
 import items from '../data/products.json';
 import Aitems from '../data/featuredItemsA.json';
 import Bitems from '../data/featuredItemsB.json';
 import InfoBanner from '../components/shared/InfoBanner'
 import Image from 'next/image'
 import { LandingPageSkeleton } from '../components/shared/LoadingSkeleton'
-
+// import name from './../components/product/ProductCard.jsx';
 export default function LandingPage() {
   return (
     <div className=' flex flex-col items-center justify-center mx-auto '>
    <div className="w-[90dvw] overflow-hidden">
-       <Hero/>
+       <HeroSection/>
 
 
       {/* Explore By Category */}
@@ -36,8 +36,9 @@ export default function LandingPage() {
           <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
         </div>
        <div className="w-[99dvw] overflow-hidden">
-        <FullWCategory/>
-       <InfoCat/>
+        {/* <FullWCategory/> */}
+        <FullWidthCategory/>
+       <InfoSection/>
        </div>
       </section>
 
@@ -123,7 +124,7 @@ export default function LandingPage() {
     </div>
   </div>
 
-  <Info />
+  <InfoBanner />
 </section>
 
 

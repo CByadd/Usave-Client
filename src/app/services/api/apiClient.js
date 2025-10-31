@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  // baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://usave-server.vercel.app/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  // baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://usave-server.vercel.app/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -48,6 +48,7 @@ export const apiEndpoints = {
     register: '/auth/register',
     logout: '/auth/logout',
     refresh: '/auth/refresh',
+    me: '/auth/me',
     profile: '/auth/profile',
   },
   
@@ -102,6 +103,11 @@ export const apiService = {
     
     async logout() {
       const response = await api.post(apiEndpoints.auth.logout);
+      return response.data;
+    },
+    
+    async getCurrentUser() {
+      const response = await api.get(apiEndpoints.auth.me);
       return response.data;
     },
     
