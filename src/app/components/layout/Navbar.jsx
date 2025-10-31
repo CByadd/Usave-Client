@@ -71,25 +71,29 @@ const Navbar = () => {
         />
       </Link>
     </div>
+  );
 
-        {/* Desktop Search Bar */}
-        <div className="hidden md:block flex-1 max-w-[600px] mx-8">
-          <SearchBar />
+  const renderDesktopNavigation = () => (
+    <div className="hidden md:flex items-center flex-1">
+      {/* Desktop Search Bar */}
+      <div className="hidden md:block flex-1 max-w-[600px] ">
+        <SearchBar />
+      </div>
+
+      <div className="hidden md:block">
+        <div className="flex h-[50px] items-center justify-center ml-10">
+          <nav className="flex gap-6 text-sm font-medium text-primary items-center">
+            {mainNavLinks.map((item) => (
+              <Link 
+                key={item.name}
+                href={item.href} 
+                className="hover:text-blue-500 transition-colors text-[16px]"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
         </div>
-
-    <div className="hidden md:block">
-      <div className="mx-auto flex h-[50px] w-full items-center justify-center px-4 sm:px-6 lg:px-8">
-        
-        <nav className="flex gap-6 text-sm font-medium text-primary items-center">
-          {mainNavLinks.map((item) => (
-            <Link 
-              key={item.name}
-              href={item.href} 
-              className="hover:text-blue-500 transition-colors text-[16px]"
-            >
-              {item.name}
-          ))}
-        </nav>
       </div>
     </div>
   );
@@ -134,85 +138,75 @@ const Navbar = () => {
     </Link>
   );
 
-  const renderUserMenu = () => {
-    return (
-      <div className="hidden md:block relative">
-        <button
-          type="button"
-          className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none relative z-10"
-          aria-label={isAuthenticated ? 'User account' : 'Sign in'}
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsAccountMenuOpen(prev => !prev);
-          }}
-          onMouseEnter={() => setIsAccountMenuOpen(true)}
-          onFocus={() => setIsAccountMenuOpen(true)}
-        >
-          <UserRound size={20} className="text-gray-600" />
-        </button>
+ const renderUserMenu = () => {
+  return (
+    <div className="hidden md:block relative">
+      {/* Account Icon Button */}
+      <button
+        type="button"
+        className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none relative z-10"
+        aria-label={isAuthenticated ? 'User account' : 'Sign in'}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsAccountMenuOpen(prev => !prev);
+        }}
+      >
+        <UserRound size={20} className="text-gray-600" />
+      </button>
 
-        {isAccountMenuOpen && (
-          <div 
-            className="fixed inset-0 z-40"
-            onClick={() => setIsAccountMenuOpen(false)}
-          />
-        )}
-        
+      {/* Click outside overlay */}
+      {isAccountMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setIsAccountMenuOpen(false)}
+        />
+      )}
+
+      {/* Dropdown Menu */}
+      {isAccountMenuOpen && (
         <div
-          className={`absolute right-0 top-full mt-1 w-60 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-150 ${
-            isAccountMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
-          }`}
-          onMouseEnter={() => setIsAccountMenuOpen(true)}
-          onMouseLeave={() => setIsAccountMenuOpen(false)}
+          className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-100"
         >
           {isAuthenticated ? (
             <>
-              <div className="px-4 pb-3 border-b border-gray-100">
-                <p className="text-sm text-gray-600">Welcome, {user?.firstName || user?.name || 'User'}</p>
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm text-gray-600 font-medium">
+                  {user?.firstName || user?.name || 'User'}
+                </p>
                 {user?.email && (
                   <p className="text-xs text-gray-500 truncate">{user.email}</p>
                 )}
               </div>
-              <div className="py-1">
-                <Link
-                  href="/orders"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => {
-                    closeMobile();
-                    setIsAccountMenuOpen(false);
-                  }}
-                >
-                  Orders
-                </Link>
-                <Link
-                  href="/account"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => {
-                    closeMobile();
-                    setIsAccountMenuOpen(false);
-                  }}
-                >
-                  My Account
-                </Link>
-                <button
-                  onClick={() => {
-                    logout();
-                    closeMobile();
-                    setIsAccountMenuOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </button>
-              </div>
+              <Link
+                href="/orders"
+                onClick={() => setIsAccountMenuOpen(false)}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                My Orders
+              </Link>
+              <Link
+                href="/account"
+                onClick={() => setIsAccountMenuOpen(false)}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                My Account
+              </Link>
+              <button
+                onClick={() => {
+                  logout();
+                  setIsAccountMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
             </>
           ) : (
-            <div className="py-1">
+            <>
               <button
                 onClick={() => {
                   openAuthDrawer('login');
-                  closeMobile();
                   setIsAccountMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -222,22 +216,23 @@ const Navbar = () => {
               <button
                 onClick={() => {
                   openAuthDrawer('register');
-                  closeMobile();
                   setIsAccountMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Sign Up
               </button>
-            </div>
+            </>
           )}
         </div>
-      </div>
-    );
-  };
+      )}
+    </div>
+  );
+};
+
 
   const renderMobileCategories = () => (
-    <div className="md:hidden w-full">
+    <div className="md:hidden w-full z-50">
       <div className="overflow-x-auto py-2 px-4">
         <div className="flex space-x-4">
           {categoryLinks.map((item) => (
@@ -313,18 +308,18 @@ const Navbar = () => {
   );
 
   return (
-    <header className="relative top-0 left-0 right-0 z-50 w-full bg-white overflow-hidden">
+<header className=" top-0 left-0 right-0 z-[9999] w-full bg-white shadow-sm">
       {/* Backdrop blur for content behind navbar */}
-      <div className="fixed top-0 left-0 right-0 h-max z-40" />
+      <div className=" top-0 left-0 right-0 h-max z-100" />
       
       {/* Desktop Search Bar */}
-      <div className="hidden md:block w-full max-w-md mx-4">
+      {/* <div className="hidden md:block w-full max-w-md mx-4">
         <SearchBar 
           placeholder="Search products..."
           isExpanded={isSearchExpanded}
           onToggle={toggleSearch}
         />
-      </div>
+      </div> */}
       
       {/* Main Navigation Bar */}
       <div className="relative">
@@ -365,7 +360,8 @@ const Navbar = () => {
         {!isSearchExpanded && renderMobileCategories()}
         
         {/* Desktop Categories */}
-        <div className="hidden md:flex mx-auto h-14 w-full items-center justify-center px-4 sm:px-6 lg:px-8 border-t border-b border-gray-200 bg-white/80 backdrop-blur-lg">
+       <div className="hidden md:flex mx-auto h-14 w-full items-center justify-center px-4 sm:px-6 lg:px-8 border-t border-b border-gray-200 bg-white/80 backdrop-blur-lg">
+
           <nav className="flex items-center gap-6 text-sm font-medium text-primary">
             {categoryLinks.map((item) => (
               <div key={item.name} className="group relative">
