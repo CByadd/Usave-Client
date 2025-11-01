@@ -3,11 +3,19 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Edit } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
+import ApprovalModal from '../components/checkout/ApprovalModal';
+import { createOrder } from '../actions/orderActions';
 
 export default function CheckoutPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [shippingOption, setShippingOption] = useState('delivery-only');
   const [warranty, setWarranty] = useState('');
   const [cartExpanded, setCartExpanded] = useState(true);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const cartItems = [
     {
@@ -55,7 +63,8 @@ export default function CheckoutPage() {
   const total = productsTotal + shippingCost + warrantyCost + tax;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-[#0F4C81] mb-8">Checkout</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -285,15 +294,72 @@ export default function CheckoutPage() {
                 <span>${total}.00</span>
               </div>
 
-              <Link href="/order-preview">
-                <button className="w-full bg-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors">
-                  Get Approval
-                </button>
-              </Link>
+              <button 
+                onClick={() => setShowApprovalModal(true)}
+                className="w-full bg-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Processing...' : 'Get Approval'}
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      <ApprovalModal
+      isOpen={showApprovalModal}
+      onClose={() => setShowApprovalModal(false)}
+      onContinueWithoutApproval={handleContinueWithoutApproval}
+      orderDetails={{
+        items: cartItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity
+        })),
+        subtotal: productsTotal,
+        tax,
+        shipping: shippingCost,
+        total,
+        shippingOption
+      }}
+      userId={user?.id}
+      />
+    </>
   );
+}
+
+async function handleContinueWithoutApproval() {
+  setIsSubmitting(true);
+  try {
+    // Create order without approval
+    const orderData = {
+      items: cartItems,
+      subtotal: productsTotal,
+      tax,
+      shipping: shippingCost,
+      total,
+      status: 'pending_payment',
+      userId: user?.id,
+      shippingOption
+    };
+
+    const result = await createOrder(orderData);
+    
+    if (result.error) {
+      console.error('Order creation failed:', result.error);
+      alert('Failed to create order. Please try again.');
+      return;
+    }
+
+    // Redirect to payment page
+    router.push(`/checkout/payment?orderId=${result.orderId}`);
+  } catch (error) {
+    console.error('Order submission error:', error);
+    alert('An error occurred. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+    setShowApprovalModal(false);
+  }
 }
