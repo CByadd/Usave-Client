@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Plus, Edit, Trash2, Search, Filter, Eye, EyeOff, Star, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import OptimizedImage from '../components/shared/OptimizedImage';
-import apiService from '../services/api';
+import api from '../services/api/apiClient';
 
 const AdminDashboard = () => {
   const { user, isAuthenticated } = useAuth();

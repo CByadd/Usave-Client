@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { CreditCard, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import OptimizedImage from '../../components/shared/OptimizedImage';
-import { apiService } from '../../services/api';
+import api from '../../services/api/apiClient';
 import Link from 'next/link';
 
 const PaymentPage = () => {

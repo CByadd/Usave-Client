@@ -95,8 +95,9 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
 >
   <form
     onSubmit={handleSubmit}
-    className={`flex items-center w-full bg-white mx-auto bg-light/80 backdrop-blur-md rounded-xl shadow-md overflow-hidden border border-black/10 focus-within:ring-2 focus-within:ring-primary transition-all duration-200 
-    ${isMobile ? 'ml-0 px-0 mx-0' : 'ml-7'}`}
+    className={`flex items-center w-full mx-auto bg-white/80 backdrop-blur-md rounded-xl shadow-sm overflow-hidden border border-gray-500 transition-all duration-200 ${
+      isMobile ? 'ml-0 px-0' : 'ml-7'
+    }`}
   >
     <button
       type="submit"

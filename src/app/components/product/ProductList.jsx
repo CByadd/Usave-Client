@@ -7,7 +7,7 @@ import { useSearch } from '../../contexts/SearchContext';
 import { useCart } from '../../contexts/CartContext';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 import { useUI } from '../../contexts/UIContext';
-import productService from '../../services/productService';
+import productService from '../../services/api/productService';
 
 const ProductListingPage = () => {
   const [activeFilters, setActiveFilters] = useState({

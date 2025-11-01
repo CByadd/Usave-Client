@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import OptimizedImage from '../../components/shared/OptimizedImage';
 import { LoadingSpinner, PageLoader } from '../../components/shared/LoadingSpinner';
-import { ProductDetailSkeleton } from '../../components/shared/LoadingSkeletons';
+import { ProductDetailSkeleton } from '../../components/shared/LoadingSkeleton';
 import { Heart, ShoppingCart, Star, ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCart } from '../../contexts/CartContext';
 import { useUI } from '../../contexts/UIContext';
-import productService from '../../services/productService';
+import productService from '../../services/api/productService';
 
 export default function ProductDetailPage() {
   const params = useParams();

@@ -7,7 +7,7 @@ import { useSearch } from '../contexts/SearchContext';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '../contexts/CartContext';
 import { useUI } from '../contexts/UIContext';
-import { ProductGridSkeleton } from '../components/shared/LoadingSkeletons';
+import { ProductGridSkeleton } from '../components/product/LoadingSkeletons';
 
 function SearchPageContent() {
   const [activeFilters, setActiveFilters] = useState({

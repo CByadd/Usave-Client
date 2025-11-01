@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { CheckCircle, Package, Truck, Home, FileText, Download } from 'lucide-react';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
-import { apiService } from '../../../services/api';
+import api from '../../../services/api/apiClient';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 
@@ -60,8 +60,8 @@ const PaymentSuccessPage = () => {
 
   const fetchOrder = async () => {
     try {
-      const response = await apiService.orders.getById(orderId);
-      if (response.success) {
+      const response = await api.orders.getById(orderId);
+      if (response.data) {
         setOrder(response.data);
       }
     } catch (err) {

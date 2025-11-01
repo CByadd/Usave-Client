@@ -36,9 +36,11 @@ const ItemCard = ({ item }) => {
           Top seller
         </div>
       )}
-    
-    <div className="min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative hover:shadow-lg transition flex flex-col items-center  overflow-visible rounded-b-4xl mb-5"
-    style={{ backgroundColor: item.bg }}>
+ <div
+  className="group min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5"
+  style={{ backgroundColor: item.bg }}
+>
+
     <div className="w-full flex items-center justify-center flex-col relative" >
           {/* Top Seller Badge */}
    
@@ -58,18 +60,20 @@ const ItemCard = ({ item }) => {
       </button>
 
       {/* Image Section with inline bg color */}
-      <div
-        onClick={goToProduct}
-        className="flex justify-center items-center w-full h-[220px] sm:h-[300px] rounded-2xl cursor-pointer"
-      >
-        <Image
-          src={item.image}
-          alt={item.title}
-          width={300}
-          height={300}
-          className="object-contain rounded-xl"
-        />
-      </div>
+<div
+  onClick={goToProduct}
+  className="flex justify-center items-center w-full h-[220px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden"
+>
+  <Image
+    src={item.image}
+    alt={item.title}
+    width={300}
+    height={300}
+    className="object-contain rounded-xl transition-transform duration-300 ease-in-out group-hover:scale-105"
+  />
+</div>
+
+
 
       {/* Quick View Button */}
       <button

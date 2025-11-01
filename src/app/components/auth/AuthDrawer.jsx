@@ -132,7 +132,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003B8E] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
@@ -455,15 +455,28 @@ const AuthDrawer = () => {
   if (!isAuthDrawerOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-[100] overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          onClick={closeAuthDrawer}
-        ></div>
+        <AnimatePresence>
+          <motion.div 
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={closeAuthDrawer}
+            aria-hidden="true"
+          />
+        </AnimatePresence>
         
-        <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex">
-          <div className="w-screen max-w-md">
+        <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex z-20">
+          <motion.div 
+            className="w-screen max-w-md"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
+          >
             <div className="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
               {isAuthenticated ? (
                 <div className="p-6">
@@ -573,7 +586,7 @@ const AuthDrawer = () => {
                 </>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
