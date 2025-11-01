@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "name": "Furniture",
+    "slug": "furniture",
+    "icon": "sofa",
+    "image": "/images/categories/furniture.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Electronics",
+    "slug": "electronics",
+    "icon": "tv",
+    "image": "/images/categories/electronics.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Kitchen",
+    "slug": "kitchen",
+    "icon": "utensils",
+    "image": "/images/categories/kitchen.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Bedroom",
+    "slug": "bedroom",
+    "icon": "bed",
+    "image": "/images/categories/bedroom.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Bathroom",
+    "slug": "bathroom",
+    "icon": "bath",
+    "image": "/images/categories/bathroom.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Lighting",
+    "slug": "lighting",
+    "icon": "lightbulb",
+    "image": "/images/categories/lighting.jpg"
+  }
+]
