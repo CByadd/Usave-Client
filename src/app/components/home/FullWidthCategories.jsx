@@ -1,5 +1,5 @@
 import React from "react";
-import categories from "../../data/placeCategories.json";
+import categories from "../../../app/data/placeCategories.json";
 import Link from "next/link";
 import { ArrowRight } from 'lucide-react';
 
