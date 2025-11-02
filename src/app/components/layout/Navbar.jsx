@@ -417,7 +417,7 @@ const Navbar = () => {
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 overflow-hidden">
-      <div className="w-full max-w-full overflow-visible h-max">
+      <div className="w-full max-w-[95dvw] overflow-visible h-max flex items-center justify-center relative bg-amber-100">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className=" justify-between items-center h-16 hidden md:flex">
           {/* Left side - Logo and Navigation Links */}
@@ -427,7 +427,7 @@ const Navbar = () => {
             </div>
             
             {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center  space-x-8 ml-16">
+            <div className="hidden md:flex items-center justify-between gap-6 ml-8">
               {/* Center - Search Bar */}
           {renderSearchBar()}
               <nav className="ml-8 flex space-x-6">
@@ -441,6 +441,35 @@ const Navbar = () => {
                   </Link>
                 ))}
               </nav>
+
+               {/* Cart */}
+  <Link href="/cart" className="relative text-gray-700 hover:text-blue-600">
+    <ShoppingCart size={22} />
+    {getCartCount() > 0 && (
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+        {getCartCount()}
+      </span>
+    )}
+  </Link>
+
+                {/* Cart */}
+          <span className='flex items-center justify-center gap-2'>
+             <Link href="/wishlist" className="relative text-gray-700 hover:text-blue-600">
+    <Heart size={22} />
+    {getWishlistCount() > 0 && (
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+        {getWishlistCount()}
+      </span>
+    )}
+  </Link>
+
+ 
+
+  {/* Account */}
+  <div className="relative">
+    {renderUserMenu()}
+  </div>
+          </span>
             </div>
           </div>
           
@@ -484,34 +513,7 @@ const Navbar = () => {
               )}
             </div>
             
-            {/* Cart */}
-            <div className="relative">
-              <Link href="/cart" className="text-gray-700 hover:text-blue-600">
-                <ShoppingCart size={20} />
-                {getCartCount() > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {getCartCount()}
-                  </span>
-                )}
-              </Link>
-            </div>
-            
-            {/* Wishlist */}
-            <div className="relative">
-              <Link href="/wishlist" className="text-gray-700 hover:text-blue-600">
-                <Heart size={20} />
-                {getWishlistCount() > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {getWishlistCount()}
-                  </span>
-                )}
-              </Link>
-            </div>
-            
-            {/* User Account */}
-            <div className="relative">
-              {renderUserMenu()}
-            </div>
+          
             
             {/* Mobile Menu Button */}
             <button 

@@ -10,7 +10,7 @@ export default function DesignCat() {
 
   return (
     <section className="sm:py-12 py-0">
-      <div className="mx-auto  grid grid-cols-2 gap-4 md:gap-6 md:px-4 px-0">
+      <div className="mx-auto  grid grid-cols-2 gap-4 md:gap-6 ">
 
         {/* LEFT SECTION */}
         <div className="grid grid-rows-2 gap-4 md:gap-6">
