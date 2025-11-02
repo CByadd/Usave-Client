@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { HERO_IMG } from '@/app/lib/constants';
+import { HERO_IMG } from '../../lib/constants';
 
 const Hero = () => {
   return (

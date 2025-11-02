@@ -103,11 +103,26 @@ const CartDrawer = () => {
                       {item.material && <span> • {item.material}</span>}
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between">
-                      {/* Price */}
-                      <div className="text-sm font-semibold text-gray-900">
-                        ${item.discountedPrice}.00
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Item Price:</span>
+                        <span className="text-sm font-medium">${item.discountedPrice * item.quantity}.00</span>
                       </div>
+                      {item.includeInstallation && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Installation ({item.quantity} × ${item.installationFee}):</span>
+                          <span className="text-sm font-medium">${(item.installationFee * item.quantity).toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-gray-100 pt-1">
+                        <span className="text-sm font-semibold">Subtotal:</span>
+                        <span className="text-sm font-semibold">
+                          ${(item.discountedPrice * item.quantity + (item.includeInstallation ? item.installationFee * item.quantity : 0)).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 flex items-center justify-between">
 
                       {/* Quantity Controls */}
                       <div className="flex items-center gap-2">
@@ -152,12 +167,48 @@ const CartDrawer = () => {
         {/* Footer */}
         {cartItems.length > 0 && (
           <div className="border-t border-gray-200 p-6">
-            {/* Total */}
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold text-gray-900">Total:</span>
-              <span className="text-xl font-bold text-[#0B4866]">
-                ${getCartTotal().toFixed(2)}
-              </span>
+            {/* Order Summary */}
+            <div className="space-y-3 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Order Summary</h3>
+              
+              {cartItems.some(item => item.includeInstallation) && (
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
+                    </svg>
+                    Installation service included for selected items
+                  </p>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Subtotal:</span>
+                  <span className="text-sm">
+                    ${cartItems.reduce((sum, item) => sum + (item.discountedPrice * item.quantity), 0).toFixed(2)}
+                  </span>
+                </div>
+                
+                {cartItems.some(item => item.includeInstallation) && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Installation:</span>
+                    <span className="text-sm">
+                      ${cartItems
+                        .filter(item => item.includeInstallation)
+                        .reduce((sum, item) => sum + (item.installationFee * item.quantity), 0)
+                        .toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between border-t border-gray-200 pt-2">
+                  <span className="text-lg font-semibold">Total:</span>
+                  <span className="text-xl font-bold text-[#0B4866]">
+                    ${getCartTotal().toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Action Buttons */}

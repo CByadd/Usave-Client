@@ -308,23 +308,11 @@ export default function CheckoutPage() {
       </div>
 
       <ApprovalModal
-      isOpen={showApprovalModal}
-      onClose={() => setShowApprovalModal(false)}
-      onContinueWithoutApproval={handleContinueWithoutApproval}
-      orderDetails={{
-        items: cartItems.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity
-        })),
-        subtotal: productsTotal,
-        tax,
-        shipping: shippingCost,
-        total,
-        shippingOption
-      }}
-      userId={user?.id}
+        isOpen={showApprovalModal}
+        onClose={() => setShowApprovalModal(false)}
+        onContinueWithoutApproval={handleContinueWithoutApproval}
+        cartItems={cartItems}
+        totalAmount={total}
       />
     </>
   );

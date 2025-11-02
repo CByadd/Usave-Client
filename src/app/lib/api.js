@@ -125,6 +125,11 @@ export const apiService = {
     return this.get(`/products/${id}`);
   },
 
+  async searchProducts(query, filters = {}) {
+    const params = new URLSearchParams({ q: query, ...filters });
+    return this.get(`/products/search?${params.toString()}`);
+  },
+
   // Cart related methods
   async getCart() {
     return this.get('/cart');

@@ -1,4 +1,4 @@
-import { apiService } from '../../lib/api';
+import { apiService } from './apiClient';
 import productsData from '../../data/products.json';
 
 // Mock API service for development (replace with real API calls)

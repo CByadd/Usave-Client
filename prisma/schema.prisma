@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole  @default(USER)
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+}
+
+model Order {
+  id              String     @id @default(uuid())
+  orderNumber     String     @unique
+  status          OrderStatus @default(PENDING)
+  subtotal        Float
+  total           Float
+  tax             Float      @default(0)
+  shipping        Float      @default(0)
+  notes           String?
+  shippingAddress Json
+  billingAddress  Json
+  paymentMethod   String
+  paymentStatus   String     @default("PENDING")
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  productId String
+  price     Float
+  quantity  Int     @default(1)
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  CUSTOMER
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  FAILED
+  PENDING_APPROVAL
+}

@@ -59,7 +59,10 @@ export const CartProvider = ({ children }) => {
   // Calculate cart totals
   const calculateTotals = () => {
     const subtotal = cartItems.reduce((total, item) => {
-      return total + (item.discountedPrice * item.quantity);
+      const itemTotal = item.discountedPrice * item.quantity;
+      // Add installation fee if included
+      const installationTotal = item.includeInstallation ? (item.installationFee || 0) * item.quantity : 0;
+      return total + itemTotal + installationTotal;
     }, 0);
 
     const tax = subtotal * 0.1; // 10% GST
@@ -115,6 +118,8 @@ export const CartProvider = ({ children }) => {
             maxQuantity: product.maxQuantity || 10,
             category: product.category,
             description: product.description,
+            includeInstallation: product.includeInstallation || false,
+            installationFee: product.includeInstallation ? (product.installationFee || 49.99) : 0,
             addedAt: new Date().toISOString()
           };
           
@@ -210,6 +215,19 @@ export const CartProvider = ({ children }) => {
   const getItemQuantity = (productId) => {
     const item = cartItems.find(item => item.id === productId);
     return item ? item.quantity : 0;
+  };
+
+  // Toggle installation for an item
+  const toggleInstallation = (productId, includeInstallation) => {
+    setCartItems(cartItems.map(item => 
+      item.id === productId 
+        ? { 
+            ...item, 
+            includeInstallation,
+            installationFee: includeInstallation ? (item.installationFee || 49.99) : 0
+          } 
+        : item
+    ));
   };
 
   // Validate cart (check stock, prices, etc.)
@@ -315,6 +333,7 @@ export const CartProvider = ({ children }) => {
     clearCart,
     isInCart,
     getItemQuantity,
+    toggleInstallation,
     getCartCount,
     getCartTotal,
     validateCart,

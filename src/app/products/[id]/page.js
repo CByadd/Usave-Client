@@ -16,10 +16,17 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [includeInstallation, setIncludeInstallation] = useState(false);
+  const [installationFee] = useState(49.99); // Default installation fee
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addToCart, isInCart, getItemQuantity } = useCart();
   const { openCartDrawer } = useUI();
+
+  // Calculate total price including installation fee
+  const totalPrice = includeInstallation 
+    ? (product?.discountedPrice * quantity) + installationFee 
+    : product?.discountedPrice * quantity;
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -138,16 +145,52 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <span className="text-3xl font-bold text-gray-900">${product.discountedPrice}</span>
-              {product.originalPrice > product.discountedPrice && (
-                <>
-                  <span className="text-xl text-gray-500 line-through">${product.originalPrice}</span>
-                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">
-                    Save ${product.originalPrice - product.discountedPrice}
+            <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <span className="text-3xl font-bold text-gray-900">${product.discountedPrice}</span>
+                {product.originalPrice > product.discountedPrice && (
+                  <>
+                    <span className="text-xl text-gray-500 line-through">${product.originalPrice}</span>
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">
+                      Save ${product.originalPrice - product.discountedPrice}
+                    </span>
+                  </>
+                )}
+              </div>
+              
+              {/* Installation Fee Toggle */}
+              <div className="flex items-center mt-4">
+                <label className="flex items-center cursor-pointer">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={includeInstallation}
+                      onChange={(e) => setIncludeInstallation(e.target.checked)}
+                    />
+                    <div className={`block w-12 h-6 rounded-full ${includeInstallation ? 'bg-[#0B4866]' : 'bg-gray-300'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${includeInstallation ? 'translate-x-6' : ''}`}></div>
+                  </div>
+                  <div className="ml-3 text-gray-700 font-medium">
+                    Include Installation: <span className="font-bold">${installationFee.toFixed(2)}</span>
+                  </div>
+                </label>
+              </div>
+              
+              {/* Total Price */}
+              <div className="pt-2 border-t border-gray-200 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-medium">Total:</span>
+                  <span className="text-xl font-bold text-[#0B4866]">
+                    ${totalPrice.toFixed(2)}
+                    {includeInstallation && (
+                      <span className="text-sm font-normal text-gray-500 ml-2">
+                        (includes ${installationFee.toFixed(2)} installation)
+                      </span>
+                    )}
                   </span>
-                </>
-              )}
+                </div>
+              </div>
             </div>
 
             <div>
@@ -190,7 +233,20 @@ export default function ProductDetailPage() {
 
             <div className="flex gap-4">
               <button 
-                onClick={() => { addToCart(product, quantity); openCartDrawer(); }}
+                onClick={() => { 
+                  addToCart(
+                    { 
+                      ...product, 
+                      includeInstallation,
+                      installationFee: includeInstallation ? installationFee : 0,
+                      totalPrice: includeInstallation 
+                        ? (product.discountedPrice * quantity) + installationFee 
+                        : product.discountedPrice * quantity
+                    }, 
+                    quantity 
+                  ); 
+                  openCartDrawer(); 
+                }}
                 disabled={!product.inStock}
                 className={`flex-1 py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 ${
                   !product.inStock 

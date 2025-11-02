@@ -137,3 +137,4 @@ const LoggingToggle = () => {
 };
 
 export default LoggingToggle;
+
