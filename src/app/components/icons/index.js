@@ -13,4 +13,4 @@ export { default as FiRrShoppingCartAddIcon } from "../../assets/icons/fi-rr-sho
 export { default as FiRrThumbsUpIcon } from "../../assets/icons/fi-rr-thumbs-up.svg";
 export { default as FiRrTimeForwardIcon } from "../../assets/icons/fi-rr-time-forward.svg";
 export { default as FiRrTrashIcon } from "../../assets/icons/fi-rr-trash.svg";
-export { default as FiRrUserIcon } from "../../assets/icons/fi-rr-user.svg";
+// export { default as FiRrUserIcon } from "../../assets/icons/fi-rr-user.svg";

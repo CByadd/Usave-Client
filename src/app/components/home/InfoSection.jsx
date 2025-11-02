@@ -33,7 +33,7 @@ export default function InfoCat() {
   ];
 
   return (
-    <section className="bg-sky-50 py-10 h-[300px]">
+    <section className="bg-sky-50 py-10 md:h-[300px] h-max mt-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-center items-center justify-center h-full px-4">
         {infoItems.map((item, index) => (
           <div key={index} className="flex flex-col items-center">

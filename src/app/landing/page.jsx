@@ -14,21 +14,20 @@ import Bitems from '../data/featuredItemsB.json';
 import InfoBanner from '../components/shared/InfoBanner'
 import Image from 'next/image'
 import { LandingPageSkeleton } from '../components/shared/LoadingSkeleton'
+import InspirationSection from '../components/home/InspirationSection'
 // import name from './../components/product/ProductCard.jsx';
 export default function LandingPage() {
   return (
     <div className=' flex flex-col items-center justify-center mx-auto '>
-   <div className="w-[90dvw] overflow-hidden">
+   <div className="md:w-[90dvw] w-full   overflow-hidden">
        <HeroSection/>
-
-
       {/* Explore By Category */}
-      <section className='w-full mt-20 mb-20'>
+   </div>
+
+    <section className='w-[90dvw] overflow-hidden mt-20 mb-20'>
         <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room"/>
         <CategoryCarousel/>
       </section>
-
-   </div>
 
       {/* Explore By Category */}
       <section className='w-[99dvw] mt-20 mb-20 flex flex-col items-center justify-center overflow-hidden '>
@@ -42,7 +41,7 @@ export default function LandingPage() {
        </div>
       </section>
 
-<section className='w-[90dvw] mt-20 mb-20'>
+<section className='md:w-[90dvw] w-[100dvw] mt-20 mb-20'>
   <CategoryShowcase/>
 </section>
 
@@ -76,33 +75,8 @@ export default function LandingPage() {
   </ProductCarousel>
 </section>
 
-<section className="w-[90dvw] h-screen mx-auto mt-20 mb-20 overflow-hidden">
-  <CategoryHeader
-    title="Get the inspiration ones"
-    buttonText="See All Products"
-    buttonLink="/living-room"
-    disableButton={true}
-  />
+<InspirationSection/>
 
-  {/* Image Row */}
-  <div className="flex gap-6">
-    {[
-      "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_DhFHtkECn7Q_lplnxw.jpg",
-      "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_reuIAvaxUMk_faofll.jpg",
-      "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_WUC_u5yoD2w_ru05gd.jpg",
-    ].map((src, index) => (
-      <div key={index} className="w-1/3 h-[90dvh]">
-        <Image
-          src={src}
-          alt={`Design Style ${index + 1}`}
-          width={1920}
-          height={1080}
-          className="w-full h-full object-cover rounded-3xl"
-        />
-      </div>
-    ))}
-  </div>
-</section>
 
 
 <section className="w-[99dvw] mt-20 mb-20 relative overflow-hidden">
@@ -112,12 +86,12 @@ export default function LandingPage() {
       alt="Newsletter"
       width={1920}
       height={400}
-      className="w-full h-[400px] object-cover"
+      className="w-full h-[20dvh] md:h-[400px] object-cover"
     />
 
     {/* Overlay text centered on the image */}
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white px-6">
-      <h2 className="text-[4rem] font-normal mb-3 text-center font-serifx">
+      <h2 className="md:text-[4rem]  text-[2rem] font-normal mb-3 text-center font-serifx">
        Loved by 1000+ Business
       </h2>
      

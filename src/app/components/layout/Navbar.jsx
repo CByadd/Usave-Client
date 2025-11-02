@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { UserRound, Search, LogOut, ChevronDown, X, ShoppingCart, Heart, Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_WHITE_BG } from '../../lib/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
@@ -279,9 +280,9 @@ const Navbar = () => {
   );
 
   const renderMobileDrawer = () => (
-    <div className="fixed inset-0 z-[100] overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <AnimatePresence>
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
           <motion.div 
             className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[20]"
             initial={{ opacity: 0 }}
@@ -294,16 +295,15 @@ const Navbar = () => {
             }}
             aria-hidden="true"
           />
-        </AnimatePresence>
-        
-        <div className="fixed inset-y-0 left-0 max-w-full flex z-[60]">
-          <motion.div 
-            className="w-screen max-w-xs"
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
-          >
+          
+          <div className="fixed inset-y-0 left-0 max-w-full flex z-[60]">
+            <motion.div 
+              className="w-screen max-w-xs"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
+            >
             <div className="h-full flex flex-col bg-white shadow-xl overflow-y-auto">
               <div className="flex-1 py-6 overflow-y-auto px-4 sm:px-6">
                 <div className="flex items-start justify-between">
@@ -408,17 +408,18 @@ const Navbar = () => {
                 )}
               </div>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </div>
-    </div>
+    </AnimatePresence>
   );
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
+    <header className="bg-white shadow-sm sticky top-0 z-40 overflow-hidden">
       <div className="w-full max-w-full overflow-visible h-max">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className=" justify-between items-center h-16 hidden md:flex">
           {/* Left side - Logo and Navigation Links */}
           <div className="flex items-center space-x-8">
             <div className="flex-shrink-0">
@@ -573,7 +574,7 @@ const Navbar = () => {
         )}
         
         {/* Mobile Categories */}
-        {!isSearchExpanded && renderMobileCategories()}
+        {/* {!isSearchExpanded && renderMobileCategories()} */}
         </div>
       </div>
       

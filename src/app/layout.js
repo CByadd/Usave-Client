@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
         <Providers>
           <Navbar />
-          <main className="flex-grow pt-16">
+          <main className="flex-grow">
             {children}
           </main>
           <Footer />

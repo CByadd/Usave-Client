@@ -9,8 +9,9 @@ export default function DesignCat() {
   const rightImages = designData.right || [];
 
   return (
-    <section className="py-12">
-      <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 px-4">
+    <section className="sm:py-12 py-0">
+      <div className="mx-auto  grid grid-cols-2 gap-4 md:gap-6 md:px-4 px-0">
+
         {/* LEFT SECTION */}
         <div className="grid grid-rows-2 gap-4 md:gap-6">
          {leftImages.map((item, index) => (
