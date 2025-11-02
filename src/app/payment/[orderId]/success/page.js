@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { CheckCircle, Package, Truck, Home, FileText, Download } from 'lucide-react';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
-import api from '../../../services/api/apiClient';
+import { apiService as api } from '../../../services/api/apiClient';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 
@@ -61,8 +61,8 @@ const PaymentSuccessPage = () => {
   const fetchOrder = async () => {
     try {
       const response = await api.orders.getById(orderId);
-      if (response.data) {
-        setOrder(response.data);
+      if (response.success) {
+        setOrder(response.data?.order || response.data);
       }
     } catch (err) {
       console.error('Failed to load order:', err);

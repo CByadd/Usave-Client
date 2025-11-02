@@ -52,16 +52,39 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
   const handleUpdateQuantity = async (itemId, newQuantity) => {
     setError('');
     setSuccess('');
+    
+    // Validate quantity
+    if (!newQuantity || newQuantity < 1) {
+      setError('Quantity must be at least 1');
+      return;
+    }
+    
     try {
       const response = await apiService.orders.updateOrderItemQuantity(order.id, itemId, newQuantity);
       if (response.success) {
         onOrderUpdate(response.data);
-        setSuccess('Quantity updated');
+        setSuccess('Quantity updated successfully');
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(response.message || 'Failed to update quantity');
+        setError(response.error || response.message || 'Failed to update quantity');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update quantity');
+      // Handle different error formats
+      let errorMessage = 'Failed to update quantity';
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      } else if (err.error) {
+        errorMessage = err.error;
+      }
+      
+      setError(errorMessage);
+      console.error('Update quantity error:', err);
     }
   };
 
@@ -96,8 +119,20 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <p className="text-red-800 font-medium text-sm">Error</p>
+              <p className="text-red-700 text-sm mt-1">{error}</p>
+            </div>
+            <button
+              onClick={() => setError('')}
+              className="text-red-400 hover:text-red-600"
+              title="Dismiss"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
       )}
 

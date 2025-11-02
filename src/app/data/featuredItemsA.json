@@ -1,38 +1,38 @@
 [
   {
     "id": 1,
-    "title": "City Lounge 2 Seater",
-    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806309/Usave/BoucleSwivelChair_600x600_1_juxgud-removebg-preview_1_wjnbtx.png",
+    "title": "Steel Dishwasher",
+    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762103354/Usave/gg/zxcv_gkklas.png",
     "originalPrice": 800,
     "discountedPrice": 699,
     "rating": 4.5,
     "reviews": 13,
     "inStock": true,
     "topSeller": true,
-    "bg": "#E8F8F5"
+    "bg": "#8A8A8A1A"
   },
   {
     "id": 3,
-    "title": "City Lounge 2 Seater",
-    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806309/Usave/MelroseChair_2_600x600_1_1_oh7jmb-removebg-preview_ilows9.png",
+    "title": "Cooking Oven",
+    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762103353/Usave/gg/cvbgh_c8qdq3.png",
     "originalPrice": 800,
     "discountedPrice": 699,
     "rating": 4.5,
     "reviews": 13,
     "inStock": true,
     "topSeller": true,
-    "bg": "#E8F8F5"
+    "bg": "#F3D6C333"
   },
   {
     "id": 2,
-    "title": "Modern Recliner Chair",
-    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806309/Usave/EuropeanStyle_LinenBethbed_head_695x695_1_1_ctjlw7-removebg-preview_gatecb.png",
+    "title": "Mattress Frame",
+    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762103354/Usave/gg/bnhh_b88yuz.png",
     "originalPrice": 950,
     "discountedPrice": 849,
     "rating": 4.7,
     "reviews": 9,
     "inStock": true,
     "topSeller": false,
-    "bg": "#E8F8F5"
+    "bg": "#C4E6EA33"
   }
 ]

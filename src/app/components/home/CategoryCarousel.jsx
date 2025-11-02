@@ -69,15 +69,15 @@ const CategoryCarousel = () => {
               flex: "0 0 calc((100% - 3rem)/4)", // show 4 items with gap 1rem between
             }}
           >
-            <div className="w-24 h-24 relative mb-4">
-              <Image
-                src={cat.img}
-                alt={cat.name}
-                fill
-                sizes="(max-width: 640px) 96px, 96px"
-                className="object-contain"
-              />
-            </div>
+            <div className="w-[90%] h-[90%] relative mb-4"> {/* increased size from w-24 h-24 */}
+  <Image
+    src={cat.img}
+    alt={cat.name}
+    className="object-contain"
+    fill // this makes the image fill the parent div
+  />
+</div>
+
             <p className="text-lg font-medium text-gray-700">{cat.name}</p>
           </div>
         ))}

@@ -5,8 +5,16 @@ export async function POST(request) {
     const body = await request.json();
     const { adminEmail, orderDetails, userId, ownerEmail } = body;
 
-    // Use environment variable or default to localhost:5000 (common backend port)
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Get backend URL - use HTTP for localhost, HTTPS for production
+    const getBackendUrl = () => {
+      if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
+      }
+      // Development: use HTTP (no SSL) for localhost
+      return 'http://localhost:3001';
+    };
+    
+    const backendUrl = getBackendUrl();
     
     // Forward the request to your backend server
     const response = await fetch(`${backendUrl}/api/orders/request-approval`, {

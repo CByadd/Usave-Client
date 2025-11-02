@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Plus, Edit, Trash2, Search, Filter, Eye, EyeOff, Star, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import OptimizedImage from '../components/shared/OptimizedImage';
-import api from '../services/api/apiClient';
+import { apiService } from '../services/api/apiClient';
 
 const AdminDashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -77,17 +77,77 @@ const AdminDashboard = () => {
     }
   };
 
+  const validateProductForm = () => {
+    if (!productForm.title.trim()) {
+      alert('Product title is required');
+      return false;
+    }
+    if (!productForm.description.trim()) {
+      alert('Product description is required');
+      return false;
+    }
+    if (!productForm.category) {
+      alert('Product category is required');
+      return false;
+    }
+    if (!productForm.originalPrice || parseFloat(productForm.originalPrice) <= 0) {
+      alert('Please enter a valid original price');
+      return false;
+    }
+    if (!productForm.discountedPrice || parseFloat(productForm.discountedPrice) <= 0) {
+      alert('Please enter a valid discounted price');
+      return false;
+    }
+    if (parseFloat(productForm.discountedPrice) > parseFloat(productForm.originalPrice)) {
+      alert('Discounted price cannot be greater than original price');
+      return false;
+    }
+    if (!productForm.stockQuantity || parseInt(productForm.stockQuantity) < 0) {
+      alert('Please enter a valid stock quantity');
+      return false;
+    }
+    if (!productForm.image.trim()) {
+      alert('Product image URL is required');
+      return false;
+    }
+    // Validate URL format
+    try {
+      new URL(productForm.image);
+    } catch {
+      alert('Please enter a valid image URL');
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateProduct = async () => {
+    if (!validateProductForm()) {
+      return;
+    }
+
     setIsCreating(true);
     try {
-      const response = await apiService.admin.products.create(productForm);
+      // Prepare product data
+      const productData = {
+        ...productForm,
+        originalPrice: parseFloat(productForm.originalPrice),
+        discountedPrice: parseFloat(productForm.discountedPrice),
+        stockQuantity: parseInt(productForm.stockQuantity),
+        weight: productForm.weight ? parseFloat(productForm.weight) : null
+      };
+
+      const response = await apiService.admin.products.create(productData);
       if (response.success) {
         setShowProductForm(false);
         resetForm();
         loadProducts();
+        alert('Product created successfully');
+      } else {
+        alert(response.message || 'Failed to create product');
       }
     } catch (error) {
       console.error('Failed to create product:', error);
+      alert(error.message || 'Failed to create product. Please try again.');
     } finally {
       setIsCreating(false);
     }
@@ -96,17 +156,34 @@ const AdminDashboard = () => {
   const handleUpdateProduct = async () => {
     if (!editingProduct) return;
     
+    if (!validateProductForm()) {
+      return;
+    }
+
     setIsCreating(true);
     try {
-      const response = await apiService.admin.products.update(editingProduct.id, productForm);
+      // Prepare product data
+      const productData = {
+        ...productForm,
+        originalPrice: parseFloat(productForm.originalPrice),
+        discountedPrice: parseFloat(productForm.discountedPrice),
+        stockQuantity: parseInt(productForm.stockQuantity),
+        weight: productForm.weight ? parseFloat(productForm.weight) : null
+      };
+
+      const response = await apiService.admin.products.update(editingProduct.id, productData);
       if (response.success) {
         setEditingProduct(null);
         setShowProductForm(false);
         resetForm();
         loadProducts();
+        alert('Product updated successfully');
+      } else {
+        alert(response.message || 'Failed to update product');
       }
     } catch (error) {
       console.error('Failed to update product:', error);
+      alert(error.message || 'Failed to update product. Please try again.');
     } finally {
       setIsCreating(false);
     }

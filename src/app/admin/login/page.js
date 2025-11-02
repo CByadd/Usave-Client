@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -10,26 +10,53 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login, isAuthenticated, user } = useAuth();
+
+  useEffect(() => {
+    // Redirect if already logged in as admin
+    if (isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN')) {
+      router.push('/admin');
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        callbackUrl: '/admin/dashboard',
-      });
+    // Basic validation
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
+    }
 
-      if (result.error) {
-        setError('Invalid email or password');
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const result = await login({ email, password });
+
+      if (result.success) {
+        // Check if user is admin
+        if (result.user?.role === 'ADMIN' || result.user?.role === 'SUPER_ADMIN') {
+          router.push('/admin');
+        } else {
+          setError('Access denied. Admin privileges required.');
+          // Log out non-admin users
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+        }
       } else {
-        router.push('/admin/dashboard');
+        setError(result.error || 'Invalid email or password');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -90,10 +117,18 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#0B4866] hover:bg-[#094058] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B4866] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
+          </div>
+          <div className="text-center">
+            <a
+              href="/"
+              className="text-sm text-[#0B4866] hover:text-[#094058] font-medium"
+            >
+              Back to Home
+            </a>
           </div>
         </form>
       </div>

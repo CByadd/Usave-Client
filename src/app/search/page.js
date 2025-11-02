@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { useCart } from '../contexts/CartContext';
 import { useUI } from '../contexts/UIContext';
 import { ProductGridSkeleton } from '../components/product/LoadingSkeletons';
+import QuickViewModal from '../components/product/QuickViewModal';
 
 function SearchPageContent() {
   const [activeFilters, setActiveFilters] = useState({
@@ -31,6 +32,7 @@ function SearchPageContent() {
   const { addToCart, isInCart } = useCart();
   const { openCart } = useUI();
   const searchParams = useSearchParams();
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   // Initialize search when component mounts
   useEffect(() => {
@@ -432,7 +434,10 @@ function SearchPageContent() {
                   height={300}
                   className="object-contain max-h-[250px] w-auto"
                 />
-                <button className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickViewProduct(product);
+                }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
                   <Search size={16} />
                   Quick View
                 </button>
@@ -544,6 +549,13 @@ function SearchPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      <QuickViewModal 
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </div>
   );
 }

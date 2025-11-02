@@ -8,6 +8,7 @@ import { useCart } from '../../contexts/CartContext';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 import { useUI } from '../../contexts/UIContext';
 import productService from '../../services/api/productService';
+import QuickViewModal from './QuickViewModal';
 
 const ProductListingPage = () => {
   const [activeFilters, setActiveFilters] = useState({
@@ -26,6 +27,7 @@ const ProductListingPage = () => {
   const [products, setProducts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   const fallbackProducts = [
     {
@@ -241,7 +243,10 @@ const ProductListingPage = () => {
                       height={300}
                       className="object-contain max-h-[250px] w-auto"
                     />
-                    <button onClick={() => window.location.assign(`/products/${product.id}`)} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      setQuickViewProduct(product);
+                    }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
                       <Search size={16} />
                       Quick View
                     </button>
@@ -325,7 +330,10 @@ const ProductListingPage = () => {
                   height={300}
                   className="object-contain max-h-[250px] w-auto"
                 />
-                <button onClick={() => window.location.assign(`/products/${product.id}`)} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickViewProduct(product);
+                }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
                   <Search size={16} />
                   Quick View
                 </button>
@@ -438,6 +446,13 @@ const ProductListingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      <QuickViewModal 
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </div>
   );
 };

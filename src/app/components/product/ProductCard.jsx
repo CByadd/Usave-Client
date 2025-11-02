@@ -7,6 +7,7 @@ import { useWishlist } from "../../contexts/WishlistContext";
 import { useUI } from "../../contexts/UIContext";
 import { useRouter } from "next/navigation";
 import { FiRrHeartIcon, FiRrShoppingBagIcon, FiRrShoppingCartAddWIcon } from "../icons";
+import QuickViewModal from "./QuickViewModal";
 
 const ItemCard = ({ item }) => {
   const { addToCart, isInCart } = useCart();
@@ -14,6 +15,7 @@ const ItemCard = ({ item }) => {
   const { openCartDrawer } = useUI();
   const router = useRouter();
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+  const [showQuickView, setShowQuickView] = useState(false);
 
   const goToProduct = () => router.push(`/products/${item.id}`);
   
@@ -62,22 +64,26 @@ const ItemCard = ({ item }) => {
       {/* Image Section with inline bg color */}
 <div
   onClick={goToProduct}
-  className="flex justify-center items-center w-full h-[220px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden"
+  className="flex justify-center items-center w-full sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden"
 >
-  <Image
-    src={item.image}
-    alt={item.title}
-    width={300}
-    height={300}
-    className="object-contain rounded-xl transition-transform duration-300 ease-in-out group-hover:scale-105"
-  />
+  <div className="relative w-[90%] h-[90%] max-w-[90%] max-h-[90%]  flex justify-center items-center">
+    <Image
+      src={item.image}
+      alt={item.title}
+      fill
+      className="object-contain rounded-xl transition-transform duration-300 ease-in-out group-hover:scale-105"
+    />
+  </div>
 </div>
 
 
 
       {/* Quick View Button */}
       <button
-        onClick={goToProduct}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowQuickView(true);
+        }}
         className="w-[80%] sm:w-[70%] mt-3 mb-4 h-[44px] sm:h-[50px] py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-center gap-2 bg-white border-0"
       >
         <Search size={16} />
@@ -149,6 +155,13 @@ const ItemCard = ({ item }) => {
         </div>
       </div>
     </div>
+
+    {/* Quick View Modal */}
+    <QuickViewModal 
+      product={item}
+      isOpen={showQuickView}
+      onClose={() => setShowQuickView(false)}
+    />
     </div>
   );
 };

@@ -1,29 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api/apiClient';
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login');
-    } else if (status === 'authenticated') {
-      fetchOrders();
+    if (!authLoading) {
+      if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
+        router.push('/admin/login');
+      } else {
+        fetchOrders();
+      }
     }
-  }, [status, router]);
+  }, [isAuthenticated, user, authLoading, router]);
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch('/api/admin/orders');
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
+      setLoading(true);
+      const response = await apiService.orders.getAll();
+      if (response.success) {
+        setOrders(response.data?.orders || []);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -34,12 +37,8 @@ export default function AdminDashboard() {
 
   const handleApprove = async (orderId) => {
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/approve`, {
-        method: 'PUT',
-      });
-      
-      if (res.ok) {
-        // Refresh orders after approval
+      const response = await apiService.orders.approve(orderId, 'Approved by admin');
+      if (response.success) {
         fetchOrders();
       }
     } catch (error) {
@@ -47,12 +46,16 @@ export default function AdminDashboard() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0B4866]"></div>
       </div>
     );
+  }
+
+  if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
+    return null; // Will redirect
   }
 
   return (
@@ -60,12 +63,18 @@ export default function AdminDashboard() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <button
-            onClick={() => signOut({ callbackUrl: '/admin/login' })}
+          <a
+            href="/admin/login"
+            onClick={(e) => {
+              e.preventDefault();
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('userData');
+              router.push('/admin/login');
+            }}
             className="text-sm text-gray-600 hover:text-gray-900"
           >
             Sign out
-          </button>
+          </a>
         </div>
       </header>
       
@@ -86,8 +95,8 @@ export default function AdminDashboard() {
                     <li key={order.id} className="px-4 py-4 sm:px-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-indigo-600 truncate">
-                            Order #{order.orderNumber}
+                          <p className="text-sm font-medium text-[#0B4866] truncate">
+                            Order #{order.orderNumber || order.id}
                           </p>
                           <p className="mt-1 text-sm text-gray-500">
                             {order.items.length} items • ${order.total.toFixed(2)}

@@ -1,11 +1,10 @@
 // Base API service for making HTTP requests
-// Remove /api from the end since Next.js routes already include it
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { config, getApiUrl } from './config';
 
 export const apiService = {
   // Generic request handler
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = getApiUrl(endpoint);
     
     // Set default headers
     const headers = {

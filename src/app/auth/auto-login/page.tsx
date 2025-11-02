@@ -39,7 +39,15 @@ const AutoLoginPage = () => {
         try {
           setStatus('Logging in with credentials...');
           
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+          // Get API URL - use HTTP for localhost, HTTPS for production
+          const getApiUrl = () => {
+            if (process.env.NEXT_PUBLIC_API_URL) {
+              return process.env.NEXT_PUBLIC_API_URL;
+            }
+            // Development: use HTTP (no SSL) for localhost
+            return 'http://localhost:3001/api';
+          };
+          const apiUrl = getApiUrl();
           const response = await fetch(`${apiUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -24,7 +24,7 @@ export default function LandingPage() {
 
       {/* Explore By Category */}
       <section className='w-full mt-20 mb-20'>
-        <CategoryHeader title="Living Room" buttonText="Explore All" buttonLink="/living-room"/>
+        <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room"/>
         <CategoryCarousel/>
       </section>
 
@@ -47,7 +47,7 @@ export default function LandingPage() {
 </section>
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
-  <CategoryHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
+  <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {items.map((item) => (
         <ItemCard key={item.id} item={item} />
@@ -57,9 +57,9 @@ export default function LandingPage() {
 
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
-  <CategoryHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
+  <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
-     {Aitems.map((item) => (
+     {Bitems.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}
   </ProductCarousel>
@@ -68,9 +68,9 @@ export default function LandingPage() {
 
 
 <section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
-  <CategoryHeader title="Shop By Design Style" buttonText="See All Products" buttonLink="/living-room"/>
+  <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
-     {Bitems.map((item) => (
+     {Aitems.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}
   </ProductCarousel>
@@ -78,7 +78,7 @@ export default function LandingPage() {
 
 <section className="w-[90dvw] h-screen mx-auto mt-20 mb-20 overflow-hidden">
   <CategoryHeader
-    title="Shop By Design Style"
+    title="Get the inspiration ones"
     buttonText="See All Products"
     buttonLink="/living-room"
     disableButton={true}

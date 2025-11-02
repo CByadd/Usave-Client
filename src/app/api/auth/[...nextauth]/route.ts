@@ -27,9 +27,19 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // Get API URL - use HTTP for localhost, HTTPS for production
+          const getApiUrl = () => {
+            if (process.env.NEXT_PUBLIC_API_URL) {
+              return process.env.NEXT_PUBLIC_API_URL;
+            }
+            // Development: use HTTP (no SSL) for localhost
+            return 'http://localhost:3001/api';
+          };
+          const apiUrl = getApiUrl();
+
           // Handle token-based login
           if (credentials.token) {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-token`, {
+            const response = await fetch(`${apiUrl}/auth/verify-token`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -51,7 +61,7 @@ export const authOptions: NextAuthOptions = {
 
           // Handle email/password login
           if (credentials.password) {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+            const response = await fetch(`${apiUrl}/auth/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

@@ -1,10 +1,10 @@
 import axios from 'axios';
+import { config } from '../../lib/config';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  // baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://usave-server.vercel.app/api',
-  timeout: 10000,
+  baseURL: config.api.baseURL,
+  timeout: config.api.timeout,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,12 +30,20 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
       window.location.href = '/';
     }
+    
+    // Enhance error object with server error message
+    if (error.response?.data) {
+      error.serverError = error.response.data.error || error.response.data.message;
+      error.serverResponse = error.response.data;
+    }
+    
     return Promise.reject(error);
   }
 );

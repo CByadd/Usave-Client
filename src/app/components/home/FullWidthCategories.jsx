@@ -48,7 +48,7 @@ const FullWCategory = () => {
           }}
         >
           {/* Black gradient overlay for text visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/30 to-transparent pointer-events-none" />
           
           <Link href={cat.link}>
             <span className="absolute inset-0 flex flex-col justify-end p-7 text-white">

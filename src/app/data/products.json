@@ -4,7 +4,7 @@
     "title": "City Lounge 2 Seater",
     "slug": "city-lounge-2-seater",
     "description": "Comfortable 2-seater lounge perfect for living rooms. Features premium upholstery and modern design with excellent comfort and durability.",
-    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
+    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762103354/Usave/gg/ssas_jwwuaq.png",
     "images": [
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
@@ -47,21 +47,21 @@
     "tags": ["living", "sofa", "comfortable", "modern"],
     "createdAt": "2024-01-15T10:00:00Z",
     "updatedAt": "2024-01-15T10:00:00Z",
-     "bg": "#E8F8F5"
+     "bg": "#F3D6C333"
   },
   {
     "id": 2,
     "title": "City Lounge RHF Chase 2 Seater",
     "slug": "city-lounge-rhf-chase-2-seater",
     "description": "Premium 2-seater with chase for ultimate comfort. Perfect for relaxation with its extended chaise section and premium materials.",
-    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
+    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762103353/Usave/gg/sds_cy793u.png",
     "images": [
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png"
     ],
     "originalPrice": 1200,
     "discountedPrice": 999,
-     "bg": "#E8F8F5",
+     "bg": "#DF9CDF1A",
     "rating": 4.7,
     "reviews": 8,
     "inStock": true,
@@ -102,11 +102,11 @@
   {
     "id": 3,
 
-     "bg": "#E8F8F5",
+     "bg": "#D8D0C933",
     "title": "Hasting 3 Seater Lounge with Chaise",
     "slug": "hasting-3-seater-lounge-chaise",
     "description": "Spacious 3-seater with chaise for ultimate relaxation. Perfect for large living rooms with its generous seating and premium comfort.",
-    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
+    "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762103353/Usave/gg/cvghy_lrusqp.png",
     "images": [
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
       "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png"

@@ -1,10 +1,12 @@
 'use client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { config, getApiUrl } from '../lib/config';
+
+const API_BASE_URL = config.api.baseURL;
 
 export async function requestApproval(ownerEmail, orderDetails, userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/orders/request-approval`, {
+    const response = await fetch(getApiUrl(config.endpoints.orders.requestApproval), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -40,7 +42,7 @@ export async function requestApproval(ownerEmail, orderDetails, userId) {
 
 export async function createOrder(orderData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/orders/request-approval`, {
+    const response = await fetch(getApiUrl(config.endpoints.orders.requestApproval), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +77,7 @@ export async function createOrder(orderData) {
 
 export async function approveOrder(token) {
   try {
-    const response = await fetch(`${API_BASE_URL}/orders/approve`, {
+    const response = await fetch(getApiUrl('/orders/approve'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

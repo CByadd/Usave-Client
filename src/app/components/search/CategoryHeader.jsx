@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const CatHeader = ({ title, buttonText, buttonLink = "#", disableButton = false }) => {
   return (
-    <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-6">
+    <div className="flex items-center justify-between  pb-3 mb-6">
       {/* Title */}
       <h2 className="text-xl md:text-5xl font-light text-gray-800 font-serifx">
         {title}

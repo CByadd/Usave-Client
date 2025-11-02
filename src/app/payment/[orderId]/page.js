@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { CreditCard, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import OptimizedImage from '../../components/shared/OptimizedImage';
-import api from '../../services/api/apiClient';
+import { apiService as api } from '../../services/api/apiClient';
 import Link from 'next/link';
 
 const PaymentPage = () => {
@@ -37,13 +37,20 @@ const PaymentPage = () => {
 
   const fetchOrder = async () => {
     try {
-      const response = await apiService.orders.getById(orderId);
+      const response = await api.orders.getById(orderId);
       if (response.success) {
         const orderData = response.data;
         
         // Verify order is approved and payment is pending
-        if (orderData.status !== 'APPROVED' || orderData.paymentStatus !== 'PENDING') {
-          setError('This order is not available for payment');
+        if (orderData.status !== 'APPROVED') {
+          setError('This order must be approved before payment');
+          return;
+        }
+
+        if (orderData.paymentStatus !== 'PENDING') {
+          setError(orderData.paymentStatus === 'PAID' 
+            ? 'This order has already been paid' 
+            : 'This order is not available for payment');
           return;
         }
 
@@ -89,20 +96,59 @@ const PaymentPage = () => {
   const validateCardDetails = () => {
     if (paymentMethod === 'card') {
       const cardNumber = cardDetails.cardNumber.replace(/\s/g, '');
-      if (cardNumber.length < 13 || cardNumber.length > 19) {
-        setError('Invalid card number');
+      
+      // Validate card number (Luhn algorithm check would be ideal but basic length check for now)
+      if (!cardNumber || cardNumber.length < 13 || cardNumber.length > 19) {
+        setError('Please enter a valid card number (13-19 digits)');
         return false;
       }
+      
+      // Check if card number is all digits
+      if (!/^\d+$/.test(cardNumber)) {
+        setError('Card number must contain only digits');
+        return false;
+      }
+
+      // Validate cardholder name
       if (!cardDetails.cardName.trim()) {
         setError('Cardholder name is required');
         return false;
       }
-      if (cardDetails.expiryDate.length !== 5) {
-        setError('Invalid expiry date');
+      if (cardDetails.cardName.trim().length < 3) {
+        setError('Cardholder name must be at least 3 characters');
         return false;
       }
-      if (cardDetails.cvv.length < 3) {
-        setError('Invalid CVV');
+
+      // Validate expiry date
+      if (cardDetails.expiryDate.length !== 5 || !cardDetails.expiryDate.includes('/')) {
+        setError('Please enter a valid expiry date (MM/YY)');
+        return false;
+      }
+      
+      const [month, year] = cardDetails.expiryDate.split('/');
+      const expiryMonth = parseInt(month, 10);
+      const expiryYear = parseInt('20' + year, 10);
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+      
+      if (expiryMonth < 1 || expiryMonth > 12) {
+        setError('Invalid expiry month');
+        return false;
+      }
+      
+      if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
+        setError('Card has expired');
+        return false;
+      }
+
+      // Validate CVV
+      if (cardDetails.cvv.length < 3 || cardDetails.cvv.length > 4) {
+        setError('CVV must be 3 or 4 digits');
+        return false;
+      }
+      if (!/^\d+$/.test(cardDetails.cvv)) {
+        setError('CVV must contain only digits');
         return false;
       }
     }
@@ -112,36 +158,65 @@ const PaymentPage = () => {
   const handlePayment = async () => {
     setError('');
 
-    if (!validateCardDetails()) {
+    // Validate based on payment method
+    if (paymentMethod === 'card' && !validateCardDetails()) {
+      return;
+    }
+
+    if (!order) {
+      setError('Order not found');
+      return;
+    }
+
+    // Verify order is still valid for payment
+    if (order.status !== 'APPROVED') {
+      setError('This order is not approved for payment');
+      return;
+    }
+
+    if (order.paymentStatus !== 'PENDING') {
+      setError('This order has already been paid');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // Simulate payment processing delay
+      // Simulate payment processing delay (remove in production)
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // In production, integrate with payment gateway here
-      // const stripeResponse = await stripe.confirmPayment(...)
+      // Example: Stripe
+      // const stripeResponse = await stripe.confirmPayment({
+      //   elements,
+      //   confirmParams: { return_url: `${window.location.origin}/payment/${orderId}/success` }
+      // });
       // const paymentIntentId = stripeResponse.paymentIntent.id;
 
+      // For now, use simulated payment intent ID
+      const paymentIntentId = paymentMethod === 'card' 
+        ? `card_${Date.now()}`
+        : paymentMethod === 'paypal'
+        ? `paypal_${Date.now()}`
+        : `bank_transfer_${Date.now()}`;
+
       // Process payment on server
-      const response = await apiService.orders.processPayment(
+      const response = await api.orders.processPayment(
         orderId,
         paymentMethod,
-        'simulated_payment_intent_' + Date.now() // Replace with real payment intent ID
+        paymentIntentId
       );
 
       if (response.success) {
         // Redirect to success page
         router.push(`/payment/${orderId}/success`);
       } else {
-        setError(response.message || 'Payment failed');
+        setError(response.message || 'Payment processing failed. Please try again.');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment failed. Please try again.');
-      console.error(err);
+      console.error('Payment error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Payment failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -278,20 +353,22 @@ const PaymentPage = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Number
+                      Card Number *
                     </label>
                     <input
                       type="text"
                       value={cardDetails.cardNumber}
                       onChange={(e) => handleCardInputChange('cardNumber', e.target.value)}
                       placeholder="1234 5678 9012 3456"
+                      maxLength={19}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                      required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cardholder Name
+                      Cardholder Name *
                     </label>
                     <input
                       type="text"
@@ -299,33 +376,38 @@ const PaymentPage = () => {
                       onChange={(e) => handleCardInputChange('cardName', e.target.value)}
                       placeholder="John Doe"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                      required
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Expiry Date
+                        Expiry Date *
                       </label>
                       <input
                         type="text"
                         value={cardDetails.expiryDate}
                         onChange={(e) => handleCardInputChange('expiryDate', e.target.value)}
                         placeholder="MM/YY"
+                        maxLength={5}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                        required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        CVV
+                        CVV *
                       </label>
                       <input
                         type="text"
                         value={cardDetails.cvv}
                         onChange={(e) => handleCardInputChange('cvv', e.target.value)}
                         placeholder="123"
+                        maxLength={4}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                        required
                       />
                     </div>
                   </div>

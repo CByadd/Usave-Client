@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ApprovalModal({ 
   isOpen, 
@@ -10,7 +10,7 @@ export default function ApprovalModal({
   cartItems = [],
   totalAmount = 0
 }) {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [adminEmail, setAdminEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -60,10 +60,10 @@ export default function ApprovalModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ownerEmail: session?.user?.email || 'guest@example.com',
+          ownerEmail: user?.email || 'guest@example.com',
           adminEmail,
           orderDetails,
-          userId: session?.user?.id || 'guest'
+          userId: user?.id || 'guest'
         }),
       });
 
