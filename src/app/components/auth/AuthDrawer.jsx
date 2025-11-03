@@ -24,19 +24,30 @@ const LoginForm = ({ onSwitch, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!login || typeof login !== 'function') {
+      setError('Login function is not available');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
-    const result = await login(formData.email, formData.password);
-    
-    if (result.success) {
-      onClose();
-      setFormData({ email: '', password: '' });
-    } else {
-      setError(result.error || 'Login failed. Please try again.');
+    try {
+      const result = await login(formData.email, formData.password);
+      
+      if (result && result.success) {
+        if (onClose && typeof onClose === 'function') {
+          onClose();
+        }
+        setFormData({ email: '', password: '' });
+      } else {
+        setError(result?.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -152,7 +163,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
         <div className="mt-6">
           <button
             type="button"
-            onClick={() => onSwitch('register')}
+            onClick={() => onSwitch && typeof onSwitch === 'function' && onSwitch('register')}
             className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Create an account
@@ -189,6 +200,11 @@ const RegisterForm = ({ onSwitch, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!register || typeof register !== 'function') {
+      setError('Registration function is not available');
+      return;
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -197,20 +213,26 @@ const RegisterForm = ({ onSwitch, onClose }) => {
     setIsLoading(true);
     setError('');
 
-    const result = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password
-    });
-    
-    if (result.success) {
-      onClose();
-      setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-    } else {
-      setError(result.error || 'Registration failed. Please try again.');
+    try {
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+      
+      if (result && result.success) {
+        if (onClose && typeof onClose === 'function') {
+          onClose();
+        }
+        setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+      } else {
+        setError(result?.error || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -364,7 +386,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
         <div className="mt-6">
           <button
             type="button"
-            onClick={() => onSwitch('login')}
+            onClick={() => onSwitch && typeof onSwitch === 'function' && onSwitch('login')}
             className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Sign in to your account
@@ -448,9 +470,17 @@ const AuthDrawer = () => {
   };
   
   const handleLogout = () => {
-    logout();
-    closeAuthDrawer();
+    if (logout && typeof logout === 'function') {
+      logout();
+    }
+    if (closeAuthDrawer && typeof closeAuthDrawer === 'function') {
+      closeAuthDrawer();
+    }
   };
+  
+  const safeCloseAuthDrawer = closeAuthDrawer && typeof closeAuthDrawer === 'function' 
+    ? closeAuthDrawer 
+    : () => {};
   
   if (!isAuthDrawerOpen) return null;
   
@@ -464,7 +494,7 @@ const AuthDrawer = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onClick={closeAuthDrawer}
+            onClick={safeCloseAuthDrawer}
             aria-hidden="true"
           />
         </AnimatePresence>
@@ -484,7 +514,7 @@ const AuthDrawer = () => {
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">My Account</h2>
                     <button 
-                      onClick={closeAuthDrawer}
+                      onClick={safeCloseAuthDrawer}
                       className="text-gray-500 hover:text-gray-700"
                     >
                       <X size={24} />
@@ -505,35 +535,35 @@ const AuthDrawer = () => {
                     <a
                       href="/account"
                       className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={closeAuthDrawer}
+                      onClick={safeCloseAuthDrawer}
                     >
                       <span className="truncate">My Profile</span>
                     </a>
                     <a
                       href="/orders"
                       className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={closeAuthDrawer}
+                      onClick={safeCloseAuthDrawer}
                     >
                       <span className="truncate">My Orders</span>
                     </a>
                     <a
                       href="/wishlist"
                       className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={closeAuthDrawer}
+                      onClick={safeCloseAuthDrawer}
                     >
                       <span className="truncate">My Wishlist</span>
                     </a>
                     <a
                       href="/addresses"
                       className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={closeAuthDrawer}
+                      onClick={safeCloseAuthDrawer}
                     >
                       <span className="truncate">Saved Addresses</span>
                     </a>
                     <button
                       onClick={() => {
                         handleLogout();
-                        closeAuthDrawer();
+                        safeCloseAuthDrawer();
                       }}
                       className="w-full group flex items-center px-3 py-3 text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
                     >
@@ -575,12 +605,12 @@ const AuthDrawer = () => {
                     {activeTab === 'login' ? (
                       <LoginForm 
                         onSwitch={() => handleTabChange('register')} 
-                        onClose={closeAuthDrawer} 
+                        onClose={safeCloseAuthDrawer} 
                       />
                     ) : (
                       <RegisterForm 
                         onSwitch={() => handleTabChange('login')} 
-                        onClose={closeAuthDrawer} 
+                        onClose={safeCloseAuthDrawer} 
                       />
                     )}
                   </div>
