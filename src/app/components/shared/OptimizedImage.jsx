@@ -86,6 +86,8 @@ const OptimizedImage = ({
   }, [blurDataURL, width, height]);
 
   const defaultBlurDataURL = blurDataURL || generatedBlurDataURL;
+  // Only use blur placeholder if we have a blurDataURL
+  const imagePlaceholder = defaultBlurDataURL ? placeholder : undefined;
 
   return (
     <div className={`relative overflow-hidden ${className}`} style={style}>
@@ -106,8 +108,10 @@ const OptimizedImage = ({
         } ${hasError ? 'object-cover' : ''}`}
         priority={priority}
         quality={quality}
-        placeholder={placeholder}
-        blurDataURL={defaultBlurDataURL}
+        {...(imagePlaceholder && defaultBlurDataURL ? {
+          placeholder: imagePlaceholder,
+          blurDataURL: defaultBlurDataURL,
+        } : {})}
         sizes={sizes}
         onLoad={handleLoad}
         onError={handleError}
