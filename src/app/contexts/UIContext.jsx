@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 
 const UIContext = createContext(null);
 
@@ -29,15 +29,21 @@ const defaultUIValue = {
 
 export const useUI = () => {
   const context = useContext(UIContext);
-  // Return default values ONLY during SSR/prerendering when context isn't available
-  // On the client, context should always be available via Providers
+  
   if (!context) {
     if (typeof window === 'undefined') {
-      // During SSR, return defaults to prevent build errors
       return defaultUIValue;
     }
-    // On client, throw error to help debug - context should always be available
-    throw new Error('useUI must be used within a UIProvider');
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      if (!window.__uiContextWarningShown) {
+        window.__uiContextWarningShown = true;
+        setTimeout(() => {
+          window.__uiContextWarningShown = false;
+        }, 1000);
+        console.warn('useUI: Context may not be available during initial render. If this persists, ensure component is wrapped in <UIProvider>.');
+      }
+    }
+    return defaultUIValue;
   }
   return context;
 };

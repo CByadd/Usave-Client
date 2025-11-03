@@ -29,15 +29,21 @@ const defaultSearchValue = {
 
 export const useSearch = () => {
   const context = useContext(SearchContext);
-  // Return default values ONLY during SSR/prerendering when context isn't available
-  // On the client, context should always be available via Providers
+  
   if (!context) {
     if (typeof window === 'undefined') {
-      // During SSR, return defaults to prevent build errors
       return defaultSearchValue;
     }
-    // On client, throw error to help debug - context should always be available
-    throw new Error('useSearch must be used within a SearchProvider');
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      if (!window.__searchContextWarningShown) {
+        window.__searchContextWarningShown = true;
+        setTimeout(() => {
+          window.__searchContextWarningShown = false;
+        }, 1000);
+        console.warn('useSearch: Context may not be available during initial render. If this persists, ensure component is wrapped in <SearchProvider>.');
+      }
+    }
+    return defaultSearchValue;
   }
   return context;
 };

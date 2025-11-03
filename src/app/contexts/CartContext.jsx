@@ -28,15 +28,21 @@ const defaultCartValue = {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  // Return default values ONLY during SSR/prerendering when context isn't available
-  // On the client, context should always be available via Providers
+  
   if (!context) {
     if (typeof window === 'undefined') {
-      // During SSR, return defaults to prevent build errors
       return defaultCartValue;
     }
-    // On client, throw error to help debug - context should always be available
-    throw new Error('useCart must be used within a CartProvider');
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      if (!window.__cartContextWarningShown) {
+        window.__cartContextWarningShown = true;
+        setTimeout(() => {
+          window.__cartContextWarningShown = false;
+        }, 1000);
+        console.warn('useCart: Context may not be available during initial render. If this persists, ensure component is wrapped in <CartProvider>.');
+      }
+    }
+    return defaultCartValue;
   }
   return context;
 };

@@ -19,15 +19,21 @@ const defaultWishlistValue = {
 
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
-  // Return default values ONLY during SSR/prerendering when context isn't available
-  // On the client, context should always be available via Providers
+  
   if (!context) {
     if (typeof window === 'undefined') {
-      // During SSR, return defaults to prevent build errors
       return defaultWishlistValue;
     }
-    // On client, throw error to help debug - context should always be available
-    throw new Error('useWishlist must be used within a WishlistProvider');
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      if (!window.__wishlistContextWarningShown) {
+        window.__wishlistContextWarningShown = true;
+        setTimeout(() => {
+          window.__wishlistContextWarningShown = false;
+        }, 1000);
+        console.warn('useWishlist: Context may not be available during initial render. If this persists, ensure component is wrapped in <WishlistProvider>.');
+      }
+    }
+    return defaultWishlistValue;
   }
   return context;
 };

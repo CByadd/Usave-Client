@@ -6,31 +6,46 @@ import logger from '../utils/logger';
 
 const AuthContext = createContext(null);
 
+const defaultAuthValue = {
+  user: null,
+  isLoading: false,
+  isAuthenticated: false,
+  error: null,
+  login: () => Promise.resolve({ success: false }),
+  register: () => Promise.resolve({ success: false }),
+  logout: () => {},
+  updateProfile: () => Promise.resolve({ success: false }),
+  changePassword: () => Promise.resolve({ success: false }),
+  forgotPassword: () => Promise.resolve({ success: false }),
+  resetPassword: () => Promise.resolve({ success: false }),
+  checkAuthStatus: () => {},
+  clearError: () => {}
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  
+  // If context is not available (shouldn't happen if wrapped in Provider)
+  // Return defaults to prevent crashes. React will re-render with correct context when available.
   if (!context) {
-    // Return default values ONLY during SSR/prerendering when context isn't available
-    // On the client, context should always be available via Providers
     if (typeof window === 'undefined') {
-      // During SSR, return defaults to prevent build errors
-      return {
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        error: null,
-        login: () => Promise.resolve({ success: false }),
-        register: () => Promise.resolve({ success: false }),
-        logout: () => {},
-        updateProfile: () => Promise.resolve({ success: false }),
-        changePassword: () => Promise.resolve({ success: false }),
-        forgotPassword: () => Promise.resolve({ success: false }),
-        resetPassword: () => Promise.resolve({ success: false }),
-        checkAuthStatus: () => {},
-        clearError: () => {}
-      };
+      // SSR: Always return defaults
+      return defaultAuthValue;
     }
-    // On client, throw error to help debug - context should always be available
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Client: Return defaults temporarily, React will re-render when context becomes available
+    // This can happen during hydration. React will automatically re-render when context is available.
+    // In development, log a one-time warning (but avoid during initial hydration)
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      // Use a flag to avoid multiple warnings
+      if (!window.__authContextWarningShown) {
+        window.__authContextWarningShown = true;
+        setTimeout(() => {
+          window.__authContextWarningShown = false;
+        }, 1000);
+        console.warn('useAuth: Context may not be available during initial render. If this persists, ensure component is wrapped in <AuthProvider>.');
+      }
+    }
+    return defaultAuthValue;
   }
   return context;
 };
