@@ -1,11 +1,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 
-const AutoLoginPage = () => {
+const AutoLoginPageContent = () => {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState('Verifying your session...');
   const [error, setError] = useState<string | null>(null);
@@ -163,4 +163,17 @@ const AutoLoginPage = () => {
   );
 };
 
-export default AutoLoginPage;
+export default function AutoLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-lg font-medium text-gray-900">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AutoLoginPageContent />
+    </Suspense>
+  );
+}

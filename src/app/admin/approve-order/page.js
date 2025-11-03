@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api/apiClient';
@@ -8,7 +8,7 @@ import AdminOrderEditor from '../../components/admin/AdminOrderEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default function ApproveOrderPage() {
+function ApproveOrderPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
@@ -241,6 +241,21 @@ export default function ApproveOrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ApproveOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-lg font-medium text-gray-900">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ApproveOrderPageContent />
+    </Suspense>
   );
 }
 
