@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import productService from '../services/api/productService';
 
-const SearchContext = createContext();
+const SearchContext = createContext(null);
 
 // Default values for SSR/prerendering
 const defaultSearchValue = {
@@ -29,9 +29,15 @@ const defaultSearchValue = {
 
 export const useSearch = () => {
   const context = useContext(SearchContext);
-  // Return default values during SSR/prerendering when context isn't available
+  // Return default values ONLY during SSR/prerendering when context isn't available
+  // On the client, context should always be available via Providers
   if (!context) {
-    return defaultSearchValue;
+    if (typeof window === 'undefined') {
+      // During SSR, return defaults to prevent build errors
+      return defaultSearchValue;
+    }
+    // On client, throw error to help debug - context should always be available
+    throw new Error('useSearch must be used within a SearchProvider');
   }
   return context;
 };

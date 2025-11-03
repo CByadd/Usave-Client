@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../lib/api';
 import { useAuth } from './AuthContext';
 
-const CartContext = createContext();
+const CartContext = createContext(null);
 
 // Default values for SSR/prerendering
 const defaultCartValue = {
@@ -28,9 +28,15 @@ const defaultCartValue = {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  // Return default values during SSR/prerendering when context isn't available
+  // Return default values ONLY during SSR/prerendering when context isn't available
+  // On the client, context should always be available via Providers
   if (!context) {
-    return defaultCartValue;
+    if (typeof window === 'undefined') {
+      // During SSR, return defaults to prevent build errors
+      return defaultCartValue;
+    }
+    // On client, throw error to help debug - context should always be available
+    throw new Error('useCart must be used within a CartProvider');
   }
   return context;
 };

@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const WishlistContext = createContext();
+const WishlistContext = createContext(null);
 
 // Default values for SSR/prerendering
 const defaultWishlistValue = {
@@ -19,9 +19,15 @@ const defaultWishlistValue = {
 
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
-  // Return default values during SSR/prerendering when context isn't available
+  // Return default values ONLY during SSR/prerendering when context isn't available
+  // On the client, context should always be available via Providers
   if (!context) {
-    return defaultWishlistValue;
+    if (typeof window === 'undefined') {
+      // During SSR, return defaults to prevent build errors
+      return defaultWishlistValue;
+    }
+    // On client, throw error to help debug - context should always be available
+    throw new Error('useWishlist must be used within a WishlistProvider');
   }
   return context;
 };

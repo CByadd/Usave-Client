@@ -1,7 +1,7 @@
 "use client";
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 
-const UIContext = createContext();
+const UIContext = createContext(null);
 
 // Default values for SSR/prerendering
 const defaultUIValue = {
@@ -29,9 +29,15 @@ const defaultUIValue = {
 
 export const useUI = () => {
   const context = useContext(UIContext);
-  // Return default values during SSR/prerendering when context isn't available
+  // Return default values ONLY during SSR/prerendering when context isn't available
+  // On the client, context should always be available via Providers
   if (!context) {
-    return defaultUIValue;
+    if (typeof window === 'undefined') {
+      // During SSR, return defaults to prevent build errors
+      return defaultUIValue;
+    }
+    // On client, throw error to help debug - context should always be available
+    throw new Error('useUI must be used within a UIProvider');
   }
   return context;
 };
@@ -45,96 +51,117 @@ export const UIProvider = ({ children }) => {
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [authDrawerTab, setAuthDrawerTab] = useState('login');
 
-  const openAuthDrawer = (tab = 'login') => {
+  const openAuthDrawer = useCallback((tab = 'login') => {
     setAuthDrawerTab(tab);
     setIsAuthDrawerOpen(true);
     // Close any other auth-related modals
     setIsLoginModalOpen(false);
     setIsRegisterModalOpen(false);
-  };
+  }, []);
 
-  const closeAuthDrawer = () => {
+  const closeAuthDrawer = useCallback(() => {
     setIsAuthDrawerOpen(false);
-  };
+  }, []);
 
-  const setAuthDrawerTabState = (tab) => {
+  const setAuthDrawerTabState = useCallback((tab) => {
     setAuthDrawerTab(tab);
-  };
+  }, []);
 
-  const openLoginModal = () => {
+  const openLoginModal = useCallback(() => {
     setIsLoginModalOpen(true);
     setIsRegisterModalOpen(false);
     // Close auth drawer if open
     setIsAuthDrawerOpen(false);
-  };
+  }, []);
 
-  const closeLoginModal = () => {
+  const closeLoginModal = useCallback(() => {
     setIsLoginModalOpen(false);
-  };
+  }, []);
 
-  const openRegisterModal = () => {
+  const openRegisterModal = useCallback(() => {
     setIsRegisterModalOpen(true);
     setIsLoginModalOpen(false);
     // Close auth drawer if open
     setIsAuthDrawerOpen(false);
-  };
+  }, []);
 
-  const closeRegisterModal = () => {
+  const closeRegisterModal = useCallback(() => {
     setIsRegisterModalOpen(false);
-  };
+  }, []);
 
-  const openCartDrawer = () => {
+  const openCartDrawer = useCallback(() => {
     setIsCartDrawerOpen(true);
-  };
+  }, []);
 
-  const closeCartDrawer = () => {
+  const closeCartDrawer = useCallback(() => {
     setIsCartDrawerOpen(false);
-  };
+  }, []);
 
-  const openWishlistDrawer = () => {
+  const openWishlistDrawer = useCallback(() => {
     setIsWishlistDrawerOpen(true);
-  };
+  }, []);
 
-  const closeWishlistDrawer = () => {
+  const closeWishlistDrawer = useCallback(() => {
     setIsWishlistDrawerOpen(false);
-  };
+  }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev);
+  }, []);
 
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(false);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    // Modal states
+    isLoginModalOpen,
+    isRegisterModalOpen,
+    isCartDrawerOpen,
+    isWishlistDrawerOpen,
+    isMobileMenuOpen,
+    isAuthDrawerOpen,
+    authDrawerTab,
+    
+    // Modal handlers
+    openLoginModal,
+    closeLoginModal,
+    openRegisterModal,
+    closeRegisterModal,
+    openCartDrawer,
+    closeCartDrawer,
+    openWishlistDrawer,
+    closeWishlistDrawer,
+    toggleMobileMenu,
+    closeMobileMenu,
+    openAuthDrawer,
+    closeAuthDrawer,
+    setAuthDrawerTab: setAuthDrawerTabState,
+  }), [
+    isLoginModalOpen,
+    isRegisterModalOpen,
+    isCartDrawerOpen,
+    isWishlistDrawerOpen,
+    isMobileMenuOpen,
+    isAuthDrawerOpen,
+    authDrawerTab,
+    openLoginModal,
+    closeLoginModal,
+    openRegisterModal,
+    closeRegisterModal,
+    openCartDrawer,
+    closeCartDrawer,
+    openWishlistDrawer,
+    closeWishlistDrawer,
+    toggleMobileMenu,
+    closeMobileMenu,
+    openAuthDrawer,
+    closeAuthDrawer,
+    setAuthDrawerTabState,
+  ]);
 
   return (
-    <UIContext.Provider
-      value={{
-        // Modal states
-        isLoginModalOpen,
-        isRegisterModalOpen,
-        isCartDrawerOpen,
-        isWishlistDrawerOpen,
-        isMobileMenuOpen,
-        isAuthDrawerOpen,
-        authDrawerTab,
-        
-        // Modal handlers
-        openLoginModal,
-        closeLoginModal,
-        openRegisterModal,
-        closeRegisterModal,
-        openCartDrawer,
-        closeCartDrawer,
-        openWishlistDrawer,
-        closeWishlistDrawer,
-        toggleMobileMenu,
-        closeMobileMenu,
-        openAuthDrawer,
-        closeAuthDrawer,
-        setAuthDrawerTab: setAuthDrawerTabState,
-      }}
-    >
+    <UIContext.Provider value={value}>
       {children}
     </UIContext.Provider>
   );

@@ -4,27 +4,33 @@ import { useRouter } from 'next/navigation';
 import { apiService } from '../services/api/apiClient';
 import logger from '../utils/logger';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    // Return a default context during static generation
-    return {
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      error: null,
-      login: () => Promise.resolve({ success: false }),
-      register: () => Promise.resolve({ success: false }),
-      logout: () => {},
-      updateProfile: () => Promise.resolve({ success: false }),
-      changePassword: () => Promise.resolve({ success: false }),
-      forgotPassword: () => Promise.resolve({ success: false }),
-      resetPassword: () => Promise.resolve({ success: false }),
-      checkAuthStatus: () => {},
-      clearError: () => {}
-    };
+    // Return default values ONLY during SSR/prerendering when context isn't available
+    // On the client, context should always be available via Providers
+    if (typeof window === 'undefined') {
+      // During SSR, return defaults to prevent build errors
+      return {
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        error: null,
+        login: () => Promise.resolve({ success: false }),
+        register: () => Promise.resolve({ success: false }),
+        logout: () => {},
+        updateProfile: () => Promise.resolve({ success: false }),
+        changePassword: () => Promise.resolve({ success: false }),
+        forgotPassword: () => Promise.resolve({ success: false }),
+        resetPassword: () => Promise.resolve({ success: false }),
+        checkAuthStatus: () => {},
+        clearError: () => {}
+      };
+    }
+    // On client, throw error to help debug - context should always be available
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
