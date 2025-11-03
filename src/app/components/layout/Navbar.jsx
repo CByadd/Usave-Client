@@ -443,14 +443,18 @@ const Navbar = () => {
               </nav>
 
                {/* Cart */}
-  <Link href="/cart" className="relative text-gray-700 hover:text-blue-600">
+  <button 
+    onClick={() => openCartDrawer()} 
+    className="relative text-gray-700 hover:text-blue-600"
+    aria-label="Open cart"
+  >
     <ShoppingCart size={22} />
     {getCartCount() > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
         {getCartCount()}
       </span>
     )}
-  </Link>
+  </button>
 
                 {/* Cart */}
           <span className='flex items-center justify-center gap-2'>
@@ -550,14 +554,18 @@ const Navbar = () => {
             >
               <Search size={20} />
             </button>
-            <Link href="/cart" className="text-gray-700 hover:text-blue-600 relative">
+            <button 
+              onClick={() => openCartDrawer()} 
+              className="text-gray-700 hover:text-blue-600 relative"
+              aria-label="Open cart"
+            >
               <ShoppingCart size={20} />
               {getCartCount() > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {getCartCount()}
                 </span>
               )}
-            </Link>
+            </button>
           </div>
         </div>
         

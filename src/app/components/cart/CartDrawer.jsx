@@ -10,11 +10,6 @@ const CartDrawer = () => {
   const { cartItems, updateQuantity, removeItem, getCartTotal, getCartCount } = useCart();
   const { isCartDrawerOpen, closeCartDrawer } = useUI();
   const [isUpdating, setIsUpdating] = useState({});
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleQuantityChange = async (productId, newQuantity) => {
     if (newQuantity < 1) {
@@ -35,7 +30,7 @@ const CartDrawer = () => {
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
-    if (!mounted || typeof document === 'undefined') return;
+    if (typeof document === 'undefined') return;
     
     if (isCartDrawerOpen) {
       document.body.style.overflow = 'hidden';
@@ -49,9 +44,9 @@ const CartDrawer = () => {
         document.body.style.overflow = 'unset';
       }
     };
-  }, [isCartDrawerOpen, mounted]);
+  }, [isCartDrawerOpen]);
 
-  if (!mounted || !isCartDrawerOpen) return null;
+  if (!isCartDrawerOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -64,7 +59,10 @@ const CartDrawer = () => {
 
       
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl flex flex-col">
+      <div 
+        className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">

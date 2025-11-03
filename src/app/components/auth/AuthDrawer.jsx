@@ -442,11 +442,6 @@ const AuthDrawer = () => {
   const { isAuthDrawerOpen, closeAuthDrawer } = useUI();
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -457,7 +452,7 @@ const AuthDrawer = () => {
     closeAuthDrawer();
   };
   
-  if (!mounted || !isAuthDrawerOpen) return null;
+  if (!isAuthDrawerOpen) return null;
   
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden">
@@ -481,6 +476,7 @@ const AuthDrawer = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
               {isAuthenticated ? (
