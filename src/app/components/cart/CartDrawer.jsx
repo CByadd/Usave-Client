@@ -30,6 +30,8 @@ const CartDrawer = () => {
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
     if (isCartDrawerOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -38,7 +40,9 @@ const CartDrawer = () => {
     
     // Cleanup on unmount
     return () => {
-      document.body.style.overflow = 'unset';
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = 'unset';
+      }
     };
   }, [isCartDrawerOpen]);
 
