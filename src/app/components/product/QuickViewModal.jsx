@@ -30,6 +30,8 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   }, [isOpen, product]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
     const handleEscape = (e) => e.key === 'Escape' && onClose();
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
@@ -37,7 +39,9 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
     }
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = 'unset';
+      }
     };
   }, [isOpen, onClose]);
 

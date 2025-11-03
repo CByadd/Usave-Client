@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 
@@ -24,6 +24,7 @@ const OptimizedImage = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
+  const [generatedBlurDataURL, setGeneratedBlurDataURL] = useState(blurDataURL || null);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
@@ -39,38 +40,52 @@ const OptimizedImage = ({
     onError?.();
   }, [currentSrc, fallbackSrc, onError]);
 
-  // Generate blur data URL if not provided
-  const generateBlurDataURL = (w, h) => {
-    // Create a simple gradient blur placeholder
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
+  // Generate blur data URL if not provided (only on client side)
+  useEffect(() => {
+    if (blurDataURL || typeof document === 'undefined') return;
     
-    // Create a subtle gradient background
-    const gradient = ctx.createLinearGradient(0, 0, w, h);
-    gradient.addColorStop(0, '#f8fafc');
-    gradient.addColorStop(0.5, '#f1f5f9');
-    gradient.addColorStop(1, '#e2e8f0');
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
-    
-    // Add some subtle noise for texture
-    const imageData = ctx.getImageData(0, 0, w, h);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      const noise = (Math.random() - 0.5) * 10;
-      data[i] = Math.max(0, Math.min(255, data[i] + noise));     // R
-      data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise)); // G
-      data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise)); // B
-    }
-    ctx.putImageData(imageData, 0, 0);
-    
-    return canvas.toDataURL();
-  };
+    const generateBlurDataURL = (w, h) => {
+      try {
+        // Create a simple gradient blur placeholder
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        
+        // Create a subtle gradient background
+        const gradient = ctx.createLinearGradient(0, 0, w, h);
+        gradient.addColorStop(0, '#f8fafc');
+        gradient.addColorStop(0.5, '#f1f5f9');
+        gradient.addColorStop(1, '#e2e8f0');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+        
+        // Add some subtle noise for texture
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const noise = (Math.random() - 0.5) * 10;
+          data[i] = Math.max(0, Math.min(255, data[i] + noise));     // R
+          data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise)); // G
+          data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise)); // B
+        }
+        ctx.putImageData(imageData, 0, 0);
+        
+        return canvas.toDataURL();
+      } catch (error) {
+        console.error('Error generating blur data URL:', error);
+        return null;
+      }
+    };
 
-  const defaultBlurDataURL = blurDataURL || generateBlurDataURL(width || 400, height || 400);
+    const generated = generateBlurDataURL(width || 400, height || 400);
+    if (generated) {
+      setGeneratedBlurDataURL(generated);
+    }
+  }, [blurDataURL, width, height]);
+
+  const defaultBlurDataURL = blurDataURL || generatedBlurDataURL;
 
   return (
     <div className={`relative overflow-hidden ${className}`} style={style}>
