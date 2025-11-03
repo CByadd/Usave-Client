@@ -482,6 +482,8 @@ const AuthDrawer = () => {
     ? closeAuthDrawer 
     : () => {};
   
+  console.log('AuthDrawer render - isAuthDrawerOpen:', isAuthDrawerOpen);
+  
   if (!isAuthDrawerOpen) return null;
   
   return (

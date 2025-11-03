@@ -12,24 +12,13 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
 
-  // Enable experimental features for better performance
-  experimental: {
-    // optimizeCss: true, // Disabled due to critters dependency issue
-    turbo: false,
-  },
-
-  // Set turbopack root to prevent workspace inference issues
-  turbopack: {
-    root: process.cwd(),
-  },
+  // Experimental features - turbo is now stable in Next.js 15
+  // No need for experimental.turbo configuration
 
   // Compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-
-  // Output configuration
-  output: 'standalone',
 
   async redirects() {
     return [

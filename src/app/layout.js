@@ -1,8 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./styles/globals.css";
+import { Providers } from "./providers";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import { Providers } from "./providers";
 import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
 import LoggingToggle from "./components/debug/LoggingToggle";

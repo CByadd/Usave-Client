@@ -46,6 +46,8 @@ const CartDrawer = () => {
     };
   }, [isCartDrawerOpen]);
 
+  console.log('CartDrawer render - isCartDrawerOpen:', isCartDrawerOpen);
+  
   if (!isCartDrawerOpen) return null;
 
   return (

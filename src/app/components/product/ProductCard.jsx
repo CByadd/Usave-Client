@@ -9,25 +9,58 @@ import QuickViewModal from "./QuickViewModal";
 import OptimizedImage from "../shared/OptimizedImage";
 
 const ItemCard = ({ item, variant = 'carousel' }) => {
-  const { addToCart, isInCart } = useCart();
-  const { toggleWishlist, isInWishlist } = useWishlist();
-  const { openCartDrawer } = useUI();
+  const cartContext = useCart();
+  const wishlistContext = useWishlist();
+  const uiContext = useUI();
   const router = useRouter();
+  
+  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
+  const { toggleWishlist = async () => ({}), isInWishlist = () => false } = wishlistContext || {};
+  const { openCartDrawer = () => {} } = uiContext || {};
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
 
   const goToProduct = () => router.push(`/products/${item.id}`);
   
   const handleWishlistToggle = async (e) => {
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setIsAddingToWishlist(true);
-    await toggleWishlist(item);
-    setIsAddingToWishlist(false);
+    try {
+      await toggleWishlist(item);
+    } catch (error) {
+      console.error('Wishlist error:', error);
+    } finally {
+      setIsAddingToWishlist(false);
+    }
   };
 
-  const quickShop = async () => {
-    await addToCart(item);
-    router.push('/cart');
+  const quickShop = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      await addToCart(item);
+      router.push('/cart');
+    } catch (error) {
+      console.error('Quick shop error:', error);
+    }
+  };
+
+  const handleAddToCart = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      await addToCart(item);
+      openCartDrawer();
+    } catch (error) {
+      console.error('Add to cart error:', error);
+    }
   };
 
   // Determine classes based on variant
@@ -184,19 +217,26 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
           {variant === 'grid' ? (
             <>
               <button
-                onClick={quickShop}
-                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  quickShop(e);
+                }}
+                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Search size={16} />
                 Quick Shop
               </button>
               <button 
-                onClick={async () => { 
-                  await addToCart(item); 
-                  openCartDrawer(); 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddToCart(e);
                 }}
                 disabled={item.inStock === false}
-                className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
                   item.inStock === false 
                     ? 'bg-gray-400 cursor-not-allowed' 
                     : isInCart(item.id) 
@@ -211,19 +251,26 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
           ) : (
             <>
               <button
-                onClick={quickShop}
-                className="flex-1 border rounded-4xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  quickShop(e);
+                }}
+                className="flex-1 border rounded-4xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100 cursor-pointer"
               >
                 <ShoppingBag size={16} />
                 Quick Shop
               </button>
               <button 
-                onClick={async () => { 
-                  await addToCart(item); 
-                  openCartDrawer(); 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddToCart(e);
                 }}
                 disabled={item.inStock === false}
-                className={`md:hidden hidden lg:flex flex-1 rounded-4xl py-2 items-center justify-center gap-2 ${
+                className={`md:hidden hidden lg:flex flex-1 rounded-4xl py-2 items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
                   item.inStock === false 
                     ? 'bg-gray-400 cursor-not-allowed text-white' 
                     : isInCart(item.id) 

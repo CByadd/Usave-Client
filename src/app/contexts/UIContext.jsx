@@ -44,6 +44,7 @@ export const UIProvider = ({ children }) => {
   const [authDrawerTab, setAuthDrawerTab] = useState('login');
 
   const openAuthDrawer = useCallback((tab = 'login') => {
+    console.log('openAuthDrawer called with tab:', tab);
     setAuthDrawerTab(tab);
     setIsAuthDrawerOpen(true);
     // Close any other auth-related modals
@@ -82,6 +83,7 @@ export const UIProvider = ({ children }) => {
   }, []);
 
   const openCartDrawer = useCallback(() => {
+    console.log('openCartDrawer called, setting isCartDrawerOpen to true');
     setIsCartDrawerOpen(true);
   }, []);
 

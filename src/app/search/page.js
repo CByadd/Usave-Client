@@ -31,8 +31,11 @@ function SearchPageContent() {
     performSearch,
     hasSearched
   } = useSearch();
-  const { addToCart, isInCart } = useCart();
-  const { openCart } = useUI();
+  const cartContext = useCart();
+  const uiContext = useUI();
+  
+  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
+  const { openCartDrawer = () => {} } = uiContext || {};
   const searchParams = useSearchParams();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
@@ -484,9 +487,23 @@ function SearchPageContent() {
                     Quick Shop
                   </button>
                   <button 
-                    onClick={() => { addToCart(product); openCart(); }}
+                    type="button"
+                    onClick={async (e) => {
+                      e?.preventDefault?.();
+                      e?.stopPropagation?.();
+                      try {
+                        if (addToCart && typeof addToCart === 'function') {
+                          await addToCart(product);
+                        }
+                        if (openCartDrawer && typeof openCartDrawer === 'function') {
+                          openCartDrawer();
+                        }
+                      } catch (err) {
+                        console.error('Add to cart error:', err);
+                      }
+                    }}
                     disabled={!product.inStock}
-                    className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
                       !product.inStock 
                         ? 'bg-gray-400 cursor-not-allowed' 
                         : isInCart(product.id) 

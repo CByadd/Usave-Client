@@ -43,39 +43,40 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  // Check if user is logged in on mount - simple client-side only
-  useEffect(() => {
+  // Check if user is logged in - simple client-side only
+  const checkAuthStatus = async () => {
     if (typeof window === 'undefined') {
       setIsLoading(false);
       return;
     }
 
-    const checkAuthStatus = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          setIsLoading(false);
-          return;
-        }
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
 
-        const response = await apiService.auth.getCurrentUser();
-        if (response?.success) {
-          const userData = response.user || response.data;
-          setUser(userData);
-          setIsAuthenticated(true);
-        } else {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
+      const response = await apiService.auth.getCurrentUser();
+      if (response?.success) {
+        const userData = response.user || response.data;
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Check if user is logged in on mount
+  useEffect(() => {
     checkAuthStatus();
   }, []);
 

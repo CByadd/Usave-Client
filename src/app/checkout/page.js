@@ -13,8 +13,11 @@ import OptimizedImage from '../components/shared/OptimizedImage';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
-  const { cartItems, totals, clearCart } = useCart();
+  const authContext = useAuth();
+  const cartContext = useCart();
+  
+  const { user, isAuthenticated } = authContext || { user: null, isAuthenticated: false };
+  const { cartItems = [], totals = { subtotal: 0, tax: 0, shipping: 0, total: 0 }, clearCart = async () => {} } = cartContext || {};
   const [shippingOption, setShippingOption] = useState('delivery-only');
   const [warranty, setWarranty] = useState('');
   const [cartExpanded, setCartExpanded] = useState(true);

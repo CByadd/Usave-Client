@@ -8,8 +8,11 @@ import { useUI } from '../../contexts/UIContext';
 
 const QuickViewModal = ({ product, isOpen, onClose }) => {
   const router = useRouter();
-  const { addToCart, isInCart } = useCart();
-  const { openCartDrawer } = useUI();
+  const cartContext = useCart();
+  const uiContext = useUI();
+  
+  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
+  const { openCartDrawer = () => {} } = uiContext || {};
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -51,17 +54,33 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   const handlePrevImage = () => setCurrentImageIndex((p) => (p - 1 + productImages.length) % productImages.length);
   const handleQuantityChange = (d) => setQuantity((p) => Math.max(1, Math.min(p + d, product.maxQuantity || 10)));
 
-  const handleQuickShop = async () => {
-    const p = { ...product, quantity, selectedColor, selectedSize };
-    await addToCart(p);
-    router.push('/cart');
-    onClose();
+  const handleQuickShop = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      const p = { ...product, quantity, selectedColor, selectedSize };
+      await addToCart(p);
+      router.push('/cart');
+      if (onClose) onClose();
+    } catch (err) {
+      console.error('Quick shop error:', err);
+    }
   };
 
-  const handleAddToCart = async () => {
-    const p = { ...product, quantity, selectedColor, selectedSize };
-    await addToCart(p);
-    openCartDrawer();
+  const handleAddToCart = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      const p = { ...product, quantity, selectedColor, selectedSize };
+      await addToCart(p);
+      openCartDrawer();
+    } catch (err) {
+      console.error('Add to cart error:', err);
+    }
   };
 
   const handleViewFullDetails = () => {
@@ -252,13 +271,15 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             {/* Buttons */}
             <div className="flex gap-3 pt-4 border-t border-gray-200">
               <button
+                type="button"
                 onClick={handleQuickShop}
                 disabled={!inStock}
-                className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
                 <ShoppingBag size={18} /> Quick Shop
               </button>
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={!inStock}
                 className={`flex-1 px-5 py-3 rounded-lg text-white flex items-center justify-center gap-2 transition ${

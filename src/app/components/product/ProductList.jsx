@@ -21,8 +21,11 @@ const ProductListingPage = () => {
   });
   
   const { searchResults, isSearching, filters, updateFilters, searchQuery } = useSearch();
-  const { addToCart, isInCart } = useCart();
-  const { openCart } = useUI();
+  const cartContext = useCart();
+  const uiContext = useUI();
+  
+  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
+  const { openCartDrawer = () => {} } = uiContext || {};
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -286,7 +289,14 @@ const ProductListingPage = () => {
                         Quick Shop
                       </button>
                       <button 
-                        onClick={() => { addToCart(product); openCart(); }}
+                        onClick={async () => { 
+                          if (addToCart && typeof addToCart === 'function') {
+                            await addToCart(product);
+                          }
+                          if (openCartDrawer && typeof openCartDrawer === 'function') {
+                            openCartDrawer();
+                          }
+                        }}
                         disabled={!product.inStock}
                         className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
                           !product.inStock 
@@ -372,21 +382,49 @@ const ProductListingPage = () => {
                   </span>
                 </div>
 
-                <div className="flex gap-2">
-                  <button onClick={() => addToCart(product)} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2">
-                    <Search size={16} />
-                    Quick Shop
-                  </button>
-                  <button 
-                    onClick={() => { addToCart(product); openCart(); }}
-                    disabled={!product.inStock}
-                    className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
-                      !product.inStock 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : isInCart(product.id) 
-                          ? 'bg-green-600 hover:bg-green-700' 
-                          : 'bg-[#0B4866] hover:bg-[#094058]'
-                    }`}
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        onClick={async (e) => {
+                          e?.preventDefault?.();
+                          e?.stopPropagation?.();
+                          try {
+                            if (addToCart && typeof addToCart === 'function') {
+                              await addToCart(product);
+                            }
+                          } catch (err) {
+                            console.error('Quick shop error:', err);
+                          }
+                        }} 
+                        className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Search size={16} />
+                        Quick Shop
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={async (e) => {
+                          e?.preventDefault?.();
+                          e?.stopPropagation?.();
+                          try {
+                            if (addToCart && typeof addToCart === 'function') {
+                              await addToCart(product);
+                            }
+                            if (openCartDrawer && typeof openCartDrawer === 'function') {
+                              openCartDrawer();
+                            }
+                          } catch (err) {
+                            console.error('Add to cart error:', err);
+                          }
+                        }}
+                        disabled={!product.inStock}
+                        className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
+                          !product.inStock 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : isInCart(product.id) 
+                              ? 'bg-green-600 hover:bg-green-700' 
+                              : 'bg-[#0B4866] hover:bg-[#094058]'
+                        }`}
                   >
                     <ShoppingCart size={16} />
                     {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}

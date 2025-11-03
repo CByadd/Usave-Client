@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { apiService } from '../lib/api';
 import { useAuth } from './AuthContext';
 
@@ -37,6 +37,8 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Get auth context - useAuth always returns default values if not in provider
   const { isAuthenticated, user } = useAuth();
   
   // Force local cart storage for all users per requirements
@@ -93,10 +95,16 @@ export const CartProvider = ({ children }) => {
 
   // Add item to cart
   const addToCart = async (product, quantity = 1) => {
+    console.log('[CartContext] addToCart called with:', product?.id, product?.title);
     setIsLoading(true);
     setError(null);
     
     try {
+      if (!product || !product.id) {
+        console.error('Invalid product:', product);
+        return { success: false, error: 'Invalid product' };
+      }
+
       if (!useServerCart) {
         // Mock API behavior
         const existingItemIndex = cartItems.findIndex(
@@ -116,6 +124,7 @@ export const CartProvider = ({ children }) => {
           }
           
           setCartItems(updatedCart);
+          console.log('Updated cart item quantity');
         } else {
           // New item
           const cartItem = {
@@ -135,13 +144,13 @@ export const CartProvider = ({ children }) => {
           };
           
           setCartItems([...cartItems, cartItem]);
+          console.log('Added new item to cart:', cartItem.title);
         }
-      } else {
-        // Server cart disabled by requirement
       }
       
       return { success: true };
     } catch (error) {
+      console.error('addToCart error:', error);
       const errorMessage = error.response?.data?.message || 'Failed to add item to cart. Please try again.';
       setError(errorMessage);
       return { success: false, error: errorMessage };

@@ -87,11 +87,16 @@ const Navbar = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
-  // Hooks
-  const { user, isAuthenticated, logout } = useAuth();
-  const { openAuthDrawer, openCartDrawer } = useUI();
-  const { getCartCount } = useCart();
-  const { getWishlistCount } = useWishlist();
+  // Hooks with fallbacks
+  const authContext = useAuth();
+  const uiContext = useUI();
+  const cartContext = useCart();
+  const wishlistContext = useWishlist();
+  
+  const { user, isAuthenticated, logout } = authContext || { user: null, isAuthenticated: false, logout: async () => {} };
+  const { openAuthDrawer = () => {}, openCartDrawer = () => {} } = uiContext || {};
+  const { getCartCount = () => 0 } = cartContext || {};
+  const { getWishlistCount = () => 0 } = wishlistContext || {};
 
   // Handlers
   const toggleMobile = useCallback(() => setIsMobileOpen(prev => !prev), []);
@@ -235,7 +240,11 @@ const Navbar = () => {
         ) : (
           <>
             <button
-              onClick={() => {
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Desktop auth login clicked');
                 openAuthDrawer('login');
                 setIsAccountMenuOpen(false);
               }}
@@ -244,7 +253,11 @@ const Navbar = () => {
               Sign In
             </button>
             <button
-              onClick={() => {
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Desktop auth register clicked');
                 openAuthDrawer('register');
                 setIsAccountMenuOpen(false);
               }}
@@ -381,29 +394,37 @@ const Navbar = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <button
-                      onClick={() => {
-                        openAuthDrawer('login');
-                        setIsMobileOpen(false);
-                        setIsAccountMenuOpen(false);
-                      }}
-                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Sign In
-                    </button>
-                    <p className="text-center text-sm text-gray-600">
-                      New customer?{' '}
-                      <button
-                        onClick={() => {
-                          openAuthDrawer('register');
-                          setIsMobileOpen(false);
-                          setIsAccountMenuOpen(false);
-                        }}
-                        className="text-blue-600 font-medium hover:text-blue-500"
-                      >
-                        Start here
-                      </button>
-                    </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Auth drawer open clicked, openAuthDrawer:', typeof openAuthDrawer);
+                openAuthDrawer('login');
+                setIsMobileOpen(false);
+                setIsAccountMenuOpen(false);
+              }}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Sign In
+            </button>
+            <p className="text-center text-sm text-gray-600">
+              New customer?{' '}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Auth drawer register clicked');
+                  openAuthDrawer('register');
+                  setIsMobileOpen(false);
+                  setIsAccountMenuOpen(false);
+                }}
+                className="text-blue-600 font-medium hover:text-blue-500"
+              >
+                Start here
+              </button>
+            </p>
                   </div>
                 )}
               </div>
@@ -444,8 +465,14 @@ const Navbar = () => {
 
                {/* Cart */}
   <button 
-    onClick={() => openCartDrawer()} 
-    className="relative text-gray-700 hover:text-blue-600"
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Cart button clicked, openCartDrawer:', typeof openCartDrawer);
+      openCartDrawer();
+    }}
+    className="relative text-gray-700 hover:text-blue-600 cursor-pointer"
     aria-label="Open cart"
   >
     <ShoppingCart size={22} />
@@ -555,8 +582,14 @@ const Navbar = () => {
               <Search size={20} />
             </button>
             <button 
-              onClick={() => openCartDrawer()} 
-              className="text-gray-700 hover:text-blue-600 relative"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Cart button clicked, openCartDrawer:', typeof openCartDrawer);
+                openCartDrawer();
+              }}
+              className="text-gray-700 hover:text-blue-600 relative cursor-pointer"
               aria-label="Open cart"
             >
               <ShoppingCart size={20} />

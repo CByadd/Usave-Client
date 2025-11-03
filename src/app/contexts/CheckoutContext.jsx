@@ -138,6 +138,7 @@ export const CheckoutProvider = ({ children }) => {
     total: 0
   });
 
+  // Get contexts - hooks return default values if providers not available
   const { user, isAuthenticated } = useAuth();
   const { cartItems, totals, clearCart } = useCart();
   const router = useRouter();
