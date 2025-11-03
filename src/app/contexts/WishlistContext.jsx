@@ -31,6 +31,9 @@ export const WishlistProvider = ({ children }) => {
 
   // Initialize wishlist from localStorage
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     try {
       const savedWishlist = localStorage.getItem('wishlistItems');
       if (savedWishlist) {
@@ -44,6 +47,9 @@ export const WishlistProvider = ({ children }) => {
 
   // Save wishlist to localStorage whenever it changes
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     try {
       localStorage.setItem('wishlistItems', JSON.stringify(wishlistItems));
     } catch (error) {
@@ -104,7 +110,9 @@ export const WishlistProvider = ({ children }) => {
     setError(null);
     try {
       setWishlistItems([]);
-      localStorage.removeItem('wishlistItems');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('wishlistItems');
+      }
       return { success: true };
     } catch (error) {
       const errorMessage = 'Failed to clear wishlist';

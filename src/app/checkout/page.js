@@ -11,8 +11,6 @@ import SuccessModal from '../components/shared/SuccessModal';
 import { apiService } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 
-export const dynamic = 'force-dynamic';
-
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -40,6 +38,9 @@ export default function CheckoutPage() {
 
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
+    // Only redirect on client side
+    if (typeof window === 'undefined') return;
+    
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;

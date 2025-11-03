@@ -6,7 +6,7 @@ import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
 
 export default function AccountDrawer({ isOpen, onClose }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (!isOpen) return null;
 
@@ -22,8 +22,8 @@ export default function AccountDrawer({ isOpen, onClose }) {
             <UserRound />
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Account</h2>
-              {isAuthenticated && (
-                <p className="text-xs text-gray-600">{user?.firstName} {user?.lastName}</p>
+              {isAuthenticated && user && (
+                <p className="text-xs text-gray-600">{user?.firstName || user?.name?.split(' ')[0]} {user?.lastName || user?.name?.split(' ')[1] || ''}</p>
               )}
             </div>
           </div>

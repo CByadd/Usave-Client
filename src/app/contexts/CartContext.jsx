@@ -45,6 +45,12 @@ export const CartProvider = ({ children }) => {
 
   // Initialize cart from localStorage
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setIsInitialized(true);
+      return;
+    }
+
     const initializeCart = async () => {
       try {
         const savedCart = localStorage.getItem('cartItems');
@@ -55,9 +61,11 @@ export const CartProvider = ({ children }) => {
         console.error('Error loading cart:', error);
         setError('Failed to load cart');
         // Fallback to localStorage
-        const savedCart = localStorage.getItem('cartItems');
-        if (savedCart) {
-          setCartItems(JSON.parse(savedCart));
+        if (typeof window !== 'undefined') {
+          const savedCart = localStorage.getItem('cartItems');
+          if (savedCart) {
+            setCartItems(JSON.parse(savedCart));
+          }
         }
       } finally {
         setIsInitialized(true);
@@ -69,6 +77,9 @@ export const CartProvider = ({ children }) => {
 
   // Save cart to localStorage whenever cartItems changes
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       localStorage.setItem('cartItems', JSON.stringify(cartItems));
     } catch (error) {
@@ -217,7 +228,9 @@ export const CartProvider = ({ children }) => {
     setError(null);
     try {
       setCartItems([]);
-      localStorage.removeItem('cartItems');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('cartItems');
+      }
       return { success: true };
     } catch (error) {
       const errorMessage = 'Failed to clear cart. Please try again.';

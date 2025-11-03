@@ -4,14 +4,80 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
 
-const CheckoutContext = createContext();
+// Default values for SSR/prerendering
+const defaultCheckoutValue = {
+  checkoutStep: 1,
+  isProcessing: false,
+  error: null,
+  orderId: null,
+  shippingInfo: {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      postcode: '',
+      country: 'Australia'
+    },
+    deliveryInstructions: ''
+  },
+  billingInfo: {
+    sameAsShipping: true,
+    firstName: '',
+    lastName: '',
+    company: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      postcode: '',
+      country: 'Australia'
+    }
+  },
+  paymentInfo: {
+    method: 'card',
+    card: {
+      number: '',
+      expiryMonth: '',
+      expiryYear: '',
+      cvv: '',
+      nameOnCard: ''
+    },
+    saveCard: false
+  },
+  orderSummary: {
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    shipping: 0,
+    discount: 0,
+    discountCode: '',
+    total: 0
+  },
+  updateShippingInfo: () => {},
+  updateBillingInfo: () => {},
+  updatePaymentInfo: () => {},
+  applyDiscountCode: () => Promise.resolve({ success: false }),
+  removeDiscountCode: () => {},
+  nextStep: () => Promise.resolve(false),
+  previousStep: () => {},
+  processOrder: () => Promise.resolve({ success: false }),
+  resetCheckout: () => {},
+  clearError: () => {},
+  validateShippingInfo: () => false,
+  validateBillingInfo: () => false,
+  validatePaymentInfo: () => false
+};
+
+const CheckoutContext = createContext(defaultCheckoutValue);
 
 export const useCheckout = () => {
   const context = useContext(CheckoutContext);
-  if (!context) {
-    throw new Error('useCheckout must be used within a CheckoutProvider');
-  }
-  return context;
+  // Context should always be available (initialized with default value)
+  return context || defaultCheckoutValue;
 };
 
 export const CheckoutProvider = ({ children }) => {

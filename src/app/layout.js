@@ -2,10 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./styles/globals.css";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import AuthDrawer from "./components/auth/AuthDrawer";
-import CartDrawer from "./components/cart/CartDrawer";
-import LoggingToggle from "./components/debug/LoggingToggle";
 import { Providers } from "./providers";
+import ClientOnlyDrawers from "./components/ClientOnlyDrawers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,9 +33,7 @@ export default function RootLayout({ children }) {
             {children}
           </main>
           <Footer />
-          <AuthDrawer />
-          <CartDrawer />
-          <LoggingToggle />
+          <ClientOnlyDrawers />
         </Providers>
       </body>
     </html>
