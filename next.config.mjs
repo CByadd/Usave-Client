@@ -18,6 +18,11 @@ const nextConfig = {
     turbo: false,
   },
 
+  // Set turbopack root to prevent workspace inference issues
+  turbopack: {
+    root: process.cwd(),
+  },
+
   // Compiler optimizations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
@@ -52,7 +57,7 @@ const nextConfig = {
             svgoConfig: {
               plugins: [
                 { name: "removeViewBox", active: false },
-                { name: "cleanupIDs", active: true },
+                "cleanupIds",
               ],
             },
           },

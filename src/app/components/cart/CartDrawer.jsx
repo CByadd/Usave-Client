@@ -28,20 +28,35 @@ const CartDrawer = () => {
     setIsUpdating(prev => ({ ...prev, [productId]: false }));
   };
 
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (isCartDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCartDrawerOpen]);
+
   if (!isCartDrawerOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0  bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={closeCartDrawer}
       />
     
 
       
       {/* Drawer */}
-      <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
+      <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl flex flex-col">
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -58,23 +73,25 @@ const CartDrawer = () => {
           </button>
         </div>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {cartItems.length === 0 ? (
-            <div className="text-center py-12">
-              <ShoppingBag className="mx-auto text-gray-300 mb-4" size={48} />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
-              <p className="text-gray-500 mb-6">Add some items to get started</p>
-              <Link
-                href="/products"
-                onClick={closeCartDrawer}
-                className="inline-block bg-[#0B4866] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#094058] transition-colors"
-              >
-                Continue Shopping
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
+        {/* Cart Container */}
+        <div className="flex flex-col h-[calc(100vh-72px)]">
+          {/* Cart Items */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+            {cartItems.length === 0 ? (
+              <div className="text-center py-12">
+                <ShoppingBag className="mx-auto text-gray-300 mb-4" size={48} />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
+                <p className="text-gray-500 mb-6">Add some items to get started</p>
+                <Link
+                  href="/products"
+                  onClick={closeCartDrawer}
+                  className="inline-block bg-[#0B4866] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#094058] transition-colors"
+                >
+                  Continue Shopping
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
               {cartItems.map((item) => (
                 <div key={item.id} className="flex gap-4 p-4 border border-gray-200 rounded-lg">
                   {/* Product Image */}
@@ -160,15 +177,15 @@ const CartDrawer = () => {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-        {/* Footer */}
-        {cartItems.length > 0 && (
-          <div className="border-t border-gray-200 p-6">
-            {/* Order Summary */}
-            <div className="space-y-3 mb-4">
+          {/* Footer */}
+          {cartItems.length > 0 && (
+            <div className="border-t border-gray-200 p-6 bg-gray-50">
+              {/* Order Summary */}
+              <div className="space-y-3 mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Order Summary</h3>
               
               {cartItems.some(item => item.includeInstallation) && (
@@ -230,7 +247,8 @@ const CartDrawer = () => {
               </Link>
             </div>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

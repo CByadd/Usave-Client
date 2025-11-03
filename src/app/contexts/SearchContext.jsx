@@ -5,10 +5,33 @@ import productService from '../services/api/productService';
 
 const SearchContext = createContext();
 
+// Default values for SSR/prerendering
+const defaultSearchValue = {
+  searchQuery: '',
+  searchResults: [],
+  isSearching: false,
+  isLoading: false,
+  suggestions: [],
+  showSuggestions: false,
+  hasSearched: false,
+  filters: {
+    category: '',
+    priceRange: { min: 0, max: 10000 },
+    sortBy: 'relevance',
+    inStock: false
+  },
+  updateFilters: () => {},
+  performSearch: async () => {},
+  getSuggestions: async () => {},
+  hideSuggestions: () => {},
+  clearSearch: () => {},
+};
+
 export const useSearch = () => {
   const context = useContext(SearchContext);
+  // Return default values during SSR/prerendering when context isn't available
   if (!context) {
-    throw new Error('useSearch must be used within a SearchProvider');
+    return defaultSearchValue;
   }
   return context;
 };

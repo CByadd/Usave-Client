@@ -4,7 +4,7 @@ import { MapPin, Phone } from "lucide-react";
 const Footer = () => {
   return (
     <footer className="bg-[#e7eff3] text-gray-800 pt-10 pb-4">
-      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
+      <div className="max-w-full mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
         {/* Left Section */}
         <div className="md:col-span-2">
           <h2 className="text-lg font-semibold text-[#00688B] mb-3">

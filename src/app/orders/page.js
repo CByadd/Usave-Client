@@ -8,6 +8,8 @@ import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function OrdersPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();

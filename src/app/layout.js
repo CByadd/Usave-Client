@@ -20,6 +20,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Usave - Your Ultimate Online Shopping Destination",
   description: "Usave - Your One-Stop Shop for Quality Products at Unbeatable Prices",
+  icons: {
+    icon: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/Logo_hqavs5.jpg",
+  },
 };
 
 export default function RootLayout({ children }) {

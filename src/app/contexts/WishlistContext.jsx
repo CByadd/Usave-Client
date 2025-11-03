@@ -3,10 +3,25 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const WishlistContext = createContext();
 
+// Default values for SSR/prerendering
+const defaultWishlistValue = {
+  wishlistItems: [],
+  isLoading: false,
+  error: null,
+  addToWishlist: () => ({ success: false }),
+  removeFromWishlist: () => {},
+  clearWishlist: () => {},
+  isInWishlist: () => false,
+  getWishlistCount: () => 0,
+  toggleWishlist: () => {},
+  clearError: () => {},
+};
+
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
+  // Return default values during SSR/prerendering when context isn't available
   if (!context) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
+    return defaultWishlistValue;
   }
   return context;
 };

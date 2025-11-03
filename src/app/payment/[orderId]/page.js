@@ -7,6 +7,8 @@ import OptimizedImage from '../../components/shared/OptimizedImage';
 import { apiService as api } from '../../services/api/apiClient';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 const PaymentPage = () => {
   const params = useParams();
   const router = useRouter();

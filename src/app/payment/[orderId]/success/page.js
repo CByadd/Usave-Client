@@ -2,11 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
-import { CheckCircle, Package, Truck, Home, FileText, Download } from 'lucide-react';
+import { CheckCircle, Package, Truck, Home, FileText } from 'lucide-react';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
+import InvoiceGenerator from '../../../components/shared/InvoiceGenerator';
 import { apiService as api } from '../../../services/api/apiClient';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
+
+export const dynamic = 'force-dynamic';
 
 const PaymentSuccessPage = () => {
   const params = useParams();
@@ -71,10 +74,6 @@ const PaymentSuccessPage = () => {
     }
   };
 
-  const handleDownloadInvoice = () => {
-    // In production, generate and download PDF invoice
-    alert('Invoice download will be implemented with PDF generation');
-  };
 
   if (isLoading) {
     return (
@@ -92,7 +91,7 @@ const PaymentSuccessPage = () => {
       <div className="max-w-4xl mx-auto">
         {/* Success Header */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4 animate-bounce">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4 ">
             <CheckCircle className="text-green-600" size={48} />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
@@ -246,13 +245,7 @@ const PaymentSuccessPage = () => {
 
         {/* Action Buttons */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <button
-            onClick={handleDownloadInvoice}
-            className="flex items-center justify-center gap-2 bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-          >
-            <Download size={20} />
-            Download Invoice
-          </button>
+          {order && <InvoiceGenerator order={order} />}
 
           <Link
             href="/orders"

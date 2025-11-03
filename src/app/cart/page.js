@@ -7,6 +7,8 @@ import { Plus, Minus, Heart, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 
+export const dynamic = 'force-dynamic';
+
 const CartPage = () => {
   const { 
     cartItems, 
@@ -134,6 +136,14 @@ const CartPage = () => {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">Color:</span>
                             <span className="text-sm font-medium">{item.color}</span>
+                          </div>
+                        )}
+                        {item.includeInstallation && (
+                          <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-lg">
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm text-green-700 font-medium">Installation Included (${item.installationFee} × {item.quantity})</span>
                           </div>
                         )}
                       </div>

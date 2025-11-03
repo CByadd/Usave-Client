@@ -417,7 +417,7 @@ const Navbar = () => {
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 overflow-hidden">
-      <div className="w-full max-w-[95dvw] overflow-visible h-max flex items-center justify-center relative bg-amber-100">
+      <div className="w-full max-w-[95dvw] overflow-visible h-max flex items-center justify-center relative ">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className=" justify-between items-center h-16 hidden md:flex">
           {/* Left side - Logo and Navigation Links */}

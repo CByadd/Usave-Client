@@ -316,6 +316,34 @@ export const apiService = {
       }
     }
   },
+
+  // User
+  user: {
+    async getProfile() {
+      const response = await api.get(apiEndpoints.user.profile);
+      return response.data;
+    },
+
+    async getAddresses() {
+      const response = await api.get(apiEndpoints.user.addresses);
+      return response.data;
+    },
+
+    async addAddress(addressData) {
+      const response = await api.post(apiEndpoints.user.addresses, addressData);
+      return response.data;
+    },
+
+    async updateAddress(addressId, addressData) {
+      const response = await api.put(`${apiEndpoints.user.addresses}/${addressId}`, addressData);
+      return response.data;
+    },
+
+    async deleteAddress(addressId) {
+      const response = await api.delete(`${apiEndpoints.user.addresses}/${addressId}`);
+      return response.data;
+    },
+  },
 };
 
 export default api;

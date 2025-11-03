@@ -3,6 +3,8 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 const AutoLoginPage = () => {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState('Verifying your session...');

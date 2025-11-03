@@ -5,10 +5,32 @@ import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
+// Default values for SSR/prerendering
+const defaultCartValue = {
+  cartItems: [],
+  isLoading: false,
+  error: null,
+  totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 },
+  addToCart: async () => {},
+  removeFromCart: () => {},
+  removeItem: () => {},
+  updateQuantity: () => {},
+  clearCart: () => {},
+  isInCart: () => false,
+  getItemQuantity: () => 0,
+  toggleInstallation: () => {},
+  getCartCount: () => 0,
+  getCartTotal: () => 0,
+  validateCart: () => true,
+  applyDiscountCode: () => {},
+  clearError: () => {},
+};
+
 export const useCart = () => {
   const context = useContext(CartContext);
+  // Return default values during SSR/prerendering when context isn't available
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
+    return defaultCartValue;
   }
   return context;
 };

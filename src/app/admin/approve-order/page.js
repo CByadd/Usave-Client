@@ -6,6 +6,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api/apiClient';
 import AdminOrderEditor from '../../components/admin/AdminOrderEditor';
 
+export const dynamic = 'force-dynamic';
+
 export default function ApproveOrderPage() {
   const searchParams = useSearchParams();
   const router = useRouter();

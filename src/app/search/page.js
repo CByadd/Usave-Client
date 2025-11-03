@@ -10,6 +10,8 @@ import { useUI } from '../contexts/UIContext';
 import { ProductGridSkeleton } from '../components/product/LoadingSkeletons';
 import QuickViewModal from '../components/product/QuickViewModal';
 
+export const dynamic = 'force-dynamic';
+
 function SearchPageContent() {
   const [activeFilters, setActiveFilters] = useState({
     sort: false,

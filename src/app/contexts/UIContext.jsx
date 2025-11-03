@@ -3,10 +3,35 @@ import React, { createContext, useContext, useState } from 'react';
 
 const UIContext = createContext();
 
+// Default values for SSR/prerendering
+const defaultUIValue = {
+  isLoginModalOpen: false,
+  isRegisterModalOpen: false,
+  isCartDrawerOpen: false,
+  isWishlistDrawerOpen: false,
+  isMobileMenuOpen: false,
+  isAuthDrawerOpen: false,
+  authDrawerTab: 'login',
+  openLoginModal: () => {},
+  closeLoginModal: () => {},
+  openRegisterModal: () => {},
+  closeRegisterModal: () => {},
+  openCartDrawer: () => {},
+  closeCartDrawer: () => {},
+  openWishlistDrawer: () => {},
+  closeWishlistDrawer: () => {},
+  toggleMobileMenu: () => {},
+  closeMobileMenu: () => {},
+  openAuthDrawer: () => {},
+  closeAuthDrawer: () => {},
+  setAuthDrawerTab: () => {},
+};
+
 export const useUI = () => {
   const context = useContext(UIContext);
+  // Return default values during SSR/prerendering when context isn't available
   if (!context) {
-    throw new Error('useUI must be used within a UIProvider');
+    return defaultUIValue;
   }
   return context;
 };

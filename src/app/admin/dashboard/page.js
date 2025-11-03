@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api/apiClient';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminDashboard() {
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const router = useRouter();

@@ -7,8 +7,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import ApprovalModal from '../components/checkout/ApprovalModal';
+import SuccessModal from '../components/shared/SuccessModal';
 import { apiService } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
+
+export const dynamic = 'force-dynamic';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -18,6 +21,8 @@ export default function CheckoutPage() {
   const [warranty, setWarranty] = useState('');
   const [cartExpanded, setCartExpanded] = useState(true);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
@@ -46,9 +51,9 @@ export default function CheckoutPage() {
   }, [isAuthenticated, cartItems.length, router]);
 
   const shippingOptions = [
-    { id: 'delivery-only', label: 'Delivery only', price: 18 },
-    { id: 'delivery-installation', label: 'Delivery & Installation', price: 25 },
-    { id: 'installation', label: 'Installation', price: 7 },
+    { id: 'delivery', label: 'Delivery', price: 18 },
+    // { id: 'delivery-installation', label: 'Delivery & Installation', price: 25 },
+    // { id: 'installation', label: 'Installation', price: 7 },
     { id: 'pickup', label: 'Pick up on my own', price: 0 }
   ];
 
@@ -159,6 +164,26 @@ export default function CheckoutPage() {
       const response = await apiService.orders.create(orderData);
 
       if (response.success) {
+        // Save shipping address to user's saved addresses
+        try {
+          await apiService.user.addAddress({
+            type: 'shipping',
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            address1: formData.address1,
+            address2: formData.address2,
+            city: formData.city,
+            state: formData.state,
+            postalCode: formData.postalCode,
+            country: formData.country,
+            phone: formData.phone,
+            isDefault: false
+          });
+        } catch (error) {
+          console.error('Failed to save address:', error);
+          // Don't block order creation if address save fails
+        }
+
         // Clear cart
         await clearCart();
         // Redirect to payment page after order is approved
@@ -168,7 +193,8 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error('Order creation error:', error);
-      alert(error.message || 'Failed to create order. Please try again.');
+      setErrorMessage(error.message || 'Failed to create order. Please try again.');
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
       setShowApprovalModal(false);
@@ -556,6 +582,16 @@ export default function CheckoutPage() {
         onContinueWithoutApproval={handleContinueWithoutApproval}
         cartItems={cartItems}
         totalAmount={finalTotal}
+      />
+
+      <SuccessModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        type="error"
+        title="Order Failed"
+        message={errorMessage}
+        primaryAction={() => setShowErrorModal(false)}
+        primaryActionLabel="OK"
       />
     </>
   );

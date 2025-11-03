@@ -1,3 +1,4 @@
+"use client";
 import React from 'react'
 import HeroSection from '../components/home/HeroSection'
 import CategoryHeader from '../components/search/CategoryHeader'

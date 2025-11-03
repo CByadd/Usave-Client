@@ -1,20 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // ✅ import router
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
+import { CheckCircle2, X } from 'lucide-react';
 
-export default function ApprovalModal({ 
-  isOpen, 
-  onClose, 
-  onContinueWithoutApproval, 
+export default function ApprovalModal({
+  isOpen,
+  onClose,
+  onContinueWithoutApproval,
   cartItems = [],
-  totalAmount = 0
+  totalAmount = 0,
 }) {
+  const router = useRouter(); // ✅ initialize router
   const { user } = useAuth();
   const [adminEmail, setAdminEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState('email'); // 'email' or 'success'
+  const [step, setStep] = useState('email');
   const [orderNumber, setOrderNumber] = useState('');
 
   if (!isOpen) return null;
@@ -25,45 +29,43 @@ export default function ApprovalModal({
       setError('Please enter an email address');
       return;
     }
-    
+
     setIsSubmitting(true);
     setError('');
 
     try {
-      // Prepare order details
       const orderDetails = {
-        items: cartItems.map(item => ({
+        items: cartItems.map((item) => ({
           id: item.id || item._id,
           name: item.name || item.title,
           price: item.discountedPrice || item.price,
           quantity: item.quantity,
           includeInstallation: item.includeInstallation || false,
-          installationFee: item.includeInstallation ? (item.installationFee || 49.99) : 0
+          installationFee: item.includeInstallation ? item.installationFee || 49.99 : 0,
         })),
-        subtotal: cartItems.reduce((sum, item) => sum + (item.discountedPrice || item.price) * item.quantity, 0),
+        subtotal: cartItems.reduce(
+          (sum, item) => sum + (item.discountedPrice || item.price) * item.quantity,
+          0
+        ),
         tax: 0,
         shipping: 0,
-        total: totalAmount
+        total: totalAmount,
       };
 
-      // Calculate installation total
       const installationTotal = cartItems
-        .filter(item => item.includeInstallation)
+        .filter((item) => item.includeInstallation)
         .reduce((sum, item) => sum + (item.installationFee || 49.99) * item.quantity, 0);
-      
+
       orderDetails.total = orderDetails.subtotal + installationTotal;
 
-      // Send approval request
       const response = await fetch('/api/orders/request-approval', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ownerEmail: user?.email || 'guest@example.com',
           adminEmail,
           orderDetails,
-          userId: user?.id || 'guest'
+          userId: user?.id || 'guest',
         }),
       });
 
@@ -83,102 +85,127 @@ export default function ApprovalModal({
     }
   };
 
+  // ✅ Modified handleClose: resets state & redirects to /orders
   const handleClose = () => {
     setStep('email');
     setAdminEmail('');
     setError('');
     onClose();
+    router.push('/orders'); // ✅ redirect to orders page
   };
 
-  if (step === 'success') {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="mt-3 text-xl font-bold text-gray-900">Request Sent Successfully!</h2>
-            <p className="mt-2 text-sm text-gray-500">
-              An approval request has been sent to {adminEmail} for Order #{orderNumber}.
-              The administrator will review your order shortly.
-            </p>
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Request Approval</h2>
-        
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="adminEmail" className="block text-sm font-medium text-gray-700 mb-1">
-              Administrator's Email
-            </label>
-            <input
-              type="email"
-              id="adminEmail"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="admin@example.com"
-              required
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              Enter the email address of the person who will approve this order.
-            </p>
-          </div>
-
-          <div className="mt-6 flex justify-between items-center">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        >
+          <motion.div
+            key="modal"
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', stiffness: 250, damping: 20 }}
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative"
+          >
             <button
-              type="button"
-              onClick={onContinueWithoutApproval}
-              disabled={isSubmitting}
-              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              onClick={handleClose}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 cursor-pointer transition"
             >
-              Continue without approval
+              <X className="w-5 h-5" />
             </button>
-            <div className="space-x-3">
-              <button
-                type="button"
-                onClick={handleClose}
-                disabled={isSubmitting}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || !adminEmail}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Sending...' : 'Send Approval Request'}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+
+            {step === 'success' ? (
+              <div className="text-center py-6">
+                <div className="flex justify-center mb-4">
+                  <CheckCircle2 className="w-14 h-14 text-green-500" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Request Sent Successfully!
+                </h2>
+                <p className="mt-2 text-sm text-gray-600">
+                  An approval request has been sent to <span className="font-medium">{adminEmail}</span> for
+                  Order #{orderNumber}. The administrator will review your order shortly.
+                </p>
+                <button
+                  onClick={handleClose}
+                  className="mt-6 px-5 py-2.5 bg-[#0B4866] text-white rounded-lg font-medium cursor-pointer transition"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Request Approval</h2>
+                <p className="text-sm text-gray-500 mb-5">
+                  Send this order for administrator approval before checkout.
+                </p>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="adminEmail"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Administrator's Email
+                    </label>
+                    <input
+                      type="email"
+                      id="adminEmail"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 transition"
+                      placeholder="admin@example.com"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Enter the approver's email address.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-6">
+                    <button
+                      type="button"
+                      onClick={onContinueWithoutApproval}
+                      disabled={isSubmitting}
+                      className="text-sm font-medium text-[#0B4866] hover:cursor-pointer hover:underline transition disabled:opacity-50"
+                    >
+                      Continue without approval
+                    </button>
+                    <div className="space-x-3">
+                      <button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={isSubmitting}
+                        className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || !adminEmail}
+                        className="px-4 py-2 text-sm rounded-lg bg-[#0B4866] text-white font-medium hover:scale-102 transition ease-in-out focus:ring-2 disabled:opacity-50"
+                      >
+                        {isSubmitting ? 'Sending...' : 'Send Request'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
