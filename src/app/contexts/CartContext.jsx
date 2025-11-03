@@ -36,48 +36,28 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState(null);
   const { isAuthenticated, user } = useAuth();
   
   // Force local cart storage for all users per requirements
   const useServerCart = false;
-  const [error, setError] = useState(null);
 
-  // Initialize cart from localStorage
+  // Initialize cart from localStorage - simple client-side only
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') {
-      setIsInitialized(true);
-      return;
-    }
-
-    const initializeCart = async () => {
-      try {
-        const savedCart = localStorage.getItem('cartItems');
-        if (savedCart) {
-          setCartItems(JSON.parse(savedCart));
-        }
-      } catch (error) {
-        console.error('Error loading cart:', error);
-        setError('Failed to load cart');
-        // Fallback to localStorage
-        if (typeof window !== 'undefined') {
-          const savedCart = localStorage.getItem('cartItems');
-          if (savedCart) {
-            setCartItems(JSON.parse(savedCart));
-          }
-        }
-      } finally {
-        setIsInitialized(true);
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const savedCart = localStorage.getItem('cartItems');
+      if (savedCart) {
+        setCartItems(JSON.parse(savedCart));
       }
-    };
-
-    initializeCart();
-  }, [isAuthenticated, user]);
+    } catch (error) {
+      console.error('Error loading cart:', error);
+    }
+  }, []);
 
   // Save cart to localStorage whenever cartItems changes
   useEffect(() => {
-    // Only run on client side
     if (typeof window === 'undefined') return;
     
     try {
@@ -85,7 +65,7 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error('Error saving cart to localStorage:', error);
     }
-  }, [cartItems, isAuthenticated]);
+  }, [cartItems]);
 
   // Calculate cart totals
   const calculateTotals = () => {
@@ -233,9 +213,7 @@ export const CartProvider = ({ children }) => {
       }
       return { success: true };
     } catch (error) {
-      const errorMessage = 'Failed to clear cart. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: true }; // Still succeed even if localStorage fails
     }
   };
 

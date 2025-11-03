@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
@@ -442,6 +442,11 @@ const AuthDrawer = () => {
   const { isAuthDrawerOpen, closeAuthDrawer } = useUI();
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -452,7 +457,7 @@ const AuthDrawer = () => {
     closeAuthDrawer();
   };
   
-  if (!isAuthDrawerOpen) return null;
+  if (!mounted || !isAuthDrawerOpen) return null;
   
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden">

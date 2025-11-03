@@ -10,6 +10,11 @@ const CartDrawer = () => {
   const { cartItems, updateQuantity, removeItem, getCartTotal, getCartCount } = useCart();
   const { isCartDrawerOpen, closeCartDrawer } = useUI();
   const [isUpdating, setIsUpdating] = useState({});
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleQuantityChange = async (productId, newQuantity) => {
     if (newQuantity < 1) {
@@ -30,7 +35,7 @@ const CartDrawer = () => {
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (!mounted || typeof document === 'undefined') return;
     
     if (isCartDrawerOpen) {
       document.body.style.overflow = 'hidden';
@@ -44,9 +49,9 @@ const CartDrawer = () => {
         document.body.style.overflow = 'unset';
       }
     };
-  }, [isCartDrawerOpen]);
+  }, [isCartDrawerOpen, mounted]);
 
-  if (!isCartDrawerOpen) return null;
+  if (!mounted || !isCartDrawerOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">

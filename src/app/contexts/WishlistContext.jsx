@@ -29,9 +29,8 @@ export const WishlistProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize wishlist from localStorage
+  // Initialize wishlist from localStorage - simple client-side only
   useEffect(() => {
-    // Only run on client side
     if (typeof window === 'undefined') return;
 
     try {
@@ -41,13 +40,11 @@ export const WishlistProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error loading wishlist:', error);
-      setError('Failed to load wishlist');
     }
   }, []);
 
   // Save wishlist to localStorage whenever it changes
   useEffect(() => {
-    // Only run on client side
     if (typeof window === 'undefined') return;
 
     try {
@@ -115,9 +112,7 @@ export const WishlistProvider = ({ children }) => {
       }
       return { success: true };
     } catch (error) {
-      const errorMessage = 'Failed to clear wishlist';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: true }; // Still succeed even if localStorage fails
     }
   };
 

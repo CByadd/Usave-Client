@@ -43,46 +43,41 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  // Check if user is logged in on mount
+  // Check if user is logged in on mount - simple client-side only
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    // Only run on client side
     if (typeof window === 'undefined') {
       setIsLoading(false);
       return;
     }
 
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+    const checkAuthStatus = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
 
-      const response = await apiService.auth.getCurrentUser();
-      if (response?.success) {
-        const userData = response.user || response.data;
-        setUser(userData);
-        setIsAuthenticated(true);
-      } else {
-        if (typeof window !== 'undefined') {
+        const response = await apiService.auth.getCurrentUser();
+        if (response?.success) {
+          const userData = response.user || response.data;
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
           localStorage.removeItem('authToken');
           localStorage.removeItem('userData');
         }
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      if (typeof window !== 'undefined') {
+      } catch (error) {
+        console.error('Auth check failed:', error);
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    checkAuthStatus();
+  }, []);
 
   const login = async (emailOrCredentials, password) => {
     // Initialize email variable in the outer scope
@@ -121,11 +116,9 @@ export const AuthProvider = ({ children }) => {
         if (response && response.success && response.user && response.token) {
           const { user: userData, token } = response;
           
-          // Store authentication data (only on client)
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('authToken', token);
-            localStorage.setItem('userData', JSON.stringify(userData));
-          }
+          // Store authentication data
+          localStorage.setItem('authToken', token);
+          localStorage.setItem('userData', JSON.stringify(userData));
           
           // Update auth state
           setUser(userData);
@@ -199,10 +192,8 @@ export const AuthProvider = ({ children }) => {
       if (response.success) {
         const { user: registeredUser, token } = response;
         
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('authToken', token);
-          localStorage.setItem('userData', JSON.stringify(registeredUser));
-        }
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userData', JSON.stringify(registeredUser));
         
         setUser(registeredUser);
         setIsAuthenticated(true);
@@ -243,11 +234,9 @@ export const AuthProvider = ({ children }) => {
     console.error('Logout error:', error);
     logger.error('AUTH', 'Logout error', { error: error.message });
   } finally {
-    // Clear local storage first (only on client)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-    }
+    // Clear local storage first
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
 
     // Reset context state
     setUser(null);
@@ -268,9 +257,7 @@ export const AuthProvider = ({ children }) => {
       
       if (response.success) {
         const updatedUser = response.data;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('userData', JSON.stringify(updatedUser));
-        }
+        localStorage.setItem('userData', JSON.stringify(updatedUser));
         setUser(updatedUser);
         return { success: true, user: updatedUser };
       } else {

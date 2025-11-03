@@ -38,9 +38,6 @@ export default function CheckoutPage() {
 
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
-    // Only redirect on client side
-    if (typeof window === 'undefined') return;
-    
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;

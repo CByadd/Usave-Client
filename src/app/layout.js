@@ -3,7 +3,9 @@ import "./styles/globals.css";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import { Providers } from "./providers";
-import ClientOnlyDrawers from "./components/ClientOnlyDrawers";
+import AuthDrawer from "./components/auth/AuthDrawer";
+import CartDrawer from "./components/cart/CartDrawer";
+import LoggingToggle from "./components/debug/LoggingToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +35,9 @@ export default function RootLayout({ children }) {
             {children}
           </main>
           <Footer />
-          <ClientOnlyDrawers />
+          <AuthDrawer />
+          <CartDrawer />
+          <LoggingToggle />
         </Providers>
       </body>
     </html>
