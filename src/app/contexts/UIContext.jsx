@@ -1,8 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 
-const UIContext = createContext(null);
-
 // Default values for SSR/prerendering
 const defaultUIValue = {
   isLoginModalOpen: false,
@@ -27,25 +25,13 @@ const defaultUIValue = {
   setAuthDrawerTab: () => {},
 };
 
+// Initialize with default value to ensure context is always defined
+const UIContext = createContext(defaultUIValue);
+
 export const useUI = () => {
   const context = useContext(UIContext);
-  
-  if (!context) {
-    if (typeof window === 'undefined') {
-      return defaultUIValue;
-    }
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      if (!window.__uiContextWarningShown) {
-        window.__uiContextWarningShown = true;
-        setTimeout(() => {
-          window.__uiContextWarningShown = false;
-        }, 1000);
-        console.warn('useUI: Context may not be available during initial render. If this persists, ensure component is wrapped in <UIProvider>.');
-      }
-    }
-    return defaultUIValue;
-  }
-  return context;
+  // Context should always be available (initialized with default value)
+  return context || defaultUIValue;
 };
 
 export const UIProvider = ({ children }) => {

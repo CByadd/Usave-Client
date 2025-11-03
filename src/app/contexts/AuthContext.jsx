@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import { apiService } from '../services/api/apiClient';
 import logger from '../utils/logger';
 
-const AuthContext = createContext(null);
-
 const defaultAuthValue = {
   user: null,
   isLoading: false,
@@ -22,32 +20,20 @@ const defaultAuthValue = {
   clearError: () => {}
 };
 
+// Initialize with default value to ensure context is always defined
+const AuthContext = createContext(defaultAuthValue);
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   
-  // If context is not available (shouldn't happen if wrapped in Provider)
-  // Return defaults to prevent crashes. React will re-render with correct context when available.
-  if (!context) {
-    if (typeof window === 'undefined') {
-      // SSR: Always return defaults
-      return defaultAuthValue;
-    }
-    // Client: Return defaults temporarily, React will re-render when context becomes available
-    // This can happen during hydration. React will automatically re-render when context is available.
-    // In development, log a one-time warning (but avoid during initial hydration)
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      // Use a flag to avoid multiple warnings
-      if (!window.__authContextWarningShown) {
-        window.__authContextWarningShown = true;
-        setTimeout(() => {
-          window.__authContextWarningShown = false;
-        }, 1000);
-        console.warn('useAuth: Context may not be available during initial render. If this persists, ensure component is wrapped in <AuthProvider>.');
-      }
-    }
-    return defaultAuthValue;
-  }
-  return context;
+  // Context should always be available now (initialized with default value)
+  // If it's still the default value and we're in a Provider, that's fine - it will update
+  // Check if we're actually inside a Provider by checking if value has been updated
+  // (This is a safety check - in practice, Provider always provides a value)
+  
+  // In production builds, sometimes context can be falsy during hydration
+  // Always return the context value, which will be either default or Provider value
+  return context || defaultAuthValue;
 };
 
 export const AuthProvider = ({ children }) => {

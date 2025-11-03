@@ -3,8 +3,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import productService from '../services/api/productService';
 
-const SearchContext = createContext(null);
-
 // Default values for SSR/prerendering
 const defaultSearchValue = {
   searchQuery: '',
@@ -27,25 +25,13 @@ const defaultSearchValue = {
   clearSearch: () => {},
 };
 
+// Initialize with default value to ensure context is always defined
+const SearchContext = createContext(defaultSearchValue);
+
 export const useSearch = () => {
   const context = useContext(SearchContext);
-  
-  if (!context) {
-    if (typeof window === 'undefined') {
-      return defaultSearchValue;
-    }
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      if (!window.__searchContextWarningShown) {
-        window.__searchContextWarningShown = true;
-        setTimeout(() => {
-          window.__searchContextWarningShown = false;
-        }, 1000);
-        console.warn('useSearch: Context may not be available during initial render. If this persists, ensure component is wrapped in <SearchProvider>.');
-      }
-    }
-    return defaultSearchValue;
-  }
-  return context;
+  // Context should always be available (initialized with default value)
+  return context || defaultSearchValue;
 };
 
 export const SearchProvider = ({ children }) => {

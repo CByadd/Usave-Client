@@ -1,8 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const WishlistContext = createContext(null);
-
 // Default values for SSR/prerendering
 const defaultWishlistValue = {
   wishlistItems: [],
@@ -17,25 +15,13 @@ const defaultWishlistValue = {
   clearError: () => {},
 };
 
+// Initialize with default value to ensure context is always defined
+const WishlistContext = createContext(defaultWishlistValue);
+
 export const useWishlist = () => {
   const context = useContext(WishlistContext);
-  
-  if (!context) {
-    if (typeof window === 'undefined') {
-      return defaultWishlistValue;
-    }
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      if (!window.__wishlistContextWarningShown) {
-        window.__wishlistContextWarningShown = true;
-        setTimeout(() => {
-          window.__wishlistContextWarningShown = false;
-        }, 1000);
-        console.warn('useWishlist: Context may not be available during initial render. If this persists, ensure component is wrapped in <WishlistProvider>.');
-      }
-    }
-    return defaultWishlistValue;
-  }
-  return context;
+  // Context should always be available (initialized with default value)
+  return context || defaultWishlistValue;
 };
 
 export const WishlistProvider = ({ children }) => {

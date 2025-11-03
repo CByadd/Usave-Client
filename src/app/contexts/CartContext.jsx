@@ -3,8 +3,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../lib/api';
 import { useAuth } from './AuthContext';
 
-const CartContext = createContext(null);
-
 // Default values for SSR/prerendering
 const defaultCartValue = {
   cartItems: [],
@@ -26,25 +24,13 @@ const defaultCartValue = {
   clearError: () => {},
 };
 
+// Initialize with default value to ensure context is always defined
+const CartContext = createContext(defaultCartValue);
+
 export const useCart = () => {
   const context = useContext(CartContext);
-  
-  if (!context) {
-    if (typeof window === 'undefined') {
-      return defaultCartValue;
-    }
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      if (!window.__cartContextWarningShown) {
-        window.__cartContextWarningShown = true;
-        setTimeout(() => {
-          window.__cartContextWarningShown = false;
-        }, 1000);
-        console.warn('useCart: Context may not be available during initial render. If this persists, ensure component is wrapped in <CartProvider>.');
-      }
-    }
-    return defaultCartValue;
-  }
-  return context;
+  // Context should always be available (initialized with default value)
+  return context || defaultCartValue;
 };
 
 export const CartProvider = ({ children }) => {
