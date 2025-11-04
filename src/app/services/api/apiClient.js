@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { config } from '../../lib/config';
 
-// Create axios instance with base configuration
+// Create axios instance
 const api = axios.create({
   baseURL: config.api.baseURL,
   timeout: config.api.timeout,
@@ -10,67 +10,22 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      window.location.href = '/';
-    }
-    
-    // Enhance error object with server error message
-    if (error.response?.data) {
-      error.serverError = error.response.data.error || error.response.data.message;
-      error.serverResponse = error.response.data;
-    }
-    
-    return Promise.reject(error);
-  }
-);
-
 // API endpoints
 export const apiEndpoints = {
-  // Authentication
   auth: {
     login: '/auth/login',
     register: '/auth/register',
     logout: '/auth/logout',
-    refresh: '/auth/refresh',
     me: '/auth/me',
     profile: '/auth/profile',
+    refresh: '/auth/refresh',
   },
-  
-  // Products
   products: {
-    list: '/products',
-    detail: (id) => `/products/${id}`,
+    getAll: '/products',
+    getById: (id) => `/products/${id}`,
     search: '/products/search',
-    suggestions: '/products/suggestions',
-    categories: '/products/categories',
-    featured: '/products/featured',
+    getSuggestions: '/products/suggestions',
   },
-  
-  // Cart
   cart: {
     get: '/cart',
     add: '/cart/add',
@@ -78,274 +33,341 @@ export const apiEndpoints = {
     remove: '/cart/remove',
     clear: '/cart/clear',
   },
-  
-  // Orders
   orders: {
-    list: '/orders',
+    getAll: '/orders',
+    getById: (id) => `/orders/${id}`,
     create: '/orders',
-    detail: (id) => `/orders/${id}`,
-    update: (id) => `/orders/${id}`,
+    cancel: (id) => `/orders/${id}/cancel`,
   },
-  
-  // User
-  user: {
-    profile: '/user/profile',
-    addresses: '/user/addresses',
-    wishlist: '/user/wishlist',
+  wishlist: {
+    get: '/wishlist',
+    add: '/wishlist/add',
+    remove: '/wishlist/remove',
+    clear: '/wishlist/clear',
   },
 };
 
-// API service functions
+// Helper to get auth token
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('authToken');
+  }
+  return null;
+};
+
+// API service functions - simple axios calls
 export const apiService = {
-  // Authentication
   auth: {
-    async login(credentials) {
-      const response = await api.post(apiEndpoints.auth.login, credentials);
-      return response.data;
+    async login(email, password) {
+      console.log('API: Login request to:', `${api.defaults.baseURL}${apiEndpoints.auth.login}`);
+      console.log('API: Email:', email);
+      
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.login}`,
+          { email, password },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        console.log('API: Login response:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('API: Login error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async register(userData) {
-      const response = await api.post(apiEndpoints.auth.register, userData);
-      return response.data;
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.register}`,
+          userData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Register error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async logout() {
-      const response = await api.post(apiEndpoints.auth.logout);
-      return response.data;
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.logout}`,
+          {},
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Logout error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async getCurrentUser() {
-      const response = await api.get(apiEndpoints.auth.me);
-      return response.data;
-    },
-    
-    async getProfile() {
-      const response = await api.get(apiEndpoints.auth.profile);
-      return response.data;
-    },
-    
-    async refreshToken() {
-      const response = await api.post(apiEndpoints.auth.refresh);
-      return response.data;
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('No token found');
+      }
+      
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.auth.me}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get current user error:', error.response?.data || error.message);
+        throw error;
+      }
     },
   },
   
-  // Products
   products: {
     async getAll(params = {}) {
-      const response = await api.get(apiEndpoints.products.list, { params });
-      return response.data;
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.getAll}`,
+          { params }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get products error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async getById(id) {
-      const response = await api.get(apiEndpoints.products.detail(id));
-      return response.data;
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.getById(id)}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get product error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
-    async search(query, filters = {}) {
-      const response = await api.get(apiEndpoints.products.search, {
-        params: { q: query, ...filters }
-      });
-      return response.data;
+    async search(query, params = {}) {
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.search}`,
+          { params: { q: query, ...params } }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Search products error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async getSuggestions(query, limit = 10) {
-      const response = await api.get(apiEndpoints.products.suggestions, {
-        params: { q: query, limit }
-      });
-      return response.data;
-    },
-    
-    async getCategories() {
-      const response = await api.get(apiEndpoints.products.categories);
-      return response.data;
-    },
-    
-    async getFeatured() {
-      const response = await api.get(apiEndpoints.products.featured);
-      return response.data;
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.getSuggestions}`,
+          { params: { q: query, limit } }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get suggestions error:', error.response?.data || error.message);
+        throw error;
+      }
     },
   },
   
-  // Cart
   cart: {
     async get() {
-      const response = await api.get(apiEndpoints.cart.get);
-      return response.data;
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.cart.get}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get cart error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async addItem(productId, quantity = 1) {
-      const response = await api.post(apiEndpoints.cart.add, {
-        productId,
-        quantity
-      });
-      return response.data;
-    },
-    
-    async updateItem(productId, quantity) {
-      const response = await api.put(apiEndpoints.cart.update, {
-        productId,
-        quantity
-      });
-      return response.data;
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.cart.add}`,
+          { productId, quantity },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Add to cart error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async removeItem(productId) {
-      const response = await api.delete(apiEndpoints.cart.remove, {
-        data: { productId }
-      });
-      return response.data;
-    },
-    
-    async clear() {
-      const response = await api.delete(apiEndpoints.cart.clear);
-      return response.data;
+      const token = getAuthToken();
+      try {
+        const response = await axios.delete(
+          `${api.defaults.baseURL}${apiEndpoints.cart.remove}`,
+          {
+            data: { productId },
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Remove from cart error:', error.response?.data || error.message);
+        throw error;
+      }
     },
   },
   
-  // Orders
   orders: {
     async getAll() {
-      const response = await api.get(apiEndpoints.orders.list);
-      return response.data;
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.orders.getAll}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get orders error:', error.response?.data || error.message);
+        throw error;
+      }
     },
     
     async create(orderData) {
-      const response = await api.post(apiEndpoints.orders.create, orderData);
-      return response.data;
-    },
-    
-    async getById(id) {
-      const response = await api.get(apiEndpoints.orders.detail(id));
-      return response.data;
-    },
-    
-    async approve(id, approvalNotes) {
-      const response = await api.put(`/orders/${id}/approve`, { approvalNotes });
-      return response.data;
-    },
-    
-    async reject(id, approvalNotes) {
-      const response = await api.put(`/orders/${id}/reject`, { approvalNotes });
-      return response.data;
-    },
-    
-    async requestReapproval(id, notes) {
-      const response = await api.put(`/orders/${id}/resubmit`, { notes });
-      return response.data;
-    },
-
-    // Admin order item management
-    async addItemToOrder(orderId, productId, quantity) {
-      const response = await api.post(`/orders/${orderId}/items`, { productId, quantity });
-      return response.data;
-    },
-
-    async removeItemFromOrder(orderId, itemId) {
-      const response = await api.delete(`/orders/${orderId}/items/${itemId}`);
-      return response.data;
-    },
-
-    async updateOrderItemQuantity(orderId, itemId, quantity) {
-      const response = await api.put(`/orders/${orderId}/items/${itemId}`, { quantity });
-      return response.data;
-    },
-
-    // User order editing (rejected orders)
-    async editOrderItems(orderId, items) {
-      const response = await api.put(`/orders/${orderId}/edit-items`, { items });
-      return response.data;
-    },
-
-    async editOrderAddresses(orderId, shippingAddress, billingAddress) {
-      const response = await api.put(`/orders/${orderId}/edit-addresses`, { shippingAddress, billingAddress });
-      return response.data;
-    },
-
-    // Payment processing
-    async processPayment(orderId, paymentMethod, paymentIntentId) {
-      const response = await api.put(`/orders/${orderId}/payment`, { paymentMethod, paymentIntentId });
-      return response.data;
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.orders.create}`,
+          orderData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Create order error:', error.response?.data || error.message);
+        throw error;
+      }
     },
   },
   
-  // Admin
-  admin: {
-    products: {
-      async getAll(params = {}) {
-        const response = await api.get('/admin/products', { params });
+  wishlist: {
+    async get() {
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.wishlist.get}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
         return response.data;
-      },
-      
-      async getById(id) {
-        const response = await api.get(`/admin/products/${id}`);
-        return response.data;
-      },
-      
-      async create(productData) {
-        const response = await api.post('/admin/products', productData);
-        return response.data;
-      },
-      
-      async update(id, productData) {
-        const response = await api.put(`/admin/products/${id}`, productData);
-        return response.data;
-      },
-      
-      async delete(id) {
-        const response = await api.delete(`/admin/products/${id}`);
-        return response.data;
-      },
-      
-      async bulkUpdate(productIds, updateData) {
-        const response = await api.put('/admin/products/bulk', {
-          productIds,
-          updateData
-        });
-        return response.data;
-      },
-      
-      async getCategories() {
-        const response = await api.get('/admin/products/categories');
-        return response.data;
-      },
-      
-      async getStats() {
-        const response = await api.get('/admin/products/stats');
-        return response.data;
+      } catch (error) {
+        console.error('API: Get wishlist error:', error.response?.data || error.message);
+        throw error;
       }
-    }
-  },
-
-  // User
-  user: {
-    async getProfile() {
-      const response = await api.get(apiEndpoints.user.profile);
-      return response.data;
     },
-
-    async getAddresses() {
-      const response = await api.get(apiEndpoints.user.addresses);
-      return response.data;
+    
+    async addItem(productId) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.wishlist.add}`,
+          { productId },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Add to wishlist error:', error.response?.data || error.message);
+        throw error;
+      }
     },
-
-    async addAddress(addressData) {
-      const response = await api.post(apiEndpoints.user.addresses, addressData);
-      return response.data;
+    
+    async removeItem(productId) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.delete(
+          `${api.defaults.baseURL}${apiEndpoints.wishlist.remove}`,
+          {
+            data: { productId },
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Remove from wishlist error:', error.response?.data || error.message);
+        throw error;
+      }
     },
-
-    async updateAddress(addressId, addressData) {
-      const response = await api.put(`${apiEndpoints.user.addresses}/${addressId}`, addressData);
-      return response.data;
-    },
-
-    async deleteAddress(addressId) {
-      const response = await api.delete(`${apiEndpoints.user.addresses}/${addressId}`);
-      return response.data;
+    
+    async clear() {
+      const token = getAuthToken();
+      try {
+        const response = await axios.delete(
+          `${api.defaults.baseURL}${apiEndpoints.wishlist.clear}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Clear wishlist error:', error.response?.data || error.message);
+        throw error;
+      }
     },
   },
 };
-
-export default api;
-
-

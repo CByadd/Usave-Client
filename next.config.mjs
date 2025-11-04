@@ -7,6 +7,24 @@ const nextConfig = {
         hostname: "res.cloudinary.com",
         port: "",
         pathname: "/**"
+      },
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+        port: "",
+        pathname: "/**"
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "",
+        pathname: "/**"
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "",
+        pathname: "/**"
       }
     ],
     formats: ['image/webp', 'image/avif'],

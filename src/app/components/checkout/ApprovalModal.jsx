@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // ✅ import router
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentUser } from '../../lib/auth';
 import { CheckCircle2, X } from 'lucide-react';
 
 export default function ApprovalModal({
@@ -14,7 +14,11 @@ export default function ApprovalModal({
   totalAmount = 0,
 }) {
   const router = useRouter(); // ✅ initialize router
-  const { user } = useAuth();
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    setUser(getCurrentUser());
+  }, []);
   const [adminEmail, setAdminEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');

@@ -8,8 +8,6 @@ import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
 import { useUI } from '../contexts/UIContext';
 
-export const dynamic = 'force-dynamic';
-
 const WishlistPage = () => {
   const { 
     wishlistItems, 

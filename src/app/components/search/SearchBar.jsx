@@ -1,53 +1,57 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { Search, Loader2, X } from 'lucide-react';
-import { useSearch } from '../../contexts/SearchContext';
+import { performSearch, getSuggestions, getSearchQuery, getSuggestionsList } from '../../lib/search';
 import { useRouter } from 'next/navigation';
 
 const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, isExpanded = false, onToggle = null }) => {
   const [localQuery, setLocalQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimerRef = useRef(null);
   const containerRef = useRef(null);
-
-  const {
-    searchQuery,
-    setSearchQuery,
-    performSearch,
-    isSearching,
-    suggestions,
-    showSuggestions,
-    getSuggestions,
-    hideSuggestions
-  } = useSearch();
   const router = useRouter();
 
   useEffect(() => {
-    // keep local field in sync if URL/ctx changes
-    if (searchQuery !== localQuery) {
-      setLocalQuery(searchQuery || "");
+    // Sync with search query from module
+    const query = getSearchQuery();
+    if (query !== localQuery) {
+      setLocalQuery(query || "");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
+  }, []);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const value = e.target.value;
     setLocalQuery(value);
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = setTimeout(() => {
+    debounceTimerRef.current = setTimeout(async () => {
       if (value.trim().length > 0) {
-        getSuggestions(value.trim());
+        const sug = await getSuggestions(value.trim());
+        setSuggestions(sug || []);
+        setShowSuggestions(true);
       } else {
-        hideSuggestions();
+        setSuggestions([]);
+        setShowSuggestions(false);
       }
     }, 200);
   };
 
-  const submitQuery = (query) => {
+  const submitQuery = async (query) => {
     if (!query || !query.trim()) return;
-    setSearchQuery(query);
-    performSearch(query);
+    setLocalQuery(query);
+    setIsSearching(true);
+    try {
+      await performSearch(query);
+      setShowSuggestions(false);
+      router.push(`/search?q=${encodeURIComponent(query)}`);
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -71,13 +75,13 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
         submitQuery(String(text));
       }
     } else if (e.key === 'Escape') {
-      hideSuggestions();
+      setShowSuggestions(false);
     }
   };
 
   const handleBlur = () => {
     // Delay to allow click on suggestion
-    setTimeout(() => hideSuggestions(), 120);
+    setTimeout(() => setShowSuggestions(false), 120);
   };
 
   return (

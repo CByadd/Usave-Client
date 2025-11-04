@@ -5,14 +5,12 @@ import { ProductDetailSkeleton } from '../../components/shared/LoadingSkeleton';
 import { Heart, ShoppingCart, ShoppingBag, ChevronLeft, ChevronRight, ArrowRight, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCart } from '../../contexts/CartContext';
-import { useUI } from '../../contexts/UIContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { fetchCart, getCartItems, addToCart, isInCart, getItemQuantity } from '../../lib/cart';
+import { openCartDrawer, openAuthDrawer, showToast } from '../../lib/ui';
+import { getCurrentUser, isAuthenticated } from '../../lib/auth';
+import { fetchWishlist, getWishlistItems, toggleWishlist, isInWishlist } from '../../lib/wishlist';
 import productService from '../../services/api/productService';
 import ProductCard from '../../components/product/ProductCard';
-import { useWishlist } from '../../contexts/WishlistContext';
-
-export const dynamic = 'force-dynamic';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -28,10 +26,22 @@ export default function ProductDetailPage() {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { addToCart, isInCart, getItemQuantity } = useCart();
-  const { openCartDrawer, openAuthDrawer } = useUI();
-  const { isAuthenticated } = useAuth();
-  const { toggleWishlist, isInWishlist } = useWishlist();
+  const [cartItems, setCartItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState([]);
+  
+  useEffect(() => {
+    const loadStatus = async () => {
+      await fetchCart();
+      await fetchWishlist();
+      setCartItems(getCartItems());
+      setWishlistItems(getWishlistItems());
+    };
+    loadStatus();
+  }, []);
+  
+  const isInCartLocal = (productId) => isInCart(productId);
+  const getItemQuantityLocal = (productId) => getItemQuantity(productId);
+  const isInWishlistLocal = (productId) => isInWishlist(productId);
 
   // Mock colors and sizes for products
   const colors = product?.colors || ['Beige', 'Brown'];
@@ -93,41 +103,61 @@ export default function ProductDetailPage() {
   };
 
   const handleQuickShop = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated()) {
       openAuthDrawer('login');
       return;
     }
-    const item = { 
-      ...product, 
-      quantity, 
-      selectedColor, 
-      selectedSize,
-      includeInstallation,
-      installationFee: includeInstallation ? 49.99 : 0
-    };
-    await addToCart(item);
+    
+    // Check if product is in stock before attempting to add
+    if (!product.inStock) {
+      showToast('This product is out of stock', 'error');
+      return;
+    }
+    
+    const result = await addToCart(product.id || productId, quantity);
+    
+    if (result?.success) {
+      await fetchCart();
+      setCartItems(getCartItems());
     router.push('/cart');
+    } else if (result?.error) {
+      showToast(result.error, 'error');
+    }
   };
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated()) {
       openAuthDrawer('login');
       return;
     }
-    const item = { 
-      ...product, 
-      quantity, 
-      selectedColor, 
-      selectedSize,
-      includeInstallation,
-      installationFee: includeInstallation ? 49.99 : 0
-    };
-    await addToCart(item);
-    openCartDrawer();
+    
+    // Check if product is in stock before attempting to add
+    if (!product.inStock) {
+      showToast('This product is out of stock', 'error');
+      return;
+    }
+    
+    const result = await addToCart(product.id || productId, quantity);
+    
+    if (result?.success) {
+      await fetchCart();
+      setCartItems(getCartItems());
+      openCartDrawer();
+      showToast('Item added to cart', 'success');
+    } else if (result?.error) {
+      showToast(result.error, 'error');
+    }
   };
 
   const handleWishlistToggle = async () => {
-    await toggleWishlist(product);
+    const result = await toggleWishlist(product);
+    if (result?.success) {
+      await fetchWishlist();
+      setWishlistItems(getWishlistItems());
+      showToast('Wishlist updated', 'success');
+    } else if (result?.error) {
+      showToast(result.error, 'error');
+    }
   };
 
   if (isLoading) {
@@ -184,7 +214,7 @@ export default function ProductDetailPage() {
               onClick={handleWishlistToggle}
               className="absolute top-4 right-4 p-2 text-gray-600 hover:text-red-500 transition-colors z-10"
             >
-              {isInWishlist(product.id) ? (
+              {isInWishlistLocal(product.id) ? (
                 <Heart size={24} className="fill-red-500 text-red-500" />
               ) : (
                 <Heart size={24} />
@@ -392,13 +422,13 @@ export default function ProductDetailPage() {
                 className={`flex-1 py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition ${
                   !product.inStock
                     ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : isInCart(product.id)
+                    : isInCartLocal(product.id)
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : 'bg-[#0B4866] hover:bg-[#094058] text-white'
                 }`}
               >
                 <ShoppingCart size={20} />
-                {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? `In Cart (${getItemQuantity(product.id)})` : 'Add to cart'}
+                {!product.inStock ? 'Out of Stock' : isInCartLocal(product.id) ? `In Cart (${getItemQuantityLocal(product.id)})` : 'Add to cart'}
               </button>
             </div>
           </div>

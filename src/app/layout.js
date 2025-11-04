@@ -6,8 +6,7 @@ import Footer from "./components/layout/Footer";
 import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
 import LoggingToggle from "./components/debug/LoggingToggle";
-
-export const dynamic = 'force-dynamic';
+import ToastContainerWrapper from "./components/shared/ToastContainerWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +39,7 @@ export default function RootLayout({ children }) {
           <AuthDrawer />
           <CartDrawer />
           <LoggingToggle />
+          <ToastContainerWrapper />
         </Providers>
       </body>
     </html>

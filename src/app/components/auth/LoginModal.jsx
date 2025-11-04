@@ -30,7 +30,7 @@ const LoginModal = () => {
     setIsLoading(true);
     setError('');
 
-    const result = await login(formData.email, formData.password);
+    const result = await login({ email: formData.email, password: formData.password });
     
     if (result.success) {
       closeLoginModal();

@@ -1,14 +1,14 @@
 "use client";
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback,useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { UserRound, Search, LogOut, ChevronDown, X, ShoppingCart, Heart, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_WHITE_BG } from '../../lib/constants';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCart } from '../../contexts/CartContext';
-import { useWishlist } from '../../contexts/WishlistContext';
-import { useUI } from '../../contexts/UIContext';
+import { getCurrentUser, isAuthenticated, logout as logoutUser } from '../../lib/auth';
+import { getCartCount, fetchCart } from '../../lib/cart';
+import { getWishlistCount, fetchWishlist } from '../../lib/wishlist';
+import { openAuthDrawer, openCartDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from '../icons';
 
@@ -87,16 +87,37 @@ const Navbar = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
-  // Hooks with fallbacks
-  const authContext = useAuth();
-  const uiContext = useUI();
-  const cartContext = useCart();
-  const wishlistContext = useWishlist();
-  
-  const { user, isAuthenticated, logout } = authContext || { user: null, isAuthenticated: false, logout: async () => {} };
-  const { openAuthDrawer = () => {}, openCartDrawer = () => {} } = uiContext || {};
-  const { getCartCount = () => 0 } = cartContext || {};
-  const { getWishlistCount = () => 0 } = wishlistContext || {};
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [isAuth, setIsAuth] = useState(false);
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    const authStatus = isAuthenticated();
+    setUser(currentUser);
+    setIsAuth(authStatus);
+  }, []);
+
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    // Load cart and wishlist counts
+    const loadCounts = async () => {
+      await fetchCart();
+      await fetchWishlist();
+      setCartCount(getCartCount());
+      setWishlistCount(getWishlistCount());
+    };
+    loadCounts();
+  }, []);
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setUser(null);
+    setIsAuth(false);
+    window.location.reload();
+  };
 
   // Handlers
   const toggleMobile = useCallback(() => setIsMobileOpen(prev => !prev), []);
@@ -202,7 +223,7 @@ const Navbar = () => {
           isAccountMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
       >
-        {isAuthenticated ? (
+        {isAuth ? (
           <>
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm text-gray-600 font-medium">
@@ -228,7 +249,7 @@ const Navbar = () => {
             </Link>
             <button
               onClick={() => {
-                logout();
+                handleLogout();
                 setIsAccountMenuOpen(false);
               }}
               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
@@ -245,10 +266,7 @@ const Navbar = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Desktop auth login clicked');
-                if (typeof openAuthDrawer === 'function') openAuthDrawer('login');
-                if (typeof document !== 'undefined') {
-                  try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'login' } })); } catch {}
-                }
+                openAuthDrawer('login');
                 setIsAccountMenuOpen(false);
               }}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -261,7 +279,7 @@ const Navbar = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Desktop auth register clicked');
-                if (typeof openAuthDrawer === 'function') openAuthDrawer('register');
+                openAuthDrawer('register');
                 if (typeof document !== 'undefined') {
                   try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'register' } })); } catch {}
                 }
@@ -375,7 +393,7 @@ const Navbar = () => {
               </div>
               
               <div className="border-t border-gray-200 py-6 px-4 space-y-6">
-                {isAuthenticated ? (
+                {isAuth ? (
                   <div className="space-y-4">
                     <Link
                       href="/account"
@@ -389,7 +407,7 @@ const Navbar = () => {
                     </Link>
                     <button
                       onClick={() => {
-                        logout();
+                        handleLogout();
                         setIsMobileOpen(false);
                         setIsAccountMenuOpen(false);
                       }}
@@ -477,14 +495,7 @@ const Navbar = () => {
       if (!e) return;
       e.preventDefault();
       e.stopPropagation();
-      console.log('[Navbar] Cart button - openCartDrawer type:', typeof openCartDrawer);
-      if (typeof openCartDrawer === 'function') {
-        console.log('[Navbar] Calling openCartDrawer');
-        openCartDrawer();
-        console.log('[Navbar] openCartDrawer called');
-      } else {
-        console.error('[Navbar] openCartDrawer is not a function!', openCartDrawer);
-      }
+      openCartDrawer();
       // Fallback: dispatch DOM event so drawers can open even if context is not wired
       if (typeof document !== 'undefined') {
         try {
@@ -496,9 +507,9 @@ const Navbar = () => {
     aria-label="Open cart"
   >
     <ShoppingCart size={22} />
-    {getCartCount() > 0 && (
+    {cartCount > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {getCartCount()}
+        {cartCount}
       </span>
     )}
   </button>
@@ -507,9 +518,9 @@ const Navbar = () => {
           <span className='flex items-center justify-center gap-2'>
              <Link href="/wishlist" className="relative text-gray-700 hover:text-blue-600">
     <Heart size={22} />
-    {getWishlistCount() > 0 && (
+    {wishlistCount > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {getWishlistCount()}
+        {wishlistCount}
       </span>
     )}
   </Link>

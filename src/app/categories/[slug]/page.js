@@ -2,8 +2,6 @@
 import { useParams } from 'next/navigation';
 import CategoryPage from '../../components/category/CategoryPage';
 
-export const dynamic = 'force-dynamic';
-
 export default function DynamicCategoryPage() {
   const params = useParams();
   const categorySlug = params?.slug || '';

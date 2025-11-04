@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../../contexts/AuthContext';
+import { getCurrentUser, isAuthenticated } from '../../../lib/auth';
 import { CheckCircle, Package, Truck, Home, FileText } from 'lucide-react';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
 import InvoiceGenerator from '../../../components/shared/InvoiceGenerator';
@@ -14,7 +14,17 @@ export const dynamic = 'force-dynamic';
 const PaymentSuccessPage = () => {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    const authenticated = isAuthenticated();
+    setUser(currentUser);
+    
+    if (!authenticated) {
+      router.push('/auth/login');
+    }
+  }, [router]);
   const orderId = params.orderId;
 
   const [order, setOrder] = useState(null);

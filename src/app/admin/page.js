@@ -1,14 +1,24 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-
-export const dynamic = 'force-dynamic';
+import { useRouter } from 'next/navigation';
 import { Plus, Edit, Trash2, Search, Filter, Eye, EyeOff, Star, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { getCurrentUser, isAuthenticated } from '../lib/auth';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import { apiService } from '../services/api/apiClient';
 
 const AdminDashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    const authenticated = isAuthenticated();
+    setUser(currentUser);
+    
+    if (!authenticated || (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'SUPER_ADMIN')) {
+      router.push('/admin/login');
+    }
+  }, [router]);
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

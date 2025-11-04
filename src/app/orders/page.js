@@ -1,19 +1,25 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../contexts/AuthContext';
-import { useUI } from '../contexts/UIContext';
+import { getCurrentUser, isAuthenticated } from '../lib/auth';
 import { RefreshCw, Edit, CreditCard, AlertCircle } from 'lucide-react';
 import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 export default function OrdersPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
-  const { openLoginModal } = useUI();
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    const authenticated = isAuthenticated();
+    setUser(currentUser);
+    
+    if (!authenticated) {
+      router.push('/auth/login');
+    }
+  }, [router]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

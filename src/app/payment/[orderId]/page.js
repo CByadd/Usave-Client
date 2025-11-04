@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentUser, isAuthenticated } from '../../lib/auth';
 import { CreditCard, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import OptimizedImage from '../../components/shared/OptimizedImage';
 import { apiService as api } from '../../services/api/apiClient';
@@ -12,7 +12,17 @@ export const dynamic = 'force-dynamic';
 const PaymentPage = () => {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    const authenticated = isAuthenticated();
+    setUser(currentUser);
+    
+    if (!authenticated) {
+      router.push('/auth/login');
+    }
+  }, [router]);
   const orderId = params.orderId;
 
   const [order, setOrder] = useState(null);

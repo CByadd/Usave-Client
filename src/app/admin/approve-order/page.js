@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentUser, isAuthenticated } from '../../lib/auth';
 import { apiService } from '../../services/api/apiClient';
 import AdminOrderEditor from '../../components/admin/AdminOrderEditor';
 
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 function ApproveOrderPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const [user, setUser] = useState(null);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,14 +21,22 @@ function ApproveOrderPageContent() {
   const orderId = searchParams.get('orderId');
 
   useEffect(() => {
-    if (orderId && isAuthenticated) {
-      fetchOrder();
-    } else if (!isAuthenticated) {
-      setError('Please log in to continue');
-    } else if (!orderId) {
-      setError('Order ID is missing');
+    const currentUser = getCurrentUser();
+    const authenticated = isAuthenticated();
+    setUser(currentUser);
+    
+    if (!authenticated || (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'SUPER_ADMIN')) {
+      router.push('/admin/login');
+      return;
     }
-  }, [orderId, isAuthenticated]);
+    
+    if (orderId) {
+      fetchOrder();
+    } else {
+      setError('Order ID is missing');
+      setLoading(false);
+    }
+  }, [orderId, router]);
 
   const fetchOrder = async () => {
     try {

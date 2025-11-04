@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 const OptimizedImage = ({
   src,
-  alt,
+  alt = 'Product image',
   width,
   height,
   className = '',
@@ -18,13 +18,32 @@ const OptimizedImage = ({
   style,
   onLoad,
   onError,
-  fallbackSrc = '/images/placeholder.jpg',
+  fallbackSrc = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzljYTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==', // Data URI for placeholder
   ...props
 }) => {
+  // Validate and normalize src
+  const normalizedSrc = src && typeof src === 'string' && src.trim() !== '' 
+    ? src.trim() 
+    : fallbackSrc;
+  
+  const normalizedAlt = alt && typeof alt === 'string' && alt.trim() !== ''
+    ? alt.trim()
+    : 'Product image';
+
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const [currentSrc, setCurrentSrc] = useState(normalizedSrc);
   const [generatedBlurDataURL, setGeneratedBlurDataURL] = useState(blurDataURL || null);
+  
+  // Update currentSrc when src prop changes
+  useEffect(() => {
+    const newSrc = src && typeof src === 'string' && src.trim() !== '' 
+      ? src.trim() 
+      : fallbackSrc;
+    setCurrentSrc(newSrc);
+    setHasError(false);
+    setIsLoading(true);
+  }, [src, fallbackSrc]);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
@@ -89,6 +108,45 @@ const OptimizedImage = ({
   // Only use blur placeholder if we have a blurDataURL
   const imagePlaceholder = defaultBlurDataURL ? placeholder : undefined;
 
+  // Check if src is a data URI or external URL that Next.js Image doesn't support
+  const isDataURI = currentSrc && currentSrc.startsWith('data:');
+  const isEmpty = !currentSrc || currentSrc.trim() === '';
+  
+  // Don't render if we don't have a valid src
+  if (isEmpty || (hasError && isDataURI)) {
+    return (
+      <div className={`relative overflow-hidden bg-gray-100 flex items-center justify-center ${className}`} style={{ width: width || 400, height: height || 400, ...style }}>
+        <div className="text-center text-gray-500">
+          <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded flex items-center justify-center">
+            <span className="text-xs">No Image</span>
+          </div>
+          <p className="text-xs">Image unavailable</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // For data URIs, use regular img tag instead of Next.js Image
+  if (isDataURI) {
+    return (
+      <div className={`relative overflow-hidden ${className}`} style={style}>
+        <img
+          src={currentSrc}
+          alt={normalizedAlt}
+          width={width || 400}
+          height={height || 400}
+          className={`transition-opacity duration-300 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
+          } ${className}`}
+          style={style}
+          onLoad={handleLoad}
+          onError={handleError}
+          {...props}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`relative overflow-hidden ${className}`} style={style}>
       {isLoading && (
@@ -99,9 +157,9 @@ const OptimizedImage = ({
       
       <Image
         src={currentSrc}
-        alt={alt}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
+        alt={normalizedAlt}
+        width={fill ? undefined : (width || 400)}
+        height={fill ? undefined : (height || 400)}
         fill={fill}
         className={`transition-opacity duration-300 ${
           isLoading ? 'opacity-0' : 'opacity-100'

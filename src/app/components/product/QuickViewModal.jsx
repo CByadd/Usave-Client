@@ -2,18 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, ShoppingBag, ShoppingCart, Minus, Plus } from 'lucide-react';
 import OptimizedImage from '../shared/OptimizedImage';
-import { useCart } from '../../contexts/CartContext';
+import { addToCart, fetchCart, getCartItems, isInCart } from '../../lib/cart';
 import { useRouter } from 'next/navigation';
-import { useUI } from '../../contexts/UIContext';
+import { openCartDrawer, showToast } from '../../lib/ui';
 
 const QuickViewModal = ({ product, isOpen, onClose }) => {
   const router = useRouter();
-  const cartContext = useCart();
-  const uiContext = useUI();
-  
-  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
-  const { openCartDrawer = () => {} } = uiContext || {};
-
+  const [cartItems, setCartItems] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(product?.color || product?.colors?.[0] || '');
@@ -22,6 +17,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   const productImages = product?.images?.length ? product.images : product?.image ? [product.image] : [];
   const colors = product?.colors || (product?.color ? [product.color] : ['Beige', 'Brown']);
   const sizes = product?.sizes || ['XS', 'S', 'M', 'L', 'XL'];
+
+  useEffect(() => {
+    // Load cart status
+    const loadCart = async () => {
+      await fetchCart();
+      setCartItems(getCartItems());
+    };
+    if (isOpen) {
+      loadCart();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && product) {
@@ -55,56 +61,64 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   const handleQuantityChange = (d) => setQuantity((p) => Math.max(1, Math.min(p + d, product.maxQuantity || 10)));
 
   const handleQuickShop = async (e) => {
-    console.log('[QuickViewModal] handleQuickShop clicked - product:', product?.id, product?.title);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    console.log('[QuickViewModal] handleQuickShop - addToCart type:', typeof addToCart);
+    
+    if (product.inStock === false) {
+      showToast('This product is out of stock', 'error');
+      return;
+    }
+
     try {
-      const p = { ...product, quantity, selectedColor, selectedSize };
-      console.log('[QuickViewModal] handleQuickShop - calling addToCart with:', p);
-      const result = await addToCart(p);
-      console.log('[QuickViewModal] handleQuickShop - addToCart result:', result);
-      console.log('[QuickViewModal] handleQuickShop - navigating to cart');
-      router.push('/cart');
-      if (onClose) {
-        console.log('[QuickViewModal] handleQuickShop - calling onClose');
-        onClose();
+      const productId = product.id || product.productId;
+      const result = await addToCart(productId, quantity);
+      if (result?.success) {
+        const { items } = await fetchCart();
+        setCartItems(items);
+        showToast('Item added to cart', 'success');
+        router.push('/cart');
+        if (onClose) {
+          onClose();
+        }
+      } else if (result?.error) {
+        showToast(result.error, 'error');
       }
     } catch (err) {
       console.error('[QuickViewModal] Quick shop error:', err);
+      showToast(err.message || 'Failed to add item to cart', 'error');
     }
   };
 
   const handleAddToCart = async (e) => {
-    console.log('[QuickViewModal] handleAddToCart clicked - product:', product?.id, product?.title);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    console.log('[QuickViewModal] handleAddToCart - addToCart type:', typeof addToCart);
-    console.log('[QuickViewModal] handleAddToCart - openCartDrawer type:', typeof openCartDrawer);
+    
+    if (product.inStock === false) {
+      showToast('This product is out of stock', 'error');
+      return;
+    }
+
     try {
-      const p = { ...product, quantity, selectedColor, selectedSize };
-      console.log('[QuickViewModal] handleAddToCart - calling addToCart with:', p);
-      const result = await addToCart(p);
-      console.log('[QuickViewModal] handleAddToCart - addToCart result:', result);
-      console.log('[QuickViewModal] handleAddToCart - calling openCartDrawer');
-      if (typeof openCartDrawer === 'function') {
+      const productId = product.id || product.productId;
+      const result = await addToCart(productId, quantity);
+      if (result?.success) {
+        const { items } = await fetchCart();
+        setCartItems(items);
         openCartDrawer();
-        console.log('[QuickViewModal] handleAddToCart - openCartDrawer called');
-      }
-      if (typeof document !== 'undefined') {
-        try {
-          document.body.dispatchEvent(new CustomEvent('usave:openCart'));
-          console.log('[QuickViewModal] Dispatched usave:openCart event');
-        } catch (err) {
-          console.error('[QuickViewModal] Error dispatching open event:', err);
+        showToast('Item added to cart', 'success');
+        if (onClose) {
+          onClose();
         }
+      } else if (result?.error) {
+        showToast(result.error, 'error');
       }
     } catch (err) {
       console.error('[QuickViewModal] Add to cart error:', err);
+      showToast(err.message || 'Failed to add item to cart', 'error');
     }
   };
 
@@ -117,6 +131,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   const rating = product.rating || 0;
   const reviews = product.reviews || 0;
   const inStock = product.inStock !== false;
+  const productInCart = cartItems.some(c => c.productId === product.id || c.product?.id === product.id);
 
   const originalPrice = product.originalPrice || product.regularPrice || product.price || 0;
   const discountedPrice = product.discountedPrice || product.salePrice || product.price || 0;
@@ -306,17 +321,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={!inStock}
+                disabled={!inStock || productInCart}
                 className={`flex-1 px-5 py-3 rounded-lg text-white flex items-center justify-center gap-2 transition ${
                   !inStock
                     ? 'bg-gray-400'
-                    : isInCart(product.id)
+                    : productInCart
                     ? 'bg-green-600 hover:bg-green-700'
                     : 'bg-[#0F4C81] hover:bg-[#0D3F6A]'
                 }`}
               >
                 <ShoppingCart size={18} />
-                {!inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to Cart'}
+                {!inStock ? 'Out of Stock' : productInCart ? 'In Cart' : 'Add to Cart'}
               </button>
             </div>
 

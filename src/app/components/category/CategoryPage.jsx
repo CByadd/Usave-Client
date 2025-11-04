@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
-import { useCart } from '../../contexts/CartContext';
-import { useUI } from '../../contexts/UIContext';
+import { fetchCart, getCartItems } from '../../lib/cart';
+import { openCartDrawer, showToast } from '../../lib/ui';
 import { ProductGridSkeleton } from '../product/LoadingSkeletons';
 import productService from '../../services/api/productService';
 import QuickViewModal from '../product/QuickViewModal';
@@ -19,8 +19,15 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
     category: false
   });
   
-  const { addToCart, isInCart } = useCart();
-  const { openCart } = useUI();
+  const [cartItems, setCartItems] = useState([]);
+  
+  useEffect(() => {
+    const loadCart = async () => {
+      await fetchCart();
+      setCartItems(getCartItems());
+    };
+    loadCart();
+  }, []);
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState(null);

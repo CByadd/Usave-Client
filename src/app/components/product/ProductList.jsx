@@ -3,10 +3,9 @@ import React, { useState, useEffect } from 'react';
 import OptimizedImage from './OptimizedImage';
 import { Heart, ShoppingCart, Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
-import { useSearch } from '../../contexts/SearchContext';
-import { useCart } from '../../contexts/CartContext';
+import { fetchCart, getCartItems, addToCart, isInCart } from '../../lib/cart';
+import { openCartDrawer, showToast } from '../../lib/ui';
 import { ProductGridSkeleton } from './LoadingSkeletons';
-import { useUI } from '../../contexts/UIContext';
 import productService from '../../services/api/productService';
 import QuickViewModal from './QuickViewModal';
 import { useRouter } from 'next/navigation';
@@ -21,12 +20,16 @@ const ProductListingPage = () => {
     category: false
   });
   
-  const { searchResults, isSearching, filters, updateFilters, searchQuery } = useSearch();
-  const cartContext = useCart();
-  const uiContext = useUI();
+  const [cartItems, setCartItems] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   
-  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
-  const { openCartDrawer = () => {} } = uiContext || {};
+  useEffect(() => {
+    const loadCart = async () => {
+      await fetchCart();
+      setCartItems(getCartItems());
+    };
+    loadCart();
+  }, []);
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
+import { login, getCurrentUser, isAuthenticated } from '../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,14 +12,15 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { login, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     // Redirect if already logged in as admin
-    if (isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN')) {
+    const user = getCurrentUser();
+    const authenticated = isAuthenticated();
+    if (authenticated && (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN')) {
       router.push('/admin');
     }
-  }, [isAuthenticated, user, router]);
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,7 +43,7 @@ export default function AdminLogin() {
     }
 
     try {
-      const result = await login({ email, password });
+      const result = await login(email, password);
 
       if (result.success) {
         // Check if user is admin

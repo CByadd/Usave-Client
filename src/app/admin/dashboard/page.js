@@ -2,26 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentUser, isAuthenticated } from '../../lib/auth';
 import { apiService } from '../../services/api/apiClient';
 
 export const dynamic = 'force-dynamic';
 
 export default function AdminDashboard() {
-  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
-        router.push('/admin/login');
-      } else {
-        fetchOrders();
-      }
+    const currentUser = getCurrentUser();
+    const authenticated = isAuthenticated();
+    setUser(currentUser);
+    
+    if (!authenticated || (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'SUPER_ADMIN')) {
+      router.push('/admin/login');
+    } else {
+      fetchOrders();
     }
-  }, [isAuthenticated, user, authLoading, router]);
+  }, [router]);
 
   const fetchOrders = async () => {
     try {

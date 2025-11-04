@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
+import { getCurrentUser, isAuthenticated } from '../lib/auth';
+import { fetchCart, getCartItems, getCartTotals } from '../lib/cart';
 import ApprovalModal from '../components/checkout/ApprovalModal';
 import SuccessModal from '../components/shared/SuccessModal';
 import { apiService } from '../services/api/apiClient';
@@ -13,11 +13,30 @@ import OptimizedImage from '../components/shared/OptimizedImage';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const authContext = useAuth();
-  const cartContext = useCart();
+  const [user, setUser] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [totals, setTotals] = useState({ subtotal: 0, tax: 0, shipping: 0, total: 0 });
+  const [authChecked, setAuthChecked] = useState(false);
   
-  const { user, isAuthenticated } = authContext || { user: null, isAuthenticated: false };
-  const { cartItems = [], totals = { subtotal: 0, tax: 0, shipping: 0, total: 0 }, clearCart = async () => {} } = cartContext || {};
+  useEffect(() => {
+    const checkAuth = async () => {
+      const currentUser = getCurrentUser();
+      const authenticated = isAuthenticated();
+      setUser(currentUser);
+      setAuthChecked(true);
+      
+      if (!authenticated) {
+        router.push('/auth/login');
+        return;
+      }
+      
+      // Load cart
+      const { items, totals: cartTotals } = await fetchCart();
+      setCartItems(items);
+      setTotals(cartTotals);
+    };
+    checkAuth();
+  }, [router]);
   const [shippingOption, setShippingOption] = useState('delivery-only');
   const [warranty, setWarranty] = useState('');
   const [cartExpanded, setCartExpanded] = useState(true);
@@ -41,9 +60,12 @@ export default function CheckoutPage() {
 
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
-    console.log('[CheckoutPage] useEffect - isAuthenticated:', isAuthenticated, 'cartItems.length:', cartItems.length);
+    if (!authChecked) return;
     
-    if (!isAuthenticated) {
+    const authenticated = isAuthenticated();
+    console.log('[CheckoutPage] useEffect - isAuthenticated:', authenticated, 'cartItems.length:', cartItems.length);
+    
+    if (!authenticated) {
       console.log('[CheckoutPage] Not authenticated, redirecting to login');
       router.push('/auth/login');
       return;
@@ -71,7 +93,7 @@ export default function CheckoutPage() {
     }
     
     console.log('[CheckoutPage] Checkout page ready, items:', cartItems.length);
-  }, [isAuthenticated, cartItems.length, router]);
+  }, [authChecked, cartItems.length, router]);
 
   const shippingOptions = [
     { id: 'delivery', label: 'Delivery', price: 18 },
@@ -181,7 +203,8 @@ export default function CheckoutPage() {
         shippingOption,
         warrantyOption: warranty,
         status: 'PENDING_APPROVAL',
-        paymentStatus: 'PENDING'
+        paymentStatus: 'PENDING',
+        
       };
 
       const response = await apiService.orders.create(orderData);
@@ -207,8 +230,10 @@ export default function CheckoutPage() {
           // Don't block order creation if address save fails
         }
 
-        // Clear cart
-        await clearCart();
+        // Clear cart - reload cart which will be empty after order
+        await fetchCart();
+        const { items } = await fetchCart();
+        setCartItems(items);
         // Redirect to payment page after order is approved
         router.push(`/payment/${response.data?.order?.id || response.data?.id}`);
       } else {
@@ -224,7 +249,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (!isAuthenticated || cartItems.length === 0) {
+  if (!authChecked || !isAuthenticated() || cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -532,11 +557,11 @@ export default function CheckoutPage() {
                             <div className="flex items-center space-x-2 mt-1">
                               {item.originalPrice > item.discountedPrice && (
                                 <span className="text-xs line-through text-gray-400">
-                                  ${item.originalPrice.toFixed(2)}
+                                  ${item.originalPrice}
                                 </span>
                               )}
                               <span className="text-sm font-bold text-gray-900">
-                                ${item.discountedPrice.toFixed(2)}
+                                ${item.discountedPrice}
                               </span>
                             </div>
                           </div>
@@ -549,27 +574,27 @@ export default function CheckoutPage() {
                 <div className="space-y-2 py-4 border-t border-gray-200">
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Subtotal</span>
-                    <span>${totals.subtotal.toFixed(2)}</span>
+                    <span>${totals.subtotal}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Tax (10% GST)</span>
-                    <span>${totals.tax.toFixed(2)}</span>
+                    <span>${totals.tax}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Shipping</span>
-                    <span>${shippingCost.toFixed(2)}</span>
+                    <span>${shippingCost}</span>
                   </div>
                   {warrantyCost > 0 && (
                     <div className="flex justify-between text-sm text-gray-700">
                       <span>Warranty</span>
-                      <span>${warrantyCost.toFixed(2)}</span>
+                      <span>${warrantyCost}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex justify-between text-lg font-bold text-gray-900 py-4 border-t border-gray-200">
                   <span>Total</span>
-                  <span className="text-[#0F4C81]">${finalTotal.toFixed(2)}</span>
+                  <span className="text-[#0F4C81]">${finalTotal}</span>
                 </div>
 
                 <button 
@@ -578,7 +603,18 @@ export default function CheckoutPage() {
                       setShowApprovalModal(true);
                     }
                   }}
-                  className="w-full bg-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#0F4C81] border  border-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Processing...' : 'Submit for Approval'}
+                </button>
+                <button 
+                  onClick={() => {
+                    if (validateForm()) {
+                      setShowApprovalModal(true);
+                    }
+                  }}
+                  className="w-full bg-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Processing...' : 'Place Order'}

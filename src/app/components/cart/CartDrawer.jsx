@@ -2,21 +2,38 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useCart } from '../../contexts/CartContext';
-import { useUI } from '../../contexts/UIContext';
+import { fetchCart, removeFromCart } from '../../lib/cart';
 import OptimizedImage from '../shared/OptimizedImage';
 
 const CartDrawer = () => {
-  const { cartItems, updateQuantity, removeItem, getCartTotal, getCartCount } = useCart();
-  const { isCartDrawerOpen, closeCartDrawer } = useUI();
+  const [cartItems, setCartItems] = useState([]);
+  const [totals, setTotals] = useState({ subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 });
   const [isUpdating, setIsUpdating] = useState({});
   const [forceOpen, setForceOpen] = useState(false);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+
+  // Load cart on mount
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  const loadCart = async () => {
+    const { items, totals: cartTotals } = await fetchCart();
+    setCartItems(items);
+    setTotals(cartTotals);
+  };
   
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const onOpen = () => setForceOpen(true);
-    const onClose = () => setForceOpen(false);
+    const onOpen = () => {
+      setForceOpen(true);
+      setIsCartDrawerOpen(true);
+    };
+    const onClose = () => {
+      setForceOpen(false);
+      setIsCartDrawerOpen(false);
+    };
     document.body.addEventListener('usave:openCart', onOpen);
     document.body.addEventListener('usave:closeCart', onClose);
     return () => {
@@ -29,22 +46,22 @@ const CartDrawer = () => {
     console.log('[CartDrawer] handleQuantityChange - productId:', productId, 'newQuantity:', newQuantity);
     if (newQuantity < 1) {
       console.log('[CartDrawer] handleQuantityChange - removing item');
-      await removeItem(productId);
+      await handleRemoveItem(productId);
       return;
     }
 
-    console.log('[CartDrawer] handleQuantityChange - updateQuantity type:', typeof updateQuantity);
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
-    await updateQuantity(productId, newQuantity);
+    // TODO: Implement updateQuantity in cart module
+    await loadCart();
     setIsUpdating(prev => ({ ...prev, [productId]: false }));
     console.log('[CartDrawer] handleQuantityChange - completed');
   };
 
   const handleRemoveItem = async (productId) => {
     console.log('[CartDrawer] handleRemoveItem clicked - productId:', productId);
-    console.log('[CartDrawer] handleRemoveItem - removeItem type:', typeof removeItem);
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
-    await removeItem(productId);
+    await removeFromCart(productId);
+    await loadCart();
     setIsUpdating(prev => ({ ...prev, [productId]: false }));
     console.log('[CartDrawer] handleRemoveItem - completed');
   };
@@ -82,10 +99,8 @@ const CartDrawer = () => {
                   e.preventDefault();
                   e.stopPropagation();
                 }
-                console.log('[CartDrawer] closeCartDrawer type:', typeof closeCartDrawer);
-                if (typeof closeCartDrawer === 'function') {
-                  closeCartDrawer();
-                }
+                setIsCartDrawerOpen(false);
+                setForceOpen(false);
                 // Fallback: dispatch close event
                 if (typeof document !== 'undefined') {
                   try {
@@ -111,7 +126,7 @@ const CartDrawer = () => {
           <div className="flex items-center gap-3">
             <ShoppingBag className="text-[#0B4866]" size={24} />
             <h2 className="text-xl font-semibold text-gray-900">
-              Shopping Cart ({getCartCount()})
+              Shopping Cart ({totals.itemCount || 0})
             </h2>
           </div>
           <button
@@ -318,7 +333,7 @@ const CartDrawer = () => {
                 <div className="flex justify-between border-t border-gray-200 pt-2">
                   <span className="text-lg font-semibold">Total:</span>
                   <span className="text-xl font-bold text-[#0B4866]">
-                    ${getCartTotal().toFixed(2)}
+                    ${totals.total.toFixed(2)}
                   </span>
                 </div>
               </div>

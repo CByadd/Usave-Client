@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, User, LogOut } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useUI } from '../../contexts/UIContext';
+import { login as loginUser, getCurrentUser, logout as logoutUser, register as registerUser, isAuthenticated as checkAuth } from '../../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginForm = ({ onSwitch, onClose }) => {
@@ -10,8 +9,6 @@ const LoginForm = ({ onSwitch, onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,17 +30,25 @@ const LoginForm = ({ onSwitch, onClose }) => {
     setError('');
 
     try {
-      const result = await login(formData.email, formData.password);
+      console.log('AuthDrawer: Calling login with:', { email: formData.email });
+      const result = await loginUser(formData.email, formData.password);
+      console.log('AuthDrawer: Login result:', result);
       
       if (result && result.success) {
+        console.log('AuthDrawer: Login successful, closing drawer');
         if (onClose && typeof onClose === 'function') {
           onClose();
         }
         setFormData({ email: '', password: '' });
+        // Reload page to update auth state
+        window.location.reload();
       } else {
-        setError(result?.error || 'Login failed. Please try again.');
+        const errorMsg = result?.error || 'Login failed. Please try again.';
+        console.error('AuthDrawer: Login failed:', errorMsg);
+        setError(errorMsg);
       }
     } catch (err) {
+      console.error('AuthDrawer: Login error:', err);
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -186,7 +191,6 @@ const RegisterForm = ({ onSwitch, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { register } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -214,7 +218,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
     setError('');
 
     try {
-      const result = await register({
+      const result = await registerUser({
         name: formData.name,
         email: formData.email,
         password: formData.password
@@ -225,6 +229,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
           onClose();
         }
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+        window.location.reload();
       } else {
         setError(result?.error || 'Registration failed. Please try again.');
       }
@@ -461,10 +466,19 @@ const UserDropdown = ({ user, onClose, onLogout }) => {
 };
 
 const AuthDrawer = () => {
-  const { isAuthDrawerOpen, closeAuthDrawer } = useUI();
-  const { user, isAuthenticated, logout } = useAuth();
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [forceOpen, setForceOpen] = useState(false);
+
+  useEffect(() => {
+    // Check auth state
+    const currentUser = getCurrentUser();
+    const authStatus = checkAuth();
+    setUser(currentUser);
+    setIsAuthenticated(authStatus);
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -488,34 +502,26 @@ const AuthDrawer = () => {
     setActiveTab(tab);
   };
   
-  const handleLogout = () => {
-    if (logout && typeof logout === 'function') {
-      logout();
-    }
-    if (closeAuthDrawer && typeof closeAuthDrawer === 'function') {
-      closeAuthDrawer();
-    }
+  const handleLogout = async () => {
+    await logoutUser();
+    setUser(null);
+    setIsAuthenticated(false);
+    setIsAuthDrawerOpen(false);
+    setForceOpen(false);
+    window.location.reload();
   };
   
   const safeCloseAuthDrawer = (e) => {
-    console.log('[AuthDrawer] safeCloseAuthDrawer called');
-    console.log('[AuthDrawer] closeAuthDrawer type:', typeof closeAuthDrawer);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (closeAuthDrawer && typeof closeAuthDrawer === 'function') {
-      console.log('[AuthDrawer] Calling closeAuthDrawer');
-      closeAuthDrawer();
-      console.log('[AuthDrawer] closeAuthDrawer called');
-    } else {
-      console.warn('[AuthDrawer] closeAuthDrawer is not a function');
-    }
+    setIsAuthDrawerOpen(false);
+    setForceOpen(false);
     // Fallback: dispatch close event
     if (typeof document !== 'undefined') {
       try {
         document.body.dispatchEvent(new CustomEvent('usave:closeAuth'));
-        console.log('[AuthDrawer] Dispatched usave:closeAuth event');
       } catch (err) {
         console.error('[AuthDrawer] Error dispatching close event:', err);
       }
