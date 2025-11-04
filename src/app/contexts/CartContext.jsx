@@ -58,7 +58,7 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error('[CartContext] Error loading cart:', error);
     }
-  };
+  }, []);
 
   // Save cart to localStorage whenever cartItems changes
   useEffect(() => {
@@ -69,7 +69,7 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error('Error saving cart to localStorage:', error);
     }
-  };
+  }, [cartItems]);
 
   // Calculate cart totals
   const calculateTotals = () => {
