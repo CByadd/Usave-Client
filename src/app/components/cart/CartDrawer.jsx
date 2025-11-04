@@ -10,22 +10,43 @@ const CartDrawer = () => {
   const { cartItems, updateQuantity, removeItem, getCartTotal, getCartCount } = useCart();
   const { isCartDrawerOpen, closeCartDrawer } = useUI();
   const [isUpdating, setIsUpdating] = useState({});
+  const [forceOpen, setForceOpen] = useState(false);
+  
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onOpen = () => setForceOpen(true);
+    const onClose = () => setForceOpen(false);
+    document.body.addEventListener('usave:openCart', onOpen);
+    document.body.addEventListener('usave:closeCart', onClose);
+    return () => {
+      document.body.removeEventListener('usave:openCart', onOpen);
+      document.body.removeEventListener('usave:closeCart', onClose);
+    };
+  }, []);
 
   const handleQuantityChange = async (productId, newQuantity) => {
+    console.log('[CartDrawer] handleQuantityChange - productId:', productId, 'newQuantity:', newQuantity);
     if (newQuantity < 1) {
+      console.log('[CartDrawer] handleQuantityChange - removing item');
       await removeItem(productId);
       return;
     }
 
+    console.log('[CartDrawer] handleQuantityChange - updateQuantity type:', typeof updateQuantity);
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
     await updateQuantity(productId, newQuantity);
     setIsUpdating(prev => ({ ...prev, [productId]: false }));
+    console.log('[CartDrawer] handleQuantityChange - completed');
   };
 
   const handleRemoveItem = async (productId) => {
+    console.log('[CartDrawer] handleRemoveItem clicked - productId:', productId);
+    console.log('[CartDrawer] handleRemoveItem - removeItem type:', typeof removeItem);
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
     await removeItem(productId);
     setIsUpdating(prev => ({ ...prev, [productId]: false }));
+    console.log('[CartDrawer] handleRemoveItem - completed');
   };
 
   // Prevent body scroll when drawer is open
@@ -46,17 +67,36 @@ const CartDrawer = () => {
     };
   }, [isCartDrawerOpen]);
 
-  console.log('CartDrawer render - isCartDrawerOpen:', isCartDrawerOpen);
+  console.log('CartDrawer render - isCartDrawerOpen:', isCartDrawerOpen, 'forceOpen:', forceOpen);
   
-  if (!isCartDrawerOpen) return null;
+  if (!isCartDrawerOpen && !forceOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={closeCartDrawer}
-      />
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={(e) => {
+                console.log('[CartDrawer] Backdrop clicked');
+                if (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                console.log('[CartDrawer] closeCartDrawer type:', typeof closeCartDrawer);
+                if (typeof closeCartDrawer === 'function') {
+                  closeCartDrawer();
+                }
+                // Fallback: dispatch close event
+                if (typeof document !== 'undefined') {
+                  try {
+                    document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                    console.log('[CartDrawer] Dispatched usave:closeCart event');
+                  } catch (err) {
+                    console.error('[CartDrawer] Error dispatching close event:', err);
+                  }
+                }
+              }}
+            />
     
 
       
@@ -75,7 +115,28 @@ const CartDrawer = () => {
             </h2>
           </div>
           <button
-            onClick={closeCartDrawer}
+            type="button"
+            onClick={(e) => {
+              console.log('[CartDrawer] Close button clicked');
+              if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              console.log('[CartDrawer] closeCartDrawer type:', typeof closeCartDrawer);
+              if (typeof closeCartDrawer === 'function') {
+                closeCartDrawer();
+                console.log('[CartDrawer] closeCartDrawer called');
+              }
+              // Fallback: dispatch close event
+              if (typeof document !== 'undefined') {
+                try {
+                  document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                  console.log('[CartDrawer] Dispatched usave:closeCart event');
+                } catch (err) {
+                  console.error('[CartDrawer] Error dispatching close event:', err);
+                }
+              }
+            }}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X size={24} />
@@ -86,14 +147,27 @@ const CartDrawer = () => {
         <div className="flex flex-col h-[calc(100vh-72px)]">
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
-            {cartItems.length === 0 ? (
+              {cartItems.length === 0 ? (
               <div className="text-center py-12">
                 <ShoppingBag className="mx-auto text-gray-300 mb-4" size={48} />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
                 <p className="text-gray-500 mb-6">Add some items to get started</p>
                 <Link
                   href="/products"
-                  onClick={closeCartDrawer}
+                  onClick={(e) => {
+                  if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                  if (typeof closeCartDrawer === 'function') {
+                    closeCartDrawer();
+                  }
+                  if (typeof document !== 'undefined') {
+                    try {
+                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                    } catch {}
+                  }
+                }}
                   className="inline-block bg-[#0B4866] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#094058] transition-colors"
                 >
                   Continue Shopping
@@ -118,7 +192,20 @@ const CartDrawer = () => {
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/products/${item.id}`}
-                      onClick={closeCartDrawer}
+                      onClick={(e) => {
+                  if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                  if (typeof closeCartDrawer === 'function') {
+                    closeCartDrawer();
+                  }
+                  if (typeof document !== 'undefined') {
+                    try {
+                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                    } catch {}
+                  }
+                }}
                       className="text-sm font-medium text-gray-900 hover:text-[#0B4866] line-clamp-2"
                     >
                       {item.title}
@@ -241,7 +328,20 @@ const CartDrawer = () => {
             <div className="space-y-3">
               <Link
                 href="/checkout"
-                onClick={closeCartDrawer}
+                onClick={(e) => {
+                  if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                  if (typeof closeCartDrawer === 'function') {
+                    closeCartDrawer();
+                  }
+                  if (typeof document !== 'undefined') {
+                    try {
+                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                    } catch {}
+                  }
+                }}
                 className="block w-full bg-[#0B4866] text-white py-3 rounded-lg font-medium text-center hover:bg-[#094058] transition-colors"
               >
                 Proceed to Checkout
@@ -249,7 +349,20 @@ const CartDrawer = () => {
               
               <Link
                 href="/cart"
-                onClick={closeCartDrawer}
+                onClick={(e) => {
+                  if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                  if (typeof closeCartDrawer === 'function') {
+                    closeCartDrawer();
+                  }
+                  if (typeof document !== 'undefined') {
+                    try {
+                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                    } catch {}
+                  }
+                }}
                 className="block w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium text-center hover:bg-gray-50 transition-colors"
               >
                 View Cart

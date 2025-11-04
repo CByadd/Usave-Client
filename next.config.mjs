@@ -16,8 +16,10 @@ const nextConfig = {
   // No need for experimental.turbo configuration
 
   // Compiler optimizations
+  // Show logs and stack traces in production for debugging
+  productionBrowserSourceMaps: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: false,
   },
 
   async redirects() {

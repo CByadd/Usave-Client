@@ -245,7 +245,10 @@ const Navbar = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Desktop auth login clicked');
-                openAuthDrawer('login');
+                if (typeof openAuthDrawer === 'function') openAuthDrawer('login');
+                if (typeof document !== 'undefined') {
+                  try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'login' } })); } catch {}
+                }
                 setIsAccountMenuOpen(false);
               }}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -258,7 +261,10 @@ const Navbar = () => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Desktop auth register clicked');
-                openAuthDrawer('register');
+                if (typeof openAuthDrawer === 'function') openAuthDrawer('register');
+                if (typeof document !== 'undefined') {
+                  try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'register' } })); } catch {}
+                }
                 setIsAccountMenuOpen(false);
               }}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -467,10 +473,24 @@ const Navbar = () => {
   <button 
     type="button"
     onClick={(e) => {
+      console.log('[Navbar] Cart button clicked');
+      if (!e) return;
       e.preventDefault();
       e.stopPropagation();
-      console.log('Cart button clicked, openCartDrawer:', typeof openCartDrawer);
-      openCartDrawer();
+      console.log('[Navbar] Cart button - openCartDrawer type:', typeof openCartDrawer);
+      if (typeof openCartDrawer === 'function') {
+        console.log('[Navbar] Calling openCartDrawer');
+        openCartDrawer();
+        console.log('[Navbar] openCartDrawer called');
+      } else {
+        console.error('[Navbar] openCartDrawer is not a function!', openCartDrawer);
+      }
+      // Fallback: dispatch DOM event so drawers can open even if context is not wired
+      if (typeof document !== 'undefined') {
+        try {
+          document.body.dispatchEvent(new CustomEvent('usave:openCart'));
+        } catch {}
+      }
     }}
     className="relative text-gray-700 hover:text-blue-600 cursor-pointer"
     aria-label="Open cart"
@@ -581,13 +601,16 @@ const Navbar = () => {
             >
               <Search size={20} />
             </button>
-            <button 
+            <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Cart button clicked, openCartDrawer:', typeof openCartDrawer);
-                openCartDrawer();
+                if (typeof openCartDrawer === 'function') openCartDrawer();
+                if (typeof document !== 'undefined') {
+                  try { document.body.dispatchEvent(new CustomEvent('usave:openCart')); } catch {}
+                }
               }}
               className="text-gray-700 hover:text-blue-600 relative cursor-pointer"
               aria-label="Open cart"

@@ -9,6 +9,7 @@ import { useCart } from '../contexts/CartContext';
 import { useUI } from '../contexts/UIContext';
 import { ProductGridSkeleton } from '../components/product/LoadingSkeletons';
 import QuickViewModal from '../components/product/QuickViewModal';
+import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,7 @@ function SearchPageContent() {
   
   const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
   const { openCartDrawer = () => {} } = uiContext || {};
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
@@ -482,24 +484,57 @@ function SearchPageContent() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2">
+                  <button 
+                    type="button"
+                    onClick={async (e) => {
+                      console.log('[SearchPage] Quick Shop clicked - product:', product?.id, product?.title);
+                      if (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                      console.log('[SearchPage] Quick Shop - addToCart type:', typeof addToCart);
+                      try {
+                        const result = await addToCart(product);
+                        console.log('[SearchPage] Quick Shop - addToCart result:', result);
+                        console.log('[SearchPage] Quick Shop - navigating to cart');
+                        router.push('/cart');
+                      } catch (err) {
+                        console.error('[SearchPage] Quick shop error:', err);
+                      }
+                    }}
+                    className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                  >
                     <Search size={16} />
                     Quick Shop
                   </button>
                   <button 
                     type="button"
                     onClick={async (e) => {
-                      e?.preventDefault?.();
-                      e?.stopPropagation?.();
+                      console.log('[SearchPage] Add to Cart clicked - product:', product?.id, product?.title);
+                      if (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                      console.log('[SearchPage] Add to Cart - addToCart type:', typeof addToCart);
+                      console.log('[SearchPage] Add to Cart - openCartDrawer type:', typeof openCartDrawer);
                       try {
-                        if (addToCart && typeof addToCart === 'function') {
-                          await addToCart(product);
-                        }
-                        if (openCartDrawer && typeof openCartDrawer === 'function') {
+                        const result = await addToCart(product);
+                        console.log('[SearchPage] Add to Cart - addToCart result:', result);
+                        console.log('[SearchPage] Add to Cart - calling openCartDrawer');
+                        if (typeof openCartDrawer === 'function') {
                           openCartDrawer();
+                          console.log('[SearchPage] Add to Cart - openCartDrawer called');
+                        }
+                        if (typeof document !== 'undefined') {
+                          try {
+                            document.body.dispatchEvent(new CustomEvent('usave:openCart'));
+                            console.log('[SearchPage] Dispatched usave:openCart event');
+                          } catch (err) {
+                            console.error('[SearchPage] Error dispatching open event:', err);
+                          }
                         }
                       } catch (err) {
-                        console.error('Add to cart error:', err);
+                        console.error('[SearchPage] Add to cart error:', err);
                       }
                     }}
                     disabled={!product.inStock}

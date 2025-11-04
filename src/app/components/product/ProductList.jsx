@@ -9,6 +9,7 @@ import { ProductGridSkeleton } from './LoadingSkeletons';
 import { useUI } from '../../contexts/UIContext';
 import productService from '../../services/api/productService';
 import QuickViewModal from './QuickViewModal';
+import { useRouter } from 'next/navigation';
 
 const ProductListingPage = () => {
   const [activeFilters, setActiveFilters] = useState({
@@ -26,6 +27,7 @@ const ProductListingPage = () => {
   
   const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
   const { openCartDrawer = () => {} } = uiContext || {};
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -284,17 +286,56 @@ const ProductListingPage = () => {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => addToCart(product)} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2">
+                      <button 
+                        type="button"
+                        onClick={async (e) => {
+                          console.log('[ProductList] Quick Shop clicked - product:', product?.id, product?.title);
+                          if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
+                          console.log('[ProductList] Quick Shop - addToCart type:', typeof addToCart);
+                          try {
+                            await addToCart(product);
+                            console.log('[ProductList] Quick Shop - addToCart completed, navigating to cart');
+                            router.push('/cart');
+                          } catch (err) {
+                            console.error('[ProductList] Quick Shop error:', err);
+                          }
+                        }} 
+                        className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                      >
                         <Search size={16} />
                         Quick Shop
                       </button>
                       <button 
-                        onClick={async () => { 
-                          if (addToCart && typeof addToCart === 'function') {
-                            await addToCart(product);
+                        type="button"
+                        onClick={async (e) => {
+                          console.log('[ProductList] Add to Cart clicked - product:', product?.id, product?.title);
+                          if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                           }
-                          if (openCartDrawer && typeof openCartDrawer === 'function') {
-                            openCartDrawer();
+                          console.log('[ProductList] Add to Cart - addToCart type:', typeof addToCart);
+                          console.log('[ProductList] Add to Cart - openCartDrawer type:', typeof openCartDrawer);
+                          try {
+                            const result = await addToCart(product);
+                            console.log('[ProductList] Add to Cart - addToCart result:', result);
+                            console.log('[ProductList] Add to Cart - calling openCartDrawer');
+                            if (typeof openCartDrawer === 'function') {
+                              openCartDrawer();
+                              console.log('[ProductList] Add to Cart - openCartDrawer called');
+                            }
+                            if (typeof document !== 'undefined') {
+                              try {
+                                document.body.dispatchEvent(new CustomEvent('usave:openCart'));
+                                console.log('[ProductList] Dispatched usave:openCart event');
+                              } catch (err) {
+                                console.error('[ProductList] Error dispatching open event:', err);
+                              }
+                            }
+                          } catch (err) {
+                            console.error('[ProductList] Add to Cart error:', err);
                           }
                         }}
                         disabled={!product.inStock}
@@ -386,14 +427,19 @@ const ProductListingPage = () => {
                       <button 
                         type="button"
                         onClick={async (e) => {
-                          e?.preventDefault?.();
-                          e?.stopPropagation?.();
+                          console.log('[ProductList-Desktop] Quick Shop clicked - product:', product?.id, product?.title);
+                          if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
+                          console.log('[ProductList-Desktop] Quick Shop - addToCart type:', typeof addToCart);
                           try {
-                            if (addToCart && typeof addToCart === 'function') {
-                              await addToCart(product);
-                            }
+                            const result = await addToCart(product);
+                            console.log('[ProductList-Desktop] Quick Shop - addToCart result:', result);
+                            console.log('[ProductList-Desktop] Quick Shop - navigating to cart');
+                            router.push('/cart');
                           } catch (err) {
-                            console.error('Quick shop error:', err);
+                            console.error('[ProductList-Desktop] Quick shop error:', err);
                           }
                         }} 
                         className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer"
@@ -404,32 +450,46 @@ const ProductListingPage = () => {
                       <button 
                         type="button"
                         onClick={async (e) => {
-                          e?.preventDefault?.();
-                          e?.stopPropagation?.();
+                          console.log('[ProductList-Desktop] Add to Cart clicked - product:', product?.id, product?.title);
+                          if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
+                          console.log('[ProductList-Desktop] Add to Cart - addToCart type:', typeof addToCart);
+                          console.log('[ProductList-Desktop] Add to Cart - openCartDrawer type:', typeof openCartDrawer);
                           try {
-                            if (addToCart && typeof addToCart === 'function') {
-                              await addToCart(product);
-                            }
-                            if (openCartDrawer && typeof openCartDrawer === 'function') {
+                            const result = await addToCart(product);
+                            console.log('[ProductList-Desktop] Add to Cart - addToCart result:', result);
+                            console.log('[ProductList-Desktop] Add to Cart - calling openCartDrawer');
+                            if (typeof openCartDrawer === 'function') {
                               openCartDrawer();
+                              console.log('[ProductList-Desktop] Add to Cart - openCartDrawer called');
+                            }
+                            if (typeof document !== 'undefined') {
+                              try {
+                                document.body.dispatchEvent(new CustomEvent('usave:openCart'));
+                                console.log('[ProductList-Desktop] Dispatched usave:openCart event');
+                              } catch (err) {
+                                console.error('[ProductList-Desktop] Error dispatching open event:', err);
+                              }
                             }
                           } catch (err) {
-                            console.error('Add to cart error:', err);
+                            console.error('[ProductList-Desktop] Add to cart error:', err);
                           }
                         }}
                         disabled={!product.inStock}
                         className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
-                          !product.inStock 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : isInCart(product.id) 
-                              ? 'bg-green-600 hover:bg-green-700' 
+                          !product.inStock
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : isInCart(product.id)
+                              ? 'bg-green-600 hover:bg-green-700'
                               : 'bg-[#0B4866] hover:bg-[#094058]'
                         }`}
-                  >
-                    <ShoppingCart size={16} />
-                    {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}
-                  </button>
-                </div>
+                      >
+                        <ShoppingCart size={16} />
+                        {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}
+                      </button>
+                    </div>
               </div>
             </div>
           ))}

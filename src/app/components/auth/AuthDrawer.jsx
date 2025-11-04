@@ -464,6 +464,25 @@ const AuthDrawer = () => {
   const { isAuthDrawerOpen, closeAuthDrawer } = useUI();
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
+  const [forceOpen, setForceOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onOpen = (e) => {
+      try {
+        const tab = e?.detail?.tab || 'login';
+        setActiveTab(tab);
+      } catch {}
+      setForceOpen(true);
+    };
+    const onClose = () => setForceOpen(false);
+    document.body.addEventListener('usave:openAuth', onOpen);
+    document.body.addEventListener('usave:closeAuth', onClose);
+    return () => {
+      document.body.removeEventListener('usave:openAuth', onOpen);
+      document.body.removeEventListener('usave:closeAuth', onClose);
+    };
+  }, []);
   
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -478,13 +497,34 @@ const AuthDrawer = () => {
     }
   };
   
-  const safeCloseAuthDrawer = closeAuthDrawer && typeof closeAuthDrawer === 'function' 
-    ? closeAuthDrawer 
-    : () => {};
+  const safeCloseAuthDrawer = (e) => {
+    console.log('[AuthDrawer] safeCloseAuthDrawer called');
+    console.log('[AuthDrawer] closeAuthDrawer type:', typeof closeAuthDrawer);
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (closeAuthDrawer && typeof closeAuthDrawer === 'function') {
+      console.log('[AuthDrawer] Calling closeAuthDrawer');
+      closeAuthDrawer();
+      console.log('[AuthDrawer] closeAuthDrawer called');
+    } else {
+      console.warn('[AuthDrawer] closeAuthDrawer is not a function');
+    }
+    // Fallback: dispatch close event
+    if (typeof document !== 'undefined') {
+      try {
+        document.body.dispatchEvent(new CustomEvent('usave:closeAuth'));
+        console.log('[AuthDrawer] Dispatched usave:closeAuth event');
+      } catch (err) {
+        console.error('[AuthDrawer] Error dispatching close event:', err);
+      }
+    }
+  };
   
-  console.log('AuthDrawer render - isAuthDrawerOpen:', isAuthDrawerOpen);
+  console.log('AuthDrawer render - isAuthDrawerOpen:', isAuthDrawerOpen, 'forceOpen:', forceOpen);
   
-  if (!isAuthDrawerOpen) return null;
+  if (!isAuthDrawerOpen && !forceOpen) return null;
   
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden">

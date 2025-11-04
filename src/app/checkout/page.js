@@ -41,14 +41,36 @@ export default function CheckoutPage() {
 
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
+    console.log('[CheckoutPage] useEffect - isAuthenticated:', isAuthenticated, 'cartItems.length:', cartItems.length);
+    
     if (!isAuthenticated) {
+      console.log('[CheckoutPage] Not authenticated, redirecting to login');
       router.push('/auth/login');
       return;
     }
-    if (cartItems.length === 0) {
+    
+    // Check both cartItems array and localStorage as fallback
+    let hasItems = cartItems.length > 0;
+    if (!hasItems && typeof window !== 'undefined') {
+      try {
+        const savedCart = localStorage.getItem('cartItems');
+        if (savedCart) {
+          const parsed = JSON.parse(savedCart);
+          hasItems = Array.isArray(parsed) && parsed.length > 0;
+          console.log('[CheckoutPage] Checked localStorage, found items:', hasItems);
+        }
+      } catch (error) {
+        console.error('[CheckoutPage] Error reading localStorage:', error);
+      }
+    }
+    
+    if (!hasItems) {
+      console.log('[CheckoutPage] Cart is empty, redirecting to cart');
       router.push('/cart');
       return;
     }
+    
+    console.log('[CheckoutPage] Checkout page ready, items:', cartItems.length);
   }, [isAuthenticated, cartItems.length, router]);
 
   const shippingOptions = [

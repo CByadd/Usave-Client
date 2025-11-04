@@ -55,31 +55,56 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   const handleQuantityChange = (d) => setQuantity((p) => Math.max(1, Math.min(p + d, product.maxQuantity || 10)));
 
   const handleQuickShop = async (e) => {
+    console.log('[QuickViewModal] handleQuickShop clicked - product:', product?.id, product?.title);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    console.log('[QuickViewModal] handleQuickShop - addToCart type:', typeof addToCart);
     try {
       const p = { ...product, quantity, selectedColor, selectedSize };
-      await addToCart(p);
+      console.log('[QuickViewModal] handleQuickShop - calling addToCart with:', p);
+      const result = await addToCart(p);
+      console.log('[QuickViewModal] handleQuickShop - addToCart result:', result);
+      console.log('[QuickViewModal] handleQuickShop - navigating to cart');
       router.push('/cart');
-      if (onClose) onClose();
+      if (onClose) {
+        console.log('[QuickViewModal] handleQuickShop - calling onClose');
+        onClose();
+      }
     } catch (err) {
-      console.error('Quick shop error:', err);
+      console.error('[QuickViewModal] Quick shop error:', err);
     }
   };
 
   const handleAddToCart = async (e) => {
+    console.log('[QuickViewModal] handleAddToCart clicked - product:', product?.id, product?.title);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    console.log('[QuickViewModal] handleAddToCart - addToCart type:', typeof addToCart);
+    console.log('[QuickViewModal] handleAddToCart - openCartDrawer type:', typeof openCartDrawer);
     try {
       const p = { ...product, quantity, selectedColor, selectedSize };
-      await addToCart(p);
-      openCartDrawer();
+      console.log('[QuickViewModal] handleAddToCart - calling addToCart with:', p);
+      const result = await addToCart(p);
+      console.log('[QuickViewModal] handleAddToCart - addToCart result:', result);
+      console.log('[QuickViewModal] handleAddToCart - calling openCartDrawer');
+      if (typeof openCartDrawer === 'function') {
+        openCartDrawer();
+        console.log('[QuickViewModal] handleAddToCart - openCartDrawer called');
+      }
+      if (typeof document !== 'undefined') {
+        try {
+          document.body.dispatchEvent(new CustomEvent('usave:openCart'));
+          console.log('[QuickViewModal] Dispatched usave:openCart event');
+        } catch (err) {
+          console.error('[QuickViewModal] Error dispatching open event:', err);
+        }
+      }
     } catch (err) {
-      console.error('Add to cart error:', err);
+      console.error('[QuickViewModal] Add to cart error:', err);
     }
   };
 

@@ -7,6 +7,8 @@ import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
 import LoggingToggle from "./components/debug/LoggingToggle";
 
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,7 +30,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
+      <body suppressHydrationWarning={true} className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
         <Providers>
           <Navbar />
           <main className="flex-grow">

@@ -23,43 +23,63 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
   const goToProduct = () => router.push(`/products/${item.id}`);
   
   const handleWishlistToggle = async (e) => {
+    console.log('[ProductCard] handleWishlistToggle clicked - item:', item?.id, item?.title);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    console.log('[ProductCard] handleWishlistToggle - toggleWishlist type:', typeof toggleWishlist);
     setIsAddingToWishlist(true);
     try {
-      await toggleWishlist(item);
+      const result = await toggleWishlist(item);
+      console.log('[ProductCard] handleWishlistToggle - result:', result);
     } catch (error) {
-      console.error('Wishlist error:', error);
+      console.error('[ProductCard] Wishlist error:', error);
     } finally {
       setIsAddingToWishlist(false);
     }
   };
 
   const quickShop = async (e) => {
+    console.log('[ProductCard] quickShop clicked - item:', item?.id, item?.title);
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     try {
-      await addToCart(item);
+      console.log('[ProductCard] quickShop - addToCart type:', typeof addToCart);
+      const result = await addToCart(item);
+      console.log('[ProductCard] quickShop - addToCart result:', result);
       router.push('/cart');
     } catch (error) {
-      console.error('Quick shop error:', error);
+      console.error('[ProductCard] Quick shop error:', error);
     }
   };
 
   const handleAddToCart = async (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    console.log('[ProductCard] handleAddToCart clicked - item:', item?.id, item?.title);
+    if (!e) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('[ProductCard] handleAddToCart - addToCart type:', typeof addToCart);
+    console.log('[ProductCard] handleAddToCart - openCartDrawer type:', typeof openCartDrawer);
+    
     try {
-      await addToCart(item);
-      openCartDrawer();
+      if (addToCart && typeof addToCart === 'function') {
+        const result = await addToCart(item);
+        console.log('[ProductCard] handleAddToCart - addToCart result:', result);
+        if (result?.success && openCartDrawer && typeof openCartDrawer === 'function') {
+          console.log('[ProductCard] handleAddToCart - calling openCartDrawer');
+          openCartDrawer();
+          console.log('[ProductCard] handleAddToCart - openCartDrawer called');
+        }
+      } else {
+        console.error('[ProductCard] handleAddToCart - functions not available');
+      }
     } catch (error) {
-      console.error('Add to cart error:', error);
+      console.error('[ProductCard] Add to cart error:', error);
     }
   };
 

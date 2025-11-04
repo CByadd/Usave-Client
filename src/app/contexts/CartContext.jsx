@@ -51,12 +51,14 @@ export const CartProvider = ({ children }) => {
     try {
       const savedCart = localStorage.getItem('cartItems');
       if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
+        const parsed = JSON.parse(savedCart);
+        console.log('[CartContext] Loading cart from localStorage:', parsed.length, 'items');
+        setCartItems(parsed);
       }
     } catch (error) {
-      console.error('Error loading cart:', error);
+      console.error('[CartContext] Error loading cart:', error);
     }
-  }, []);
+  };
 
   // Save cart to localStorage whenever cartItems changes
   useEffect(() => {
@@ -67,7 +69,7 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error('Error saving cart to localStorage:', error);
     }
-  }, [cartItems]);
+  };
 
   // Calculate cart totals
   const calculateTotals = () => {
@@ -101,30 +103,31 @@ export const CartProvider = ({ children }) => {
     
     try {
       if (!product || !product.id) {
-        console.error('Invalid product:', product);
+        console.error('[CartContext] Invalid product:', product);
+        setIsLoading(false);
         return { success: false, error: 'Invalid product' };
       }
 
-      if (!useServerCart) {
-        // Mock API behavior
-        const existingItemIndex = cartItems.findIndex(
+      // Simple state update using functional form
+      setCartItems(prevItems => {
+        const existingItemIndex = prevItems.findIndex(
           item => item.id === product.id
         );
 
+        let updatedCart;
         if (existingItemIndex > -1) {
           // Item exists, update quantity
-          const updatedCart = [...cartItems];
+          updatedCart = [...prevItems];
           updatedCart[existingItemIndex].quantity += quantity;
           
-          // Ensure quantity doesn't exceed stock limit (if applicable)
+          // Ensure quantity doesn't exceed stock limit
           if (updatedCart[existingItemIndex].maxQuantity && 
               updatedCart[existingItemIndex].quantity > updatedCart[existingItemIndex].maxQuantity) {
             updatedCart[existingItemIndex].quantity = updatedCart[existingItemIndex].maxQuantity;
             setError(`Maximum quantity available: ${updatedCart[existingItemIndex].maxQuantity}`);
           }
           
-          setCartItems(updatedCart);
-          console.log('Updated cart item quantity');
+          console.log('[CartContext] Updated cart item quantity, new cart length:', updatedCart.length);
         } else {
           // New item
           const cartItem = {
@@ -134,7 +137,7 @@ export const CartProvider = ({ children }) => {
             originalPrice: product.originalPrice,
             discountedPrice: product.discountedPrice,
             quantity: Math.min(quantity, product.maxQuantity || 10),
-            inStock: product.inStock,
+            inStock: product.inStock !== false,
             maxQuantity: product.maxQuantity || 10,
             category: product.category,
             description: product.description,
@@ -143,19 +146,31 @@ export const CartProvider = ({ children }) => {
             addedAt: new Date().toISOString()
           };
           
-          setCartItems([...cartItems, cartItem]);
-          console.log('Added new item to cart:', cartItem.title);
+          updatedCart = [...prevItems, cartItem];
+          console.log('[CartContext] Added new item to cart:', cartItem.title, 'new cart length:', updatedCart.length);
         }
-      }
+        
+        // Save to localStorage immediately
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+            console.log('[CartContext] Saved cart to localStorage, items:', updatedCart.length);
+          } catch (error) {
+            console.error('[CartContext] Error saving cart to localStorage:', error);
+          }
+        }
+        
+        return updatedCart;
+      });
       
+      setIsLoading(false);
       return { success: true };
     } catch (error) {
-      console.error('addToCart error:', error);
+      console.error('[CartContext] addToCart error:', error);
       const errorMessage = error.response?.data?.message || 'Failed to add item to cart. Please try again.';
       setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
       setIsLoading(false);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -163,14 +178,8 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId) => {
     setError(null);
     try {
-      if (!useServerCart) {
-        setCartItems(cartItems.filter(item => item.id !== productId));
-        return { success: true };
-      } else {
-        // Server cart disabled by requirement
-        setCartItems(cartItems.filter(item => item.id !== productId));
-        return { success: true };
-      }
+      setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+      return { success: true };
     } catch (error) {
       const errorMessage = 'Failed to remove item from cart. Please try again.';
       setError(errorMessage);
@@ -186,8 +195,8 @@ export const CartProvider = ({ children }) => {
         return removeFromCart(productId);
       }
 
-      if (!useServerCart) {
-        const updatedCart = cartItems.map(item => {
+      setCartItems(prevItems => {
+        const updatedCart = prevItems.map(item => {
           if (item.id === productId) {
             if (item.maxQuantity && newQuantity > item.maxQuantity) {
               setError(`Maximum quantity available: ${item.maxQuantity}`);
@@ -197,14 +206,9 @@ export const CartProvider = ({ children }) => {
           }
           return item;
         });
-        setCartItems(updatedCart);
-        return { success: true };
-      } else {
-        // Server cart disabled by requirement
-        const updatedCart = cartItems.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item);
-        setCartItems(updatedCart);
-        return { success: true };
-      }
+        return updatedCart;
+      });
+      return { success: true };
     } catch (error) {
       const errorMessage = 'Failed to update quantity. Please try again.';
       setError(errorMessage);
@@ -239,7 +243,7 @@ export const CartProvider = ({ children }) => {
 
   // Toggle installation for an item
   const toggleInstallation = (productId, includeInstallation) => {
-    setCartItems(cartItems.map(item => 
+    setCartItems(prevItems => prevItems.map(item => 
       item.id === productId 
         ? { 
             ...item, 
@@ -320,7 +324,9 @@ export const CartProvider = ({ children }) => {
 
   // Get cart count
   const getCartCount = () => {
-    return cartItems.reduce((count, item) => count + item.quantity, 0);
+    const count = cartItems.reduce((count, item) => count + item.quantity, 0);
+    console.log('[CartContext] getCartCount called, cartItems:', cartItems.length, 'total quantity:', count);
+    return count;
   };
 
   // Get cart total
@@ -348,7 +354,7 @@ export const CartProvider = ({ children }) => {
     // Actions
     addToCart,
     removeFromCart,
-    removeItem,
+    removeItem: removeFromCart, // alias
     updateQuantity,
     clearCart,
     isInCart,
