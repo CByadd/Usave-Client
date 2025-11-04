@@ -50,7 +50,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0B4866]"></div>
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAuthenticated || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
+  if (!isAuthenticated() || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')) {
     return null; // Will redirect
   }
 
