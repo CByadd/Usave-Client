@@ -137,24 +137,17 @@ const ProductListingPage = () => {
   ];
 
   useEffect(() => {
-    // initialize with context results or fallback
-    if (searchResults && searchResults.length > 0) {
-      setProducts(searchResults);
-      setTotalPages(1);
-      setPage(1);
-    } else {
-      setProducts(fallbackProducts);
-      setTotalPages(1);
-      setPage(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchResults]);
+    // initialize with fallback products
+    setProducts(fallbackProducts);
+    setTotalPages(1);
+    setPage(1);
+  }, []);
 
   const loadMore = async () => {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const response = await productService.getAllProducts({ ...filters, page: nextPage, limit: 12 });
+      const response = await productService.getAllProducts({ page: nextPage, limit: 12 });
       const newItems = response.data.products || [];
       setProducts(prev => [...prev, ...newItems]);
       setPage(nextPage);
@@ -181,7 +174,7 @@ const ProductListingPage = () => {
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal text-gray-800 mb-2">
-            Search results for <span className="font-medium">"{searchQuery || 'All Products'}"</span>
+            Search results for <span className="font-medium">"All Products"</span>
           </h1>
           <p className="text-sm md:text-base text-gray-600">{products.length} results</p>
         </div>
