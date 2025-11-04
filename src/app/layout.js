@@ -5,6 +5,7 @@ import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
+import CartInitializer from "./components/cart/CartInitializer";
 import LoggingToggle from "./components/debug/LoggingToggle";
 import ToastContainerWrapper from "./components/shared/ToastContainerWrapper";
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body suppressHydrationWarning={true} className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
         <Providers>
+          <CartInitializer />
           <Navbar />
           <main className="flex-grow">
             {children}

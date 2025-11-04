@@ -1,34 +1,31 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, Minus, Heart, Trash2, ShoppingBag } from 'lucide-react';
-import { fetchCart, getCartItems, getCartTotals, removeFromCart, addToCart } from '../lib/cart';
-import { addToWishlist } from '../lib/wishlist';
+import { useCart } from '../stores/useCartStore';
+import { useWishlist } from '../contexts/WishlistContext';
 import { showToast } from '../lib/ui';
 
 const CartPage = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [totals, setTotals] = useState({ subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 });
-  const [error, setError] = useState(null);
   const router = useRouter();
+  const { 
+    cartItems, 
+    totals, 
+    isLoading, 
+    error, 
+    updateQuantity, 
+    removeFromCart, 
+    loadCart 
+  } = useCart();
+  const { addToWishlist } = useWishlist();
 
   useEffect(() => {
     loadCart();
-  }, []);
+  }, [loadCart]);
 
-  const loadCart = async () => {
-    try {
-      const { items, totals: cartTotals } = await fetchCart();
-      setCartItems(items);
-      setTotals(cartTotals);
-    } catch (err) {
-      setError(err.message || 'Failed to load cart');
-    }
-  };
-
-  const updateQuantity = async (itemId, newQuantity) => {
+  const handleUpdateQuantity = async (itemId, newQuantity) => {
     if (newQuantity < 1) {
       await handleRemove(itemId);
       return;
@@ -37,10 +34,10 @@ const CartPage = () => {
     if (!item) return;
     
     try {
-      // Remove and re-add with new quantity
-      await removeFromCart(item.productId || item.id);
-      await addToCart(item.productId || item.id, newQuantity);
-      await loadCart();
+      const result = await updateQuantity(item.productId || item.id, newQuantity);
+      if (!result.success) {
+        showToast(result.error || 'Failed to update quantity', 'error');
+      }
     } catch (err) {
       showToast(err.message || 'Failed to update quantity', 'error');
     }
@@ -206,7 +203,7 @@ const CartPage = () => {
                           {/* Quantity Controls */}
                           <div className="flex items-center gap-2 border border-gray-300 rounded-lg">
                             <button
-                              onClick={() => updateQuantity(itemId, item.quantity - 1)}
+                              onClick={() => handleUpdateQuantity(itemId, item.quantity - 1)}
                               className="px-3 py-1 hover:bg-gray-100 transition-colors"
                               disabled={item.quantity <= 1}
                             >
@@ -214,7 +211,7 @@ const CartPage = () => {
                             </button>
                             <span className="px-2 text-sm font-medium">{item.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                              onClick={() => handleUpdateQuantity(itemId, item.quantity + 1)}
                               className="px-3 py-1 hover:bg-gray-100 transition-colors"
                               disabled={item.quantity >= (product.maxQuantity || item.maxQuantity || 10)}
                             >

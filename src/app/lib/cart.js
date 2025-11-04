@@ -6,10 +6,15 @@ import { isAuthenticated } from './auth';
 let cartItems = [];
 let totals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
 
+// localStorage key
+const CART_STORAGE_KEY = 'usave_cart';
+
 // Calculate totals from cart items
 const calculateTotals = (items) => {
   const subtotal = items.reduce((sum, item) => {
-    const price = item.product?.discountedPrice || item.product?.originalPrice || 0;
+    // Handle both API format (item.product) and localStorage format (direct properties)
+    const price = item.product?.discountedPrice || item.product?.originalPrice || 
+                  item.discountedPrice || item.originalPrice || item.price || 0;
     return sum + (price * item.quantity);
   }, 0);
   
@@ -21,70 +26,188 @@ const calculateTotals = (items) => {
   return { subtotal, tax, shipping, total, itemCount };
 };
 
-// Fetch cart from API
-export const fetchCart = async () => {
-  if (!isAuthenticated()) {
-    cartItems = [];
-    totals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
-    return { items: [], totals };
-  }
-
+// Load cart from localStorage
+const loadCartFromStorage = () => {
+  if (typeof window === 'undefined') return [];
+  
   try {
-    const response = await apiService.cart.get();
-    if (response.success && response.data) {
-      cartItems = response.data.items || [];
-      totals = calculateTotals(cartItems);
-      return { items: cartItems, totals };
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
     }
   } catch (err) {
-    console.error('Error fetching cart:', err);
-    return { items: [], totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 } };
+    console.error('Error loading cart from localStorage:', err);
   }
+  return [];
+};
+
+// Save cart to localStorage
+const saveCartToStorage = (items) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.error('Error saving cart to localStorage:', err);
+  }
+};
+
+// Fetch cart - loads from localStorage first, then syncs with API if authenticated
+export const fetchCart = async () => {
+  // Always load from localStorage first
+  cartItems = loadCartFromStorage();
+  totals = calculateTotals(cartItems);
+
+  // If authenticated, try to sync with API
+  if (isAuthenticated()) {
+    try {
+      const response = await apiService.cart.get();
+      if (response.success && response.data && response.data.items) {
+        // API has cart data, use it and update localStorage
+        cartItems = response.data.items || [];
+        saveCartToStorage(cartItems);
+        totals = calculateTotals(cartItems);
+        return { items: cartItems, totals };
+      }
+    } catch (err) {
+      // API failed, use localStorage data
+      console.log('API cart unavailable, using localStorage');
+    }
+  }
+
+  totals = calculateTotals(cartItems);
   return { items: cartItems, totals };
 };
 
-// Add to cart
-export const addToCart = async (productId, quantity = 1) => {
-  if (!isAuthenticated()) {
-    return { success: false, error: 'Please login to add items to cart' };
+// Add to cart - accepts product object or productId
+export const addToCart = async (productOrId, quantity = 1) => {
+  // Load current cart
+  await fetchCart();
+  
+  // Determine product ID and product data
+  let productId;
+  let productData;
+  
+  if (typeof productOrId === 'object' && productOrId !== null) {
+    // Product object provided
+    productId = productOrId.id || productOrId.productId;
+    productData = productOrId;
+  } else {
+    // Just product ID provided
+    productId = productOrId;
+    productData = null;
   }
 
-  try {
-    const response = await apiService.cart.addItem(productId, quantity);
-    if (response.success) {
-      await fetchCart(); // Refresh cart
-      return { success: true };
-    } else {
-      return { success: false, error: response.message || 'Failed to add to cart' };
-    }
-  } catch (err) {
-    const errorMessage = err.response?.data?.error || err.message || 'Failed to add item to cart';
-    return { success: false, error: errorMessage };
+  if (!productId) {
+    return { success: false, error: 'Product ID is required' };
   }
+
+  // Check if item already exists in cart
+  const existingItemIndex = cartItems.findIndex(
+    item => item.productId === productId || item.id === productId || 
+            item.product?.id === productId
+  );
+
+  if (existingItemIndex >= 0) {
+    // Update quantity
+    cartItems[existingItemIndex].quantity += quantity;
+  } else {
+    // Add new item
+    const newItem = {
+      id: `cart_${Date.now()}_${productId}`,
+      productId: productId,
+      quantity: quantity,
+      ...(productData && {
+        product: productData,
+        // Also store direct properties for easier access
+        title: productData.title || productData.name,
+        image: productData.image,
+        discountedPrice: productData.discountedPrice || productData.price,
+        originalPrice: productData.originalPrice || productData.price,
+        price: productData.discountedPrice || productData.originalPrice || productData.price,
+      }),
+    };
+    cartItems.push(newItem);
+  }
+
+  // Save to localStorage
+  saveCartToStorage(cartItems);
+  totals = calculateTotals(cartItems);
+
+  // If authenticated, try to sync with API
+  if (isAuthenticated()) {
+    try {
+      const response = await apiService.cart.addItem(productId, quantity);
+      if (response.success) {
+        // Sync with API response if available
+        await fetchCart();
+        return { success: true };
+      }
+    } catch (err) {
+      // API failed, but localStorage is updated
+      console.log('API cart unavailable, saved to localStorage');
+    }
+  }
+
+  return { success: true };
 };
 
 // Remove from cart
 export const removeFromCart = async (productId) => {
-  if (!isAuthenticated()) {
-    return { success: false, error: 'Please login' };
+  // Load current cart
+  await fetchCart();
+
+  // Find and remove item
+  const itemIndex = cartItems.findIndex(
+    item => item.productId === productId || item.id === productId || 
+            item.product?.id === productId
+  );
+
+  if (itemIndex >= 0) {
+    cartItems.splice(itemIndex, 1);
+    saveCartToStorage(cartItems);
+    totals = calculateTotals(cartItems);
+
+    // If authenticated, try to sync with API
+    if (isAuthenticated()) {
+      try {
+        const response = await apiService.cart.removeItem(productId);
+        if (response.success) {
+          // Sync with API response if available
+          await fetchCart();
+          return { success: true };
+        }
+        // If API says item not found, that's okay - it might have been only in localStorage
+        if (response.error && response.error.includes('not found')) {
+          return { success: true };
+        }
+      } catch (err) {
+        // Check if error is about item not found
+        const errorMessage = err.response?.data?.error || err.message || '';
+        if (errorMessage.includes('not found') || errorMessage.includes('Cart item not found')) {
+          // Item was only in localStorage, removal successful
+          return { success: true };
+        }
+        // Other API errors - localStorage is still updated
+        console.log('API cart unavailable, removed from localStorage');
+      }
+    }
+
+    return { success: true };
   }
 
-  try {
-    const response = await apiService.cart.removeItem(productId);
-    if (response.success) {
-      await fetchCart(); // Refresh cart
-      return { success: true };
-    } else {
-      return { success: false, error: response.message || 'Failed to remove item' };
-    }
-  } catch (err) {
-    const errorMessage = err.response?.data?.error || err.message || 'Failed to remove item';
-    return { success: false, error: errorMessage };
-  }
+  return { success: false, error: 'Item not found in cart' };
 };
 
 // Get cart items
-export const getCartItems = () => cartItems;
+export const getCartItems = () => {
+  // Make sure cart is loaded
+  if (cartItems.length === 0 && typeof window !== 'undefined') {
+    cartItems = loadCartFromStorage();
+    totals = calculateTotals(cartItems);
+  }
+  return cartItems;
+};
 
 // Get cart totals
 export const getCartTotals = () => totals;
@@ -94,7 +217,15 @@ export const getCartCount = () => totals.itemCount || 0;
 
 // Check if item is in cart
 export const isInCart = (productId) => {
-  return cartItems.some(item => item.productId === productId || item.product?.id === productId);
+  // Make sure cart is loaded
+  if (cartItems.length === 0 && typeof window !== 'undefined') {
+    cartItems = loadCartFromStorage();
+  }
+  return cartItems.some(item => 
+    item.productId === productId || 
+    item.id === productId || 
+    item.product?.id === productId
+  );
 };
 
 // Get item quantity
@@ -102,4 +233,70 @@ export const getItemQuantity = (productId) => {
   const item = cartItems.find(item => item.productId === productId || item.product?.id === productId);
   return item ? item.quantity : 0;
 };
+
+// Update item quantity
+export const updateQuantity = async (productId, quantity) => {
+  if (quantity <= 0) {
+    return await removeFromCart(productId);
+  }
+
+  // Load current cart
+  await fetchCart();
+
+  const itemIndex = cartItems.findIndex(
+    item => item.productId === productId || item.id === productId || 
+            item.product?.id === productId
+  );
+
+  if (itemIndex >= 0) {
+    cartItems[itemIndex].quantity = quantity;
+    saveCartToStorage(cartItems);
+    totals = calculateTotals(cartItems);
+
+    // If authenticated, try to sync with API
+    if (isAuthenticated()) {
+      try {
+        const response = await apiService.cart.update?.(productId, quantity);
+        if (response?.success) {
+          await fetchCart();
+          return { success: true };
+        }
+      } catch (err) {
+        console.log('API cart unavailable, updated localStorage');
+      }
+    }
+
+    return { success: true };
+  }
+
+  return { success: false, error: 'Item not found in cart' };
+};
+
+// Clear cart
+export const clearCart = async () => {
+  cartItems = [];
+  totals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
+  saveCartToStorage([]);
+
+  // If authenticated, try to sync with API
+  if (isAuthenticated()) {
+    try {
+      const response = await apiService.cart.clear?.();
+      if (response?.success) {
+        await fetchCart();
+        return { success: true };
+      }
+    } catch (err) {
+      console.log('API cart unavailable, cleared localStorage');
+    }
+  }
+
+  return { success: true };
+};
+
+// Initialize cart from localStorage on module load
+if (typeof window !== 'undefined') {
+  cartItems = loadCartFromStorage();
+  totals = calculateTotals(cartItems);
+}
 

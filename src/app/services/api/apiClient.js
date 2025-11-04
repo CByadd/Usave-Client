@@ -209,8 +209,18 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Get cart error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: true, data: { items: [] } };
+        }
+        // Only log meaningful errors (not empty objects)
+        const errorData = error.response?.data;
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Get cart error:', errorData);
+        }
+        // Return empty cart on error instead of throwing
+        return { success: true, data: { items: [] } };
       }
     },
     
@@ -229,8 +239,18 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Add to cart error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: false, error: 'Cart endpoint not available' };
+        }
+        // Only log meaningful errors (not empty objects)
+        const errorData = error.response?.data;
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Add to cart error:', errorData);
+        }
+        // Return error response instead of throwing
+        return { success: false, error: errorData?.error || error.message || 'Failed to add item to cart' };
       }
     },
     
@@ -248,8 +268,29 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Remove from cart error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: false, error: 'Cart endpoint not available' };
+        }
+        
+        // Get error data
+        const errorData = error.response?.data;
+        const errorMessage = errorData?.error || error.message || 'Failed to remove item from cart';
+        
+        // If item not found error (500), return it without logging
+        // This happens when item exists in localStorage but not in API - it's expected
+        if (status === 500 && (errorMessage.includes('not found') || errorMessage.includes('Cart item not found'))) {
+          return { success: false, error: errorMessage };
+        }
+        
+        // Only log meaningful errors (not empty objects and not "not found" errors)
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0 && !errorMessage.includes('not found')) {
+          console.error('API: Remove from cart error:', errorData);
+        }
+        
+        // Return error response instead of throwing
+        return { success: false, error: errorMessage };
       }
     },
   },
@@ -308,8 +349,18 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Get wishlist error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: true, data: { items: [] } };
+        }
+        // Only log meaningful errors (not empty objects)
+        const errorData = error.response?.data;
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Get wishlist error:', errorData);
+        }
+        // Return empty wishlist on error instead of throwing
+        return { success: true, data: { items: [] } };
       }
     },
     
@@ -328,8 +379,18 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Add to wishlist error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: false, error: 'Wishlist endpoint not available' };
+        }
+        // Only log meaningful errors (not empty objects)
+        const errorData = error.response?.data;
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Add to wishlist error:', errorData);
+        }
+        // Return error response instead of throwing
+        return { success: false, error: errorData?.error || error.message || 'Failed to add item to wishlist' };
       }
     },
     
@@ -347,8 +408,18 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Remove from wishlist error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: false, error: 'Wishlist endpoint not available' };
+        }
+        // Only log meaningful errors (not empty objects)
+        const errorData = error.response?.data;
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Remove from wishlist error:', errorData);
+        }
+        // Return error response instead of throwing
+        return { success: false, error: errorData?.error || error.message || 'Failed to remove item from wishlist' };
       }
     },
     
@@ -365,8 +436,18 @@ export const apiService = {
         );
         return response.data;
       } catch (error) {
-        console.error('API: Clear wishlist error:', error.response?.data || error.message);
-        throw error;
+        // Handle 404 and other errors gracefully - endpoint may not exist yet
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: false, error: 'Wishlist endpoint not available' };
+        }
+        // Only log meaningful errors (not empty objects)
+        const errorData = error.response?.data;
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Clear wishlist error:', errorData);
+        }
+        // Return error response instead of throwing
+        return { success: false, error: errorData?.error || error.message || 'Failed to clear wishlist' };
       }
     },
   },

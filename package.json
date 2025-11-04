@@ -11,6 +11,7 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^6.18.0",
     "@supabase/supabase-js": "^2.78.0",
+    "@tanstack/react-query": "^5.90.6",
     "@types/uuid": "^10.0.0",
     "axios": "^1.13.1",
     "bcryptjs": "^3.0.2",
@@ -26,7 +27,8 @@
     "react-icons": "^5.5.0",
     "resend": "^6.4.0",
     "tailwind-scrollbar-hide": "^4.0.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",

@@ -2,37 +2,40 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { fetchCart, removeFromCart } from '../../lib/cart';
+import { useCart } from '../../stores/useCartStore';
+import { useUIStore } from '../../stores/useUIStore';
 import OptimizedImage from '../shared/OptimizedImage';
 
 const CartDrawer = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [totals, setTotals] = useState({ subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 });
+  const { 
+    cartItems, 
+    totals, 
+    isLoading, 
+    updateQuantity, 
+    removeFromCart, 
+    loadCart 
+  } = useCart();
+  
+  // Use UI store for drawer state
+  const isCartDrawerOpen = useUIStore((state) => state.isCartDrawerOpen);
+  const closeCartDrawer = useUIStore((state) => state.closeCartDrawer);
+  
   const [isUpdating, setIsUpdating] = useState({});
-  const [forceOpen, setForceOpen] = useState(false);
-  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
 
   // Load cart on mount
   useEffect(() => {
     loadCart();
-  }, []);
-
-  const loadCart = async () => {
-    const { items, totals: cartTotals } = await fetchCart();
-    setCartItems(items);
-    setTotals(cartTotals);
-  };
+  }, [loadCart]);
   
 
+  // Listen for custom events for backward compatibility
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const onOpen = () => {
-      setForceOpen(true);
-      setIsCartDrawerOpen(true);
+      useUIStore.getState().openCartDrawer();
     };
     const onClose = () => {
-      setForceOpen(false);
-      setIsCartDrawerOpen(false);
+      useUIStore.getState().closeCartDrawer();
     };
     document.body.addEventListener('usave:openCart', onOpen);
     document.body.addEventListener('usave:closeCart', onClose);
@@ -51,18 +54,26 @@ const CartDrawer = () => {
     }
 
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
-    // TODO: Implement updateQuantity in cart module
-    await loadCart();
-    setIsUpdating(prev => ({ ...prev, [productId]: false }));
+    try {
+      await updateQuantity(productId, newQuantity);
+    } catch (error) {
+      console.error('[CartDrawer] Error updating quantity:', error);
+    } finally {
+      setIsUpdating(prev => ({ ...prev, [productId]: false }));
+    }
     console.log('[CartDrawer] handleQuantityChange - completed');
   };
 
   const handleRemoveItem = async (productId) => {
     console.log('[CartDrawer] handleRemoveItem clicked - productId:', productId);
     setIsUpdating(prev => ({ ...prev, [productId]: true }));
-    await removeFromCart(productId);
-    await loadCart();
-    setIsUpdating(prev => ({ ...prev, [productId]: false }));
+    try {
+      await removeFromCart(productId);
+    } catch (error) {
+      console.error('[CartDrawer] Error removing item:', error);
+    } finally {
+      setIsUpdating(prev => ({ ...prev, [productId]: false }));
+    }
     console.log('[CartDrawer] handleRemoveItem - completed');
   };
 
@@ -84,9 +95,7 @@ const CartDrawer = () => {
     };
   }, [isCartDrawerOpen]);
 
-  console.log('CartDrawer render - isCartDrawerOpen:', isCartDrawerOpen, 'forceOpen:', forceOpen);
-  
-  if (!isCartDrawerOpen && !forceOpen) return null;
+  if (!isCartDrawerOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -99,8 +108,7 @@ const CartDrawer = () => {
                   e.preventDefault();
                   e.stopPropagation();
                 }
-                setIsCartDrawerOpen(false);
-                setForceOpen(false);
+                closeCartDrawer();
                 // Fallback: dispatch close event
                 if (typeof document !== 'undefined') {
                   try {

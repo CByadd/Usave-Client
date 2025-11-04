@@ -6,8 +6,8 @@ import { UserRound, Search, LogOut, ChevronDown, X, ShoppingCart, Heart, Menu } 
 import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_WHITE_BG } from '../../lib/constants';
 import { getCurrentUser, isAuthenticated, logout as logoutUser } from '../../lib/auth';
-import { getCartCount, fetchCart } from '../../lib/cart';
-import { getWishlistCount, fetchWishlist } from '../../lib/wishlist';
+import { useCart } from '../../stores/useCartStore';
+import { useWishlist } from '../../contexts/WishlistContext';
 import { openAuthDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from '../icons';
@@ -91,25 +91,15 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [isAuth, setIsAuth] = useState(false);
 
+  // Cart and wishlist contexts
+  const { getCartCount } = useCart();
+  const { getWishlistCount } = useWishlist();
+
   useEffect(() => {
     const currentUser = getCurrentUser();
     const authStatus = isAuthenticated();
     setUser(currentUser);
     setIsAuth(authStatus);
-  }, []);
-
-  const [cartCount, setCartCount] = useState(0);
-  const [wishlistCount, setWishlistCount] = useState(0);
-
-  useEffect(() => {
-    // Load cart and wishlist counts
-    const loadCounts = async () => {
-      await fetchCart();
-      await fetchWishlist();
-      setCartCount(getCartCount());
-      setWishlistCount(getWishlistCount());
-    };
-    loadCounts();
   }, []);
 
   const handleLogout = async () => {
@@ -494,9 +484,9 @@ const Navbar = () => {
     aria-label="View cart"
   >
     <ShoppingCart size={22} />
-    {cartCount > 0 && (
+    {getCartCount() > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {cartCount}
+        {getCartCount()}
       </span>
     )}
   </Link>
@@ -505,9 +495,9 @@ const Navbar = () => {
           <span className='flex items-center justify-center gap-2'>
              <Link href="/wishlist" className="relative text-gray-700 hover:text-blue-600">
     <Heart size={22} />
-    {wishlistCount > 0 && (
+    {getWishlistCount() > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {wishlistCount}
+        {getWishlistCount()}
       </span>
     )}
   </Link>
