@@ -126,17 +126,17 @@ const Navbar = () => {
   const closeSearch = useCallback(() => setIsSearchExpanded(false), []);
 
   // Render Functions
-  const renderMobileMenuButton = () => (
-    <button
-      className="md:hidden p-2 -ml-2 text-primary hover:text-blue-500 transition-colors"
-      aria-label="Toggle menu"
-      onClick={toggleMobile}
-    >
-      <span className="block h-0.5 w-5 bg-current mb-1" />
-      <span className="block h-0.5 w-5 bg-current mb-1" />
-      <span className="block h-0.5 w-5 bg-current" />
-    </button>
-  );
+  // const renderMobileMenuButton = () => (
+  //   <button
+  //     className="md:hidden p-2 -ml-2 text-primary hover:text-blue-500 transition-colors"
+  //     aria-label="Toggle menu"
+  //     onClick={toggleMobile}
+  //   >
+  //     <span className="block h-0.5 w-5 bg-current mb-1" />
+  //     <span className="block h-0.5 w-5 bg-current mb-1" />
+  //     <span className="block h-0.5 w-5 bg-current" />
+  //   </button>
+  // );
 
   const renderLogo = () => (
     <div className="flex items-center gap-2">
@@ -152,48 +152,48 @@ const Navbar = () => {
     </div>
   );
 
-  const renderDesktopNavigation = () => (
-    <div className="hidden md:flex items-center justify-between w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center space-x-8">
-        {renderLogo()}
-        <nav className="hidden md:flex space-x-8">
-          {mainNavLinks.map((item) => (
-            <Link 
-              key={item.name}
-              href={item.href} 
-              className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors"
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-      </div>
+  // const renderDesktopNavigation = () => (
+  //   <div className="hidden md:flex items-center justify-between w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  //     <div className="flex items-center space-x-8">
+  //       {renderLogo()}
+  //       <nav className="hidden md:flex space-x-8">
+  //         {mainNavLinks.map((item) => (
+  //           <Link 
+  //             key={item.name}
+  //             href={item.href} 
+  //             className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors"
+  //           >
+  //             {item.name}
+  //           </Link>
+  //         ))}
+  //       </nav>
+  //     </div>
       
-    </div>
-  );
+  //   </div>
+  // );
 
-  const renderMobileSearch = () => (
-    <div className="relative z-[1000]">
-      <button 
-        className="md:hidden hover:text-blue-500 transition-colors relative z-[1000]" 
-        aria-label="Search"
-        onClick={toggleSearch}
-      >
-        <Search size={20} />
-      </button>
-      {isSearchExpanded && (
-        <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex z-[60]">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-xl border border-gray-100 p-3">
-            <SearchBar 
-              isMobile 
-              isExpanded={isSearchExpanded}
-              onToggle={toggleSearch}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // const renderMobileSearch = () => (
+  //   <div className="relative z-[1000]">
+  //     <button 
+  //       className="md:hidden hover:text-blue-500 transition-colors relative z-[1000]" 
+  //       aria-label="Search"
+  //       onClick={toggleSearch}
+  //     >
+  //       <Search size={20} />
+  //     </button>
+  //     {isSearchExpanded && (
+  //       <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex z-[60]">
+  //         <div className="w-full max-w-md bg-white rounded-lg shadow-xl border border-gray-100 p-3">
+  //           <SearchBar 
+  //             isMobile 
+  //             isExpanded={isSearchExpanded}
+  //             onToggle={toggleSearch}
+  //           />
+  //         </div>
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 
   const renderSearchBar = () => (
     <div className="hidden md:flex flex-1 w-[600px] mx-4">
@@ -297,24 +297,24 @@ const Navbar = () => {
 };
 
 
-  const renderMobileCategories = () => (
-    <div className="md:hidden w-full z-50">
-      <div className="overflow-x-auto py-2 px-4">
-        <div className="flex space-x-4">
-          {categoryLinks.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="whitespace-nowrap text-sm font-medium text-gray-700 hover:text-blue-500 px-3 py-1 rounded-full bg-gray-100"
-              onClick={closeMobile}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  // const renderMobileCategories = () => (
+  //   <div className="md:hidden w-full z-50">
+  //     <div className="overflow-x-auto py-2 px-4">
+  //       <div className="flex space-x-4">
+  //         {categoryLinks.map((item) => (
+  //           <Link
+  //             key={item.name}
+  //             href={item.href}
+  //             className="whitespace-nowrap text-sm font-medium text-gray-700 hover:text-blue-500 px-3 py-1 rounded-full bg-gray-100"
+  //             onClick={closeMobile}
+  //           >
+  //             {item.name}
+  //           </Link>
+  //         ))}
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
 
   const renderMobileDrawer = () => (
     <AnimatePresence>

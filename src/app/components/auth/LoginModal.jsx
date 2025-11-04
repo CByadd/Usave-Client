@@ -1,10 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useUI } from '../../contexts/UIContext';
+import { login } from '../../lib/auth';
+import { showToast } from '../../lib/ui';
 
-const LoginModal = () => {
+const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -12,9 +12,6 @@ const LoginModal = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const { login } = useAuth();
-  const { isLoginModalOpen, closeLoginModal, openRegisterModal } = useUI();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,44 +27,43 @@ const LoginModal = () => {
     setIsLoading(true);
     setError('');
 
-    const result = await login({ email: formData.email, password: formData.password });
+    const result = await login(formData.email, formData.password);
     
     if (result.success) {
-      closeLoginModal();
+      showToast('Login successful', 'success');
+      if (onClose) onClose();
       setFormData({ email: '', password: '' });
+      window.location.reload();
     } else {
-      setError(result.error);
+      setError(result.error || 'Login failed');
+      showToast(result.error || 'Login failed', 'error');
     }
     
     setIsLoading(false);
   };
 
   const handleSwitchToRegister = () => {
-    closeLoginModal();
-    openRegisterModal();
+    if (onClose) onClose();
+    if (onSwitchToRegister) onSwitchToRegister();
   };
 
-  if (!isLoginModalOpen) return null;
+  if (!isOpen) return null;
 
   return (
    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-
       <div className="bg-white rounded-lg w-full max-w-md relative">
-        {/* Close button */}
         <button
-          onClick={closeLoginModal}
+          onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
         >
           <X size={24} />
         </button>
 
-        {/* Header */}
         <div className="p-6 pb-4">
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">Welcome Back</h2>
           <p className="text-gray-600">Sign in to your account to continue</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 pt-0">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -75,7 +71,6 @@ const LoginModal = () => {
             </div>
           )}
 
-          {/* Email */}
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
@@ -95,7 +90,6 @@ const LoginModal = () => {
             </div>
           </div>
 
-          {/* Password */}
           <div className="mb-6">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               Password
@@ -122,7 +116,6 @@ const LoginModal = () => {
             </div>
           </div>
 
-          {/* Submit button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -131,7 +124,6 @@ const LoginModal = () => {
             {isLoading ? 'Signing In...' : 'Sign In'}
           </button>
 
-          {/* Forgot password */}
           <div className="mt-4 text-center">
             <button
               type="button"
@@ -141,7 +133,6 @@ const LoginModal = () => {
             </button>
           </div>
 
-          {/* Switch to register */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
               Don't have an account?{' '}

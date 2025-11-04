@@ -603,7 +603,7 @@ export default function CheckoutPage() {
                       setShowApprovalModal(true);
                     }
                   }}
-                  className="w-full bg-[#0F4C81] border  border-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-white  border  border-[#0F4C81] text-[#0F4C81] py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Processing...' : 'Submit for Approval'}

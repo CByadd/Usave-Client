@@ -1,10 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useUI } from '../../contexts/UIContext';
+import { register } from '../../lib/auth';
+import { showToast } from '../../lib/ui';
 
-const RegisterModal = () => {
+const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -18,14 +18,6 @@ const RegisterModal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
-
-  const { register } = useAuth();
-  const { isRegisterModalOpen, closeRegisterModal, openLoginModal } = useUI();
-
-  // 🪵 Simple error logger
-  const logError = (context, err) => {
-    console.error(`[RegisterModal:${context}]`, err);
-  };
 
   const validatePassword = (password) => {
     const errors = [];
@@ -46,19 +38,15 @@ const RegisterModal = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    try {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-      setError('');
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setError('');
 
-      if (name === 'password') {
-        const errors = validatePassword(value);
-        setPasswordErrors(errors);
-      }
-    } catch (err) {
-      logError(`handleChange:${name}`, err);
+    if (name === 'password') {
+      const errors = validatePassword(value);
+      setPasswordErrors(errors);
     }
   };
 
@@ -68,10 +56,8 @@ const RegisterModal = () => {
     setError('');
 
     try {
-      // ✅ Validation
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
-        logError('Validation', 'Passwords do not match');
         setIsLoading(false);
         return;
       }
@@ -79,12 +65,10 @@ const RegisterModal = () => {
       const passwordValidationErrors = validatePassword(formData.password);
       if (passwordValidationErrors.length > 0) {
         setError('Please fix password requirements');
-        logError('Validation', passwordValidationErrors);
         setIsLoading(false);
         return;
       }
 
-      // ✅ Register user
       const result = await register({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -94,8 +78,8 @@ const RegisterModal = () => {
       });
 
       if (result.success) {
-        console.info('[RegisterModal] Account created successfully');
-        closeRegisterModal();
+        showToast('Account created successfully', 'success');
+        if (onClose) onClose();
         setFormData({
           firstName: '',
           lastName: '',
@@ -105,48 +89,36 @@ const RegisterModal = () => {
           confirmPassword: ''
         });
         setPasswordErrors([]);
+        window.location.reload();
       } else {
-        setError(result.error);
-        logError('Register API', result.error);
+        setError(result.error || 'Registration failed');
+        showToast(result.error || 'Registration failed', 'error');
       }
     } catch (err) {
-      logError('Unexpected Error', err);
       setError('Something went wrong. Please try again.');
+      showToast('Something went wrong. Please try again.', 'error');
     }
 
     setIsLoading(false);
   };
 
-  const handleSwitchToLogin = () => {
-    try {
-      closeRegisterModal();
-      openLoginModal();
-    } catch (err) {
-      logError('SwitchToLogin', err);
-    }
-  };
-
-  if (!isRegisterModalOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-
       <div className="bg-white rounded-lg w-full max-w-md relative max-h-[90vh] overflow-y-auto">
-        {/* Close button */}
         <button
-          onClick={closeRegisterModal}
+          onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
         >
           <X size={24} />
         </button>
 
-        {/* Header */}
         <div className="p-6 pb-4">
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">Create Account</h2>
           <p className="text-gray-600">Join us and start shopping today</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 pt-0">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -154,7 +126,6 @@ const RegisterModal = () => {
             </div>
           )}
 
-          {/* Name fields */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -194,7 +165,6 @@ const RegisterModal = () => {
             </div>
           </div>
 
-          {/* Email */}
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
@@ -214,7 +184,6 @@ const RegisterModal = () => {
             </div>
           </div>
 
-          {/* Phone */}
           <div className="mb-4">
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number (Optional)
@@ -233,7 +202,6 @@ const RegisterModal = () => {
             </div>
           </div>
 
-          {/* Password */}
           <div className="mb-4">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               Password
@@ -267,7 +235,6 @@ const RegisterModal = () => {
             )}
           </div>
 
-          {/* Confirm Password */}
           <div className="mb-6">
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
               Confirm Password
@@ -294,7 +261,6 @@ const RegisterModal = () => {
             </div>
           </div>
 
-          {/* Submit button */}
           <button
             type="submit"
             disabled={isLoading || passwordErrors.length > 0}
@@ -303,13 +269,12 @@ const RegisterModal = () => {
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
 
-          {/* Switch to login */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={handleSwitchToLogin}
+                onClick={onSwitchToLogin}
                 className="text-[#0B4866] hover:text-[#094058] font-medium"
               >
                 Sign in

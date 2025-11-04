@@ -1,12 +1,21 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, UserRound } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentUser, isAuthenticated } from '../../lib/auth';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
 
 export default function AccountDrawer({ isOpen, onClose }) {
-  const { isAuthenticated, user } = useAuth();
+  const [user, setUser] = useState(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [activeModal, setActiveModal] = useState('login'); // 'login' or 'register'
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    const authStatus = isAuthenticated();
+    setUser(currentUser);
+    setAuthenticated(authStatus);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -22,7 +31,7 @@ export default function AccountDrawer({ isOpen, onClose }) {
             <UserRound />
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Account</h2>
-              {isAuthenticated && user && (
+              {authenticated && user && (
                 <p className="text-xs text-gray-600">{user?.firstName || user?.name?.split(' ')[0]} {user?.lastName || user?.name?.split(' ')[1] || ''}</p>
               )}
             </div>
@@ -33,10 +42,23 @@ export default function AccountDrawer({ isOpen, onClose }) {
         </div>
 
         <div className="p-0">
-          {!isAuthenticated ? (
-            <LoginModal isOpen embedded onClose={onClose} onSwitchToRegister={() => {}} />
+          {!authenticated ? (
+            <>
+              <LoginModal 
+                isOpen={activeModal === 'login'} 
+                onClose={onClose} 
+                onSwitchToRegister={() => setActiveModal('register')} 
+              />
+              <RegisterModal 
+                isOpen={activeModal === 'register'} 
+                onClose={onClose} 
+                onSwitchToLogin={() => setActiveModal('login')} 
+              />
+            </>
           ) : (
-            <RegisterModal isOpen embedded onClose={onClose} onSwitchToLogin={() => {}} />
+            <div className="p-6">
+              <p className="text-gray-600">Welcome, {user?.firstName || user?.name || 'User'}!</p>
+            </div>
           )}
         </div>
       </div>

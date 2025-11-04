@@ -3,10 +3,10 @@ import React, { useState, useEffect, Suspense } from 'react';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import { Heart, ShoppingCart, ChevronDown, SlidersHorizontal, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useSearch } from '../contexts/SearchContext';
+import { performSearch, getSearchResults, getSearchQuery } from '../lib/search';
 import { useSearchParams } from 'next/navigation';
-import { useCart } from '../contexts/CartContext';
-import { useUI } from '../contexts/UIContext';
+import { addToCart, fetchCart, getCartItems, isInCart } from '../lib/cart';
+import { openCartDrawer, showToast } from '../lib/ui';
 import { ProductGridSkeleton } from '../components/product/LoadingSkeletons';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { useRouter } from 'next/navigation';
@@ -21,31 +21,52 @@ function SearchPageContent() {
     category: false
   });
   
-  const { 
-    searchQuery, 
-    searchResults, 
-    isSearching, 
-    filters, 
-    updateFilters, 
-    performSearch,
-    hasSearched
-  } = useSearch();
-  const cartContext = useCart();
-  const uiContext = useUI();
-  
-  const { addToCart = async () => ({ success: false }), isInCart = () => false } = cartContext || {};
-  const { openCartDrawer = () => {} } = uiContext || {};
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', inStock: false });
+  const [hasSearched, setHasSearched] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  const loadCart = async () => {
+    await fetchCart();
+    setCartItems(getCartItems());
+  };
 
   // Initialize search when component mounts
   useEffect(() => {
     const query = searchParams.get('q');
     if (query && query !== searchQuery) {
-      performSearch(query);
+      handleSearch(query);
     }
-  }, [searchParams, performSearch, searchQuery]);
+  }, [searchParams]);
+
+  const handleSearch = async (query) => {
+    if (!query) return;
+    setIsSearching(true);
+    setSearchQuery(query);
+    try {
+      const results = await performSearch(query, filters);
+      setSearchResults(results);
+      setHasSearched(true);
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const updateFilters = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
 
   const products = searchResults.length > 0 ? searchResults : [
     {
@@ -396,7 +417,7 @@ function SearchPageContent() {
               <button
                 onClick={() => {
                   setSearchQuery('');
-                  performSearch('');
+                  handleSearch('');
                 }}
                 className="px-6 py-2 bg-[#0B4866] text-white rounded-lg hover:bg-[#094058] transition-colors"
               >
@@ -485,19 +506,27 @@ function SearchPageContent() {
                   <button 
                     type="button"
                     onClick={async (e) => {
-                      console.log('[SearchPage] Quick Shop clicked - product:', product?.id, product?.title);
                       if (e) {
                         e.preventDefault();
                         e.stopPropagation();
                       }
-                      console.log('[SearchPage] Quick Shop - addToCart type:', typeof addToCart);
+                      if (product.inStock === false) {
+                        showToast('This product is out of stock', 'error');
+                        return;
+                      }
                       try {
-                        const result = await addToCart(product);
-                        console.log('[SearchPage] Quick Shop - addToCart result:', result);
-                        console.log('[SearchPage] Quick Shop - navigating to cart');
-                        router.push('/cart');
+                        const productId = product.id || product.productId;
+                        const result = await addToCart(productId, 1);
+                        if (result?.success) {
+                          await loadCart();
+                          showToast('Item added to cart', 'success');
+                          router.push('/cart');
+                        } else {
+                          showToast(result.error || 'Failed to add to cart', 'error');
+                        }
                       } catch (err) {
                         console.error('[SearchPage] Quick shop error:', err);
+                        showToast(err.message || 'Failed to add to cart', 'error');
                       }
                     }}
                     className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
@@ -508,44 +537,40 @@ function SearchPageContent() {
                   <button 
                     type="button"
                     onClick={async (e) => {
-                      console.log('[SearchPage] Add to Cart clicked - product:', product?.id, product?.title);
                       if (e) {
                         e.preventDefault();
                         e.stopPropagation();
                       }
-                      console.log('[SearchPage] Add to Cart - addToCart type:', typeof addToCart);
-                      console.log('[SearchPage] Add to Cart - openCartDrawer type:', typeof openCartDrawer);
+                      if (product.inStock === false) {
+                        showToast('This product is out of stock', 'error');
+                        return;
+                      }
                       try {
-                        const result = await addToCart(product);
-                        console.log('[SearchPage] Add to Cart - addToCart result:', result);
-                        console.log('[SearchPage] Add to Cart - calling openCartDrawer');
-                        if (typeof openCartDrawer === 'function') {
+                        const productId = product.id || product.productId;
+                        const result = await addToCart(productId, 1);
+                        if (result?.success) {
+                          await loadCart();
                           openCartDrawer();
-                          console.log('[SearchPage] Add to Cart - openCartDrawer called');
-                        }
-                        if (typeof document !== 'undefined') {
-                          try {
-                            document.body.dispatchEvent(new CustomEvent('usave:openCart'));
-                            console.log('[SearchPage] Dispatched usave:openCart event');
-                          } catch (err) {
-                            console.error('[SearchPage] Error dispatching open event:', err);
-                          }
+                          showToast('Item added to cart', 'success');
+                        } else {
+                          showToast(result.error || 'Failed to add to cart', 'error');
                         }
                       } catch (err) {
                         console.error('[SearchPage] Add to cart error:', err);
+                        showToast(err.message || 'Failed to add to cart', 'error');
                       }
                     }}
                     disabled={!product.inStock}
                     className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
                       !product.inStock 
                         ? 'bg-gray-400 cursor-not-allowed' 
-                        : isInCart(product.id) 
+                        : cartItems.some(c => c.productId === product.id || c.product?.id === product.id) 
                           ? 'bg-green-600 hover:bg-green-700' 
                           : 'bg-[#0B4866] hover:bg-[#094058]'
                     }`}
                   >
                     <ShoppingCart size={16} />
-                    {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}
+                    {!product.inStock ? 'Out of Stock' : cartItems.some(c => c.productId === product.id || c.product?.id === product.id) ? 'In Cart' : 'Add to cart'}
                   </button>
                 </div>
               </div>

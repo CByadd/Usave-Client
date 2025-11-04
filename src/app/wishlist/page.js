@@ -1,45 +1,79 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Heart, ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
-import { useWishlist } from '../contexts/WishlistContext';
-import { useCart } from '../contexts/CartContext';
-import { useUI } from '../contexts/UIContext';
+import { fetchWishlist, getWishlistItems, removeFromWishlist } from '../lib/wishlist';
+import { addToCart, fetchCart, getCartItems, isInCart } from '../lib/cart';
+import { openCartDrawer, showToast } from '../lib/ui';
 
 const WishlistPage = () => {
-  const { 
-    wishlistItems, 
-    removeFromWishlist, 
-    clearWishlist,
-    error 
-  } = useWishlist();
-  const { addToCart, isInCart } = useCart();
-  const { openCartDrawer } = useUI();
-  const router = useRouter();
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const [error, setError] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [movingToCart, setMovingToCart] = useState({});
+  const router = useRouter();
 
-  React.useEffect(() => {
-    setIsAnimating(false);
+  useEffect(() => {
+    loadWishlist();
+    loadCart();
   }, []);
+
+  const loadWishlist = async () => {
+    try {
+      await fetchWishlist();
+      setWishlistItems(getWishlistItems());
+    } catch (err) {
+      setError(err.message || 'Failed to load wishlist');
+    }
+  };
+
+  const loadCart = async () => {
+    try {
+      await fetchCart();
+      setCartItems(getCartItems());
+    } catch (err) {
+      console.error('Error loading cart:', err);
+    }
+  };
 
   const handleMoveToCart = async (item) => {
     setMovingToCart(prev => ({ ...prev, [item.id]: true }));
     
-    const result = await addToCart(item);
-    
-    if (result.success) {
-      await removeFromWishlist(item.id);
-      openCartDrawer();
+    try {
+      const productId = item.productId || item.id;
+      const result = await addToCart(productId, 1);
+      
+      if (result?.success) {
+        await removeFromWishlist(productId);
+        await loadWishlist();
+        await loadCart();
+        openCartDrawer();
+        showToast('Item moved to cart', 'success');
+      } else {
+        showToast(result.error || 'Failed to add to cart', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to move to cart', 'error');
+    } finally {
+      setMovingToCart(prev => ({ ...prev, [item.id]: false }));
     }
-    
-    setMovingToCart(prev => ({ ...prev, [item.id]: false }));
   };
 
   const handleRemoveItem = async (productId) => {
-    await removeFromWishlist(productId);
+    try {
+      const result = await removeFromWishlist(productId);
+      if (result.success) {
+        await loadWishlist();
+        showToast('Item removed from wishlist', 'success');
+      } else {
+        showToast(result.error || 'Failed to remove item', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to remove item', 'error');
+    }
   };
 
   const handleContinueShopping = () => {
@@ -49,7 +83,6 @@ const WishlistPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-semibold text-[#0B4866]">Wishlist</h1>
         </div>
@@ -61,7 +94,6 @@ const WishlistPage = () => {
         )}
 
         {wishlistItems.length === 0 ? (
-          // Empty wishlist
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Heart size={64} className="text-gray-300 mb-4" />
             <h3 className="text-xl font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
@@ -75,115 +107,108 @@ const WishlistPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {wishlistItems.map((item) => (
-              <div key={item.id} className="bg-gray-50 rounded-lg p-6">
-                <div className="flex gap-6">
-                  {/* Product Image */}
-                  <div className="flex-shrink-0">
-                    <Link href={`/products/${item.id}`}>
-                      <div className="w-24 h-24 bg-white rounded-lg overflow-hidden">
-                        <Image
-                          src={item.image}
-                          alt={item.title}
-                          width={96}
-                          height={96}
-                          className="w-full h-full object-contain p-2"
-                        />
-                      </div>
-                    </Link>
-                  </div>
+            {wishlistItems.map((item) => {
+              const product = item.product || item;
+              const itemId = item.id || item.productId;
+              const inCart = cartItems.some(c => c.productId === itemId || c.product?.id === itemId);
+              return (
+                <div key={itemId} className="bg-gray-50 rounded-lg p-6">
+                  <div className="flex gap-6">
+                    <div className="flex-shrink-0">
+                      <Link href={`/products/${product.id || itemId}`}>
+                        <div className="w-24 h-24 bg-white rounded-lg overflow-hidden">
+                          <Image
+                            src={product.image || item.image}
+                            alt={product.title || item.title}
+                            width={96}
+                            height={96}
+                            className="w-full h-full object-contain p-2"
+                          />
+                        </div>
+                      </Link>
+                    </div>
 
-                  {/* Product Details */}
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <Link href={`/products/${item.id}`}>
-                          <h3 className="text-[#0B4866] font-medium hover:underline mb-1">
-                            {item.title}
-                          </h3>
-                        </Link>
-                        <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
-                          {item.rating && (
-                            <>
-                              {"★".repeat(Math.floor(item.rating))}
-                              {"☆".repeat(5 - Math.floor(item.rating))}
-                              <span className="text-gray-600 ml-1">({item.reviews || 0})</span>
-                            </>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <Link href={`/products/${product.id || itemId}`}>
+                            <h3 className="text-[#0B4866] font-medium hover:underline mb-1">
+                              {product.title || item.title}
+                            </h3>
+                          </Link>
+                          <div className="flex items-center gap-1 text-sm text-yellow-500 mb-2">
+                            {product.rating && (
+                              <>
+                                {"★".repeat(Math.floor(product.rating))}
+                                {"☆".repeat(5 - Math.floor(product.rating))}
+                                <span className="text-gray-600 ml-1">({product.reviews || 0})</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {(product.originalPrice || item.originalPrice) > (product.discountedPrice || product.price || item.discountedPrice || item.price) && (
+                            <div className="text-sm text-gray-500 line-through">
+                              ${(product.originalPrice || item.originalPrice).toFixed(2)}
+                            </div>
                           )}
+                          <div className="text-xl font-semibold text-[#0B4866]">
+                            ${(product.discountedPrice || product.price || item.discountedPrice || item.price).toFixed(2)}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        {item.originalPrice > item.discountedPrice && (
-                          <div className="text-sm text-gray-500 line-through">
-                            ${item.originalPrice}.00
+
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className={`h-2 w-2 rounded-full ${
+                          (product.inStock !== false && item.inStock !== false) ? "bg-green-500" : "bg-red-500"
+                        }`} />
+                        <span className="text-sm text-gray-600">
+                          {(product.inStock !== false && item.inStock !== false) ? "In Stock" : "Out of Stock"}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Quantity:</span>
+                          <span className="text-sm font-medium">1</span>
+                        </div>
+                        {item.size && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">Size:</span>
+                            <span className="text-sm font-medium">{item.size}</span>
                           </div>
                         )}
-                        <div className="text-xl font-semibold text-[#0B4866]">
-                          ${item.discountedPrice}.00
-                        </div>
+                        {item.color && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">Color:</span>
+                            <span className="text-sm font-medium">{item.color}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Stock Status */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className={`h-2 w-2 rounded-full ${
-                        item.inStock ? "bg-green-500" : "bg-red-500"
-                      }`} />
-                      <span className="text-sm text-gray-600">
-                        {item.inStock ? "In Stock" : "Out of Stock"}
-                      </span>
-                    </div>
-
-                    {/* Quantity and Size */}
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Quantity:</span>
-                        <span className="text-sm font-medium">1</span>
-                      </div>
-                      {item.size && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Size:</span>
-                          <span className="text-sm font-medium">{item.size}</span>
-                        </div>
-                      )}
-                      {item.color && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Color:</span>
-                          <span className="text-sm font-medium">{item.color}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-4">
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-2 border border-gray-300 rounded-lg">
+                      <div className="flex items-center gap-4">
                         <button
-                          className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                          onClick={() => handleMoveToCart(item)}
+                          disabled={movingToCart[item.id] || inCart || (product.inStock === false && item.inStock === false)}
+                          className="flex items-center gap-2 text-sm text-[#0B4866] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Minus size={16} />
+                          <ShoppingCart size={16} />
+                          {inCart ? 'In Cart' : 'Move to Cart'}
                         </button>
-                        <span className="px-2 text-sm font-medium">1</span>
+
                         <button
-                          className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                          onClick={() => handleRemoveItem(itemId)}
+                          className="flex items-center gap-2 text-sm text-red-600 hover:underline"
                         >
-                          <Plus size={16} />
+                          <Trash2 size={16} />
+                          Remove
                         </button>
                       </div>
-
-                      {/* Remove */}
-                      <button
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="flex items-center gap-2 text-sm text-red-600 hover:underline"
-                      >
-                        <Trash2 size={16} />
-                        Remove
-                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
