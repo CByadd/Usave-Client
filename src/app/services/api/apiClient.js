@@ -30,6 +30,7 @@ export const apiEndpoints = {
     get: '/cart',
     add: '/cart/add',
     update: '/cart/update',
+    save: '/cart/save', // Save entire cart as single object
     remove: '/cart/remove',
     clear: '/cart/clear',
   },
@@ -290,6 +291,77 @@ export const apiService = {
         }
         
         // Return error response instead of throwing
+        return { success: false, error: errorMessage };
+      }
+    },
+    
+    // Save entire cart as single object (for authenticated users)
+    async save(cartData) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.cart.save}`,
+          cartData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        // Handle errors gracefully
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          // Endpoint not available, try update endpoint
+          try {
+            const updateResponse = await axios.put(
+              `${api.defaults.baseURL}${apiEndpoints.cart.update}`,
+              cartData,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token ? `Bearer ${token}` : '',
+                },
+              }
+            );
+            return updateResponse.data;
+          } catch (updateError) {
+            return { success: false, error: 'Cart save endpoint not available' };
+          }
+        }
+        const errorData = error.response?.data;
+        const errorMessage = errorData?.error || error.message || 'Failed to save cart';
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Save cart error:', errorData);
+        }
+        return { success: false, error: errorMessage };
+      }
+    },
+    
+    async clear() {
+      const token = getAuthToken();
+      try {
+        const response = await axios.delete(
+          `${api.defaults.baseURL}${apiEndpoints.cart.clear}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        const status = error.response?.status;
+        if (status === 404 || !error.response) {
+          return { success: false, error: 'Cart clear endpoint not available' };
+        }
+        const errorData = error.response?.data;
+        const errorMessage = errorData?.error || error.message || 'Failed to clear cart';
+        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+          console.error('API: Clear cart error:', errorData);
+        }
         return { success: false, error: errorMessage };
       }
     },

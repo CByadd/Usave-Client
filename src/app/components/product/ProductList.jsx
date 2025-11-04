@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import OptimizedImage from './OptimizedImage';
 import { Heart, ShoppingCart, Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
-import { fetchCart, getCartItems, addToCart, isInCart } from '../../lib/cart';
+import { useCart } from '../../stores/useCartStore';
+import { useSearch } from '../../stores/useSearchStore';
 import { openCartDrawer, showToast } from '../../lib/ui';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 import productService from '../../services/api/productService';
@@ -11,25 +12,8 @@ import QuickViewModal from './QuickViewModal';
 import { useRouter } from 'next/navigation';
 
 const ProductListingPage = () => {
-  const [activeFilters, setActiveFilters] = useState({
-    sort: false,
-    price: false,
-    color: false,
-    size: false,
-    collection: false,
-    category: false
-  });
-  
-  const [cartItems, setCartItems] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  
-  useEffect(() => {
-    const loadCart = async () => {
-      await fetchCart();
-      setCartItems(getCartItems());
-    };
-    loadCart();
-  }, []);
+  const { cartItems, addToCart, isInCart } = useCart();
+  const { activeFilters, isSearching, toggleActiveFilter, setIsSearching } = useSearch();
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
@@ -158,10 +142,7 @@ const ProductListingPage = () => {
   };
 
   const toggleFilter = (filterName) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterName]: !prev[filterName]
-    }));
+    toggleActiveFilter(filterName);
   };
 
   // Show loading skeleton while searching

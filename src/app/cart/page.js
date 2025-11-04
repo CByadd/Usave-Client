@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, Minus, Heart, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '../stores/useCartStore';
-import { useWishlist } from '../contexts/WishlistContext';
+import { useWishlist } from '../stores/useWishlistStore';
 import { showToast } from '../lib/ui';
 
 const CartPage = () => {

@@ -1,37 +1,40 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { Search, Loader2, X } from 'lucide-react';
-import { performSearch, getSuggestions, getSearchQuery, getSuggestionsList } from '../../lib/search';
+import { useSearch } from '../../stores/useSearchStore';
 import { useRouter } from 'next/navigation';
+import productService from '../../services/api/productService';
 
 const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, isExpanded = false, onToggle = null }) => {
-  const [localQuery, setLocalQuery] = useState("");
+  const { query, suggestions, isSearching, setQuery, setSuggestions, setIsSearching, addToHistory } = useSearch();
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [isSearching, setIsSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimerRef = useRef(null);
   const containerRef = useRef(null);
   const router = useRouter();
 
-  useEffect(() => {
-    // Sync with search query from module
-    const query = getSearchQuery();
-    if (query !== localQuery) {
-      setLocalQuery(query || "");
-    }
-  }, []);
 
   const handleChange = async (e) => {
     const value = e.target.value;
-    setLocalQuery(value);
+    setQuery(value);
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(async () => {
       if (value.trim().length > 0) {
-        const sug = await getSuggestions(value.trim());
-        setSuggestions(sug || []);
-        setShowSuggestions(true);
+        try {
+          const response = await productService.getSearchSuggestions(value.trim());
+          if (response.success && response.data?.suggestions) {
+            setSuggestions(response.data.suggestions);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        } catch (err) {
+          console.error('Suggestions error:', err);
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -39,14 +42,14 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
     }, 200);
   };
 
-  const submitQuery = async (query) => {
-    if (!query || !query.trim()) return;
-    setLocalQuery(query);
+  const submitQuery = async (searchQuery) => {
+    if (!searchQuery || !searchQuery.trim()) return;
+    setQuery(searchQuery);
     setIsSearching(true);
     try {
-      await performSearch(query);
+      addToHistory(searchQuery);
       setShowSuggestions(false);
-      router.push(`/search?q=${encodeURIComponent(query)}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     } catch (err) {
       console.error('Search error:', err);
     } finally {
@@ -56,7 +59,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    submitQuery(localQuery);
+    submitQuery(query);
   };
 
   const handleKeyDown = (e) => {
@@ -125,7 +128,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
 
     <input
       type="text"
-      value={localQuery}
+      value={query}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}

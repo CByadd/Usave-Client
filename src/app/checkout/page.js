@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, isAuthenticated } from '../lib/auth';
-import { fetchCart, getCartItems, getCartTotals } from '../lib/cart';
+import { useAuth } from '../stores/useAuthStore';
+import { useCart } from '../stores/useCartStore';
+import { useCheckout } from '../stores/useCheckoutStore';
 import ApprovalModal from '../components/checkout/ApprovalModal';
 import SuccessModal from '../components/shared/SuccessModal';
 import { apiService } from '../services/api/apiClient';
@@ -13,87 +14,74 @@ import OptimizedImage from '../components/shared/OptimizedImage';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
-  const [totals, setTotals] = useState({ subtotal: 0, tax: 0, shipping: 0, total: 0 });
-  const [authChecked, setAuthChecked] = useState(false);
-  
+  const { user, isAuthenticated, checkAuth } = useAuth();
+  const { cartItems, totals, loadCart } = useCart();
+  const {
+    shippingOption,
+    warranty,
+    cartExpanded,
+    formData,
+    errors,
+    isSubmitting,
+    showApprovalModal,
+    showErrorModal,
+    showSuccessModal,
+    errorMessage,
+    orderId,
+    setShippingOption,
+    setWarranty,
+    toggleCartExpanded,
+    setCartExpanded,
+    updateFormField,
+    setErrors,
+    setFieldError,
+    setIsSubmitting,
+    showApproval,
+    hideApproval,
+    showError,
+    hideError,
+    showSuccess,
+    hideSuccess,
+  } = useCheckout();
+
   useEffect(() => {
-    const checkAuth = async () => {
-      const currentUser = getCurrentUser();
-      const authenticated = isAuthenticated();
-      setUser(currentUser);
-      setAuthChecked(true);
+    const initialize = async () => {
+      checkAuth();
       
-      if (!authenticated) {
+      if (!isAuthenticated) {
         router.push('/auth/login');
         return;
       }
       
       // Load cart
-      const { items, totals: cartTotals } = await fetchCart();
-      setCartItems(items);
-      setTotals(cartTotals);
+      await loadCart();
     };
-    checkAuth();
-  }, [router]);
-  const [shippingOption, setShippingOption] = useState('delivery-only');
-  const [warranty, setWarranty] = useState('');
-  const [cartExpanded, setCartExpanded] = useState(true);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'Australia'
-  });
+    initialize();
+  }, [router, isAuthenticated, checkAuth, loadCart]);
+
+  // Initialize form data from user
+  useEffect(() => {
+    if (user && !formData.firstName) {
+      updateFormField('firstName', user.firstName || '');
+      updateFormField('lastName', user.lastName || '');
+      updateFormField('email', user.email || '');
+      updateFormField('phone', user.phone || '');
+      updateFormField('country', 'Australia');
+    }
+  }, [user]);
 
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
-    if (!authChecked) return;
-    
-    const authenticated = isAuthenticated();
-    console.log('[CheckoutPage] useEffect - isAuthenticated:', authenticated, 'cartItems.length:', cartItems.length);
-    
-    if (!authenticated) {
-      console.log('[CheckoutPage] Not authenticated, redirecting to login');
+    if (!isAuthenticated) {
       router.push('/auth/login');
       return;
     }
     
-    // Check both cartItems array and localStorage as fallback
-    let hasItems = cartItems.length > 0;
-    if (!hasItems && typeof window !== 'undefined') {
-      try {
-        const savedCart = localStorage.getItem('cartItems');
-        if (savedCart) {
-          const parsed = JSON.parse(savedCart);
-          hasItems = Array.isArray(parsed) && parsed.length > 0;
-          console.log('[CheckoutPage] Checked localStorage, found items:', hasItems);
-        }
-      } catch (error) {
-        console.error('[CheckoutPage] Error reading localStorage:', error);
-      }
-    }
-    
-    if (!hasItems) {
-      console.log('[CheckoutPage] Cart is empty, redirecting to cart');
+    if (cartItems.length === 0) {
       router.push('/cart');
       return;
     }
-    
-    console.log('[CheckoutPage] Checkout page ready, items:', cartItems.length);
-  }, [authChecked, cartItems.length, router]);
+  }, [isAuthenticated, cartItems.length, router]);
 
   const shippingOptions = [
     { id: 'delivery', label: 'Delivery', price: 18 },
@@ -112,14 +100,12 @@ export default function CheckoutPage() {
   const finalTotal = totals.total + shippingCost + warrantyCost;
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    updateFormField(field, value);
     // Clear error for this field
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      const newErrors = { ...errors };
+      delete newErrors[field];
+      setErrors(newErrors);
     }
   };
 
@@ -230,26 +216,23 @@ export default function CheckoutPage() {
           // Don't block order creation if address save fails
         }
 
-        // Clear cart - reload cart which will be empty after order
-        await fetchCart();
-        const { items } = await fetchCart();
-        setCartItems(items);
-        // Redirect to payment page after order is approved
-        router.push(`/payment/${response.data?.order?.id || response.data?.id}`);
+        // Clear cart and redirect to payment page
+        const orderId = response.data?.order?.id || response.data?.id;
+        showSuccess(orderId);
+        router.push(`/payment/${orderId}`);
       } else {
         throw new Error(response.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('Order creation error:', error);
-      setErrorMessage(error.message || 'Failed to create order. Please try again.');
-      setShowErrorModal(true);
+      showError(error.message || 'Failed to create order. Please try again.');
     } finally {
       setIsSubmitting(false);
-      setShowApprovalModal(false);
+      hideApproval();
     }
   };
 
-  if (!authChecked || !isAuthenticated() || cartItems.length === 0) {
+  if (!isAuthenticated || cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -600,7 +583,7 @@ export default function CheckoutPage() {
                 <button 
                   onClick={() => {
                     if (validateForm()) {
-                      setShowApprovalModal(true);
+                      showApproval();
                     }
                   }}
                   className="w-full bg-white  border  border-[#0F4C81] text-[#0F4C81] py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -611,7 +594,7 @@ export default function CheckoutPage() {
                 <button 
                   onClick={() => {
                     if (validateForm()) {
-                      setShowApprovalModal(true);
+                      showApproval();
                     }
                   }}
                   className="w-full bg-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
@@ -637,7 +620,7 @@ export default function CheckoutPage() {
 
       <ApprovalModal
         isOpen={showApprovalModal}
-        onClose={() => setShowApprovalModal(false)}
+        onClose={() => hideApproval()}
         onContinueWithoutApproval={handleContinueWithoutApproval}
         cartItems={cartItems}
         totalAmount={finalTotal}
@@ -645,11 +628,11 @@ export default function CheckoutPage() {
 
       <SuccessModal
         isOpen={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
+        onClose={() => hideError()}
         type="error"
         title="Order Failed"
         message={errorMessage}
-        primaryAction={() => setShowErrorModal(false)}
+        primaryAction={() => hideError()}
         primaryActionLabel="OK"
       />
     </>

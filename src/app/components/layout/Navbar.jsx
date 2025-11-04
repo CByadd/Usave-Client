@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_WHITE_BG } from '../../lib/constants';
 import { getCurrentUser, isAuthenticated, logout as logoutUser } from '../../lib/auth';
 import { useCart } from '../../stores/useCartStore';
-import { useWishlist } from '../../contexts/WishlistContext';
+import { useWishlist } from '../../stores/useWishlistStore';
 import { openAuthDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from '../icons';

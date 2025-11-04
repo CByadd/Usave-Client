@@ -4,6 +4,8 @@ import { create } from 'zustand';
 import { apiService } from '../services/api/apiClient';
 import { isAuthenticated } from '../lib/auth';
 
+const CART_STORAGE_KEY = 'usave_cart';
+
 // Calculate totals from cart items
 const calculateTotals = (items) => {
   const subtotal = items.reduce((sum, item) => {
@@ -20,6 +22,54 @@ const calculateTotals = (items) => {
   return { subtotal, tax, shipping, total, itemCount };
 };
 
+// Load cart from localStorage
+const loadCartFromStorage = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (err) {
+    console.error('Error loading cart from localStorage:', err);
+  }
+  return [];
+};
+
+// Save cart to localStorage
+const saveCartToStorage = (items) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.error('Error saving cart to localStorage:', err);
+  }
+};
+
+// Save cart to database as single object (for authenticated users)
+const saveCartToDatabase = async (items) => {
+  if (!isAuthenticated()) return { success: false };
+  
+  try {
+    // Save entire cart as a single object
+    const cartData = {
+      items: items,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    // Use cart save endpoint (saves entire cart as single object)
+    const response = await apiService.cart.save(cartData);
+    
+    if (response?.success) {
+      return { success: true };
+    }
+    return { success: false, error: response?.error || 'Failed to save cart' };
+  } catch (err) {
+    console.log('Failed to save cart to database:', err);
+    return { success: false, error: err.message };
+  }
+};
+
 export const useCartStore = create((set, get) => ({
   cartItems: [],
   totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 },
@@ -28,7 +78,7 @@ export const useCartStore = create((set, get) => ({
   error: null,
   hasLoadedCart: false,
 
-  // Load cart from API (for authenticated users only)
+  // Load cart from API (for authenticated users) or localStorage
   loadCart: async () => {
     set({ isLoading: true, error: null });
 
@@ -36,7 +86,7 @@ export const useCartStore = create((set, get) => ({
       let loadedItems = [];
       let loadedTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
 
-      // Only load from API if authenticated
+      // If authenticated, load from API
       if (isAuthenticated()) {
         try {
           const response = await apiService.cart.get();
@@ -49,18 +99,31 @@ export const useCartStore = create((set, get) => ({
               totals: loadedTotals,
               isLoading: false 
             });
+            // Also save to localStorage for offline access
+            saveCartToStorage(loadedItems);
+            return { items: loadedItems, totals: loadedTotals };
+          } else if (response.success && response.data?.cart) {
+            // If cart is stored as a single object
+            loadedItems = response.data.cart.items || [];
+            loadedTotals = calculateTotals(loadedItems);
+            set({ 
+              cartItems: loadedItems, 
+              totals: loadedTotals,
+              isLoading: false 
+            });
+            saveCartToStorage(loadedItems);
             return { items: loadedItems, totals: loadedTotals };
           }
         } catch (err) {
-          // API failed
-          console.log('API cart unavailable');
-          loadedItems = [];
-          loadedTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
+          // API failed, try localStorage
+          console.log('API cart unavailable, loading from localStorage');
+          loadedItems = loadCartFromStorage();
+          loadedTotals = calculateTotals(loadedItems);
         }
       } else {
-        // Not authenticated, empty cart
-        loadedItems = [];
-        loadedTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
+        // Not authenticated, load from localStorage
+        loadedItems = loadCartFromStorage();
+        loadedTotals = calculateTotals(loadedItems);
       }
 
       set({ 
@@ -76,6 +139,28 @@ export const useCartStore = create((set, get) => ({
         isLoading: false 
       });
       return { items: [], totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 } };
+    }
+  },
+
+  // Save cart to database (for authenticated users)
+  saveCart: async () => {
+    const { cartItems } = get();
+    
+    if (!isAuthenticated()) {
+      // Not authenticated, just save to localStorage
+      saveCartToStorage(cartItems);
+      return { success: true };
+    }
+
+    try {
+      set({ isSyncing: true });
+      const result = await saveCartToDatabase(cartItems);
+      set({ isSyncing: false });
+      return result;
+    } catch (err) {
+      set({ isSyncing: false });
+      console.error('Error saving cart:', err);
+      return { success: false, error: err.message };
     }
   },
 
@@ -100,25 +185,6 @@ export const useCartStore = create((set, get) => ({
         throw new Error('Product ID is required');
       }
 
-      // If authenticated, try to add via API first
-      if (isAuthenticated()) {
-        try {
-          const response = await apiService.cart.addItem(productId, quantity);
-          if (response.success) {
-            // Reload from API to get server-side updates
-            await get().loadCart();
-            return { success: true };
-          } else {
-            // API failed, but still add to local cart
-            console.log('API add failed, adding to local cart');
-          }
-        } catch (err) {
-          // API failed, but still add to local cart
-          console.log('API unavailable, adding to local cart');
-        }
-      }
-
-      // Add to local cart (works for both authenticated and unauthenticated)
       const { cartItems } = get();
       const existingItem = cartItems.find(
         item => item.productId === productId || item.id === productId || item.product?.id === productId
@@ -158,6 +224,17 @@ export const useCartStore = create((set, get) => ({
         totals: newTotals,
         isLoading: false 
       });
+      
+      // Save to localStorage immediately
+      saveCartToStorage(newItems);
+      
+      // If authenticated, save to database as single object
+      if (isAuthenticated()) {
+        // Debounce database save
+        setTimeout(async () => {
+          await get().saveCart();
+        }, 500);
+      }
 
       return { success: true };
     } catch (err) {
@@ -175,33 +252,9 @@ export const useCartStore = create((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // If authenticated, try to remove via API first
-      if (isAuthenticated()) {
-        try {
-          const response = await apiService.cart.removeItem(productId);
-          if (response.success) {
-            // Reload from API to get server-side updates
-            await get().loadCart();
-            return { success: true };
-          } else {
-            // Even if API says item not found, that's okay - remove from local cart
-            console.log('API remove failed, removing from local cart');
-          }
-        } catch (err) {
-          // Check if error is about item not found
-          const errorMessage = err.response?.data?.error || err.message || '';
-          if (errorMessage.includes('not found') || errorMessage.includes('Cart item not found')) {
-            // Item not found in API, remove from local cart
-            console.log('Item not found in API, removing from local cart');
-          } else {
-            // Other API errors - still remove from local cart
-            console.log('API unavailable, removing from local cart');
-          }
-        }
-      }
-
-      // Remove from local cart (works for both authenticated and unauthenticated)
       const { cartItems } = get();
+      
+      // Remove from local cart
       const newItems = cartItems.filter(
         item => item.productId !== productId && item.id !== productId && item.product?.id !== productId
       );
@@ -212,6 +265,17 @@ export const useCartStore = create((set, get) => ({
         totals: newTotals,
         isLoading: false 
       });
+      
+      // Save to localStorage immediately
+      saveCartToStorage(newItems);
+      
+      // If authenticated, save to database as single object
+      if (isAuthenticated()) {
+        // Debounce database save
+        setTimeout(async () => {
+          await get().saveCart();
+        }, 500);
+      }
 
       return { success: true };
     } catch (err) {
@@ -233,20 +297,9 @@ export const useCartStore = create((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // If authenticated, try to update via API
-      if (isAuthenticated()) {
-        try {
-          // Note: API might not have updateQuantity endpoint, so we'll just update locally
-          // and sync on next loadCart
-          await get().loadCart();
-        } catch (err) {
-          // API failed, continue with local update
-          console.log('API unavailable, updating local cart');
-        }
-      }
-
-      // Update local cart (works for both authenticated and unauthenticated)
       const { cartItems } = get();
+      
+      // Update local cart
       const newItems = cartItems.map(item =>
         (item.productId === productId || item.id === productId || item.product?.id === productId)
           ? { ...item, quantity: quantity }
@@ -259,6 +312,17 @@ export const useCartStore = create((set, get) => ({
         totals: newTotals,
         isLoading: false 
       });
+      
+      // Save to localStorage immediately
+      saveCartToStorage(newItems);
+      
+      // If authenticated, save to database as single object
+      if (isAuthenticated()) {
+        // Debounce database save
+        setTimeout(async () => {
+          await get().saveCart();
+        }, 500);
+      }
 
       return { success: true };
     } catch (err) {
@@ -276,30 +340,20 @@ export const useCartStore = create((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // If authenticated, try to clear via API
-      if (isAuthenticated()) {
-        try {
-          const response = await apiService.cart.clear?.();
-          if (response?.success) {
-            await get().loadCart();
-            return { success: true };
-          } else {
-            // API failed, clear local cart
-            console.log('API clear failed, clearing local cart');
-          }
-        } catch (err) {
-          // API failed, clear local cart
-          console.log('API unavailable, clearing local cart');
-        }
-      }
-
-      // Clear local cart (works for both authenticated and unauthenticated)
       const emptyTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
       set({ 
         cartItems: [],
         totals: emptyTotals,
         isLoading: false 
       });
+      
+      // Clear localStorage
+      saveCartToStorage([]);
+      
+      // If authenticated, save to database as single object
+      if (isAuthenticated()) {
+        await get().saveCart();
+      }
 
       return { success: true };
     } catch (err) {
@@ -336,12 +390,11 @@ export const useCartStore = create((set, get) => ({
   },
 }));
 
-// Client-side initialization component
+// Client-side initialization
 if (typeof window !== 'undefined') {
-  // Use a small delay to ensure auth is ready
   setTimeout(() => {
     const store = useCartStore.getState();
-    if (!store.hasLoadedCart && isAuthenticated()) {
+    if (!store.hasLoadedCart) {
       useCartStore.setState({ hasLoadedCart: true });
       store.loadCart();
     }
@@ -380,4 +433,3 @@ export const useCart = () => {
     getCartCount,
   };
 };
-

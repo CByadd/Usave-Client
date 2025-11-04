@@ -6,6 +6,7 @@ import Footer from "./components/layout/Footer";
 import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
 import CartInitializer from "./components/cart/CartInitializer";
+import WishlistInitializer from "./components/wishlist/WishlistInitializer";
 import LoggingToggle from "./components/debug/LoggingToggle";
 import ToastContainerWrapper from "./components/shared/ToastContainerWrapper";
 
@@ -23,7 +24,7 @@ export const metadata = {
   title: "Usave - Your Ultimate Online Shopping Destination",
   description: "Usave - Your One-Stop Shop for Quality Products at Unbeatable Prices",
   icons: {
-    icon: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/Logo_hqavs5.jpg",
+    icon: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762295780/Usave/fav_oexlok.png",
   },
 };
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning={true} className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
         <Providers>
           <CartInitializer />
+          <WishlistInitializer />
           <Navbar />
           <main className="flex-grow">
             {children}

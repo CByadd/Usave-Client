@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, isAuthenticated } from '../lib/auth';
+import { useAuth } from '../stores/useAuthStore';
 import { RefreshCw, Edit, CreditCard, AlertCircle } from 'lucide-react';
 import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
@@ -9,17 +9,7 @@ import Link from 'next/link';
 
 export default function OrdersPage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    const authenticated = isAuthenticated();
-    setUser(currentUser);
-    
-    if (!authenticated) {
-      router.push('/auth/login');
-    }
-  }, [router]);
+  const { user, isAuthenticated, checkAuth } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,14 +20,20 @@ export default function OrdersPage() {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
     if (!isAuthenticated) {
-      openLoginModal();
+      router.push('/auth/login');
       return;
     }
     fetchOrders();
-  }, [isAuthenticated, openLoginModal]);
+  }, [isAuthenticated, router]);
 
   const fetchOrders = async () => {
+    if (!isAuthenticated) return;
+    
     try {
       setLoading(true);
       setError('');

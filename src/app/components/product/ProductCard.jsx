@@ -6,7 +6,7 @@ import { Heart, ShoppingCart, Search, ShoppingBag } from "lucide-react";
 
 import { useCart } from "../../stores/useCartStore";
 
-import { useWishlist } from "../../contexts/WishlistContext";
+import { useWishlist } from "../../stores/useWishlistStore";
 
 import { openCartDrawer } from "../../lib/ui";
 
