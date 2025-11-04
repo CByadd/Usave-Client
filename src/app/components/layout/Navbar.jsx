@@ -8,7 +8,7 @@ import { LOGO_WHITE_BG } from '../../lib/constants';
 import { getCurrentUser, isAuthenticated, logout as logoutUser } from '../../lib/auth';
 import { getCartCount, fetchCart } from '../../lib/cart';
 import { getWishlistCount, fetchWishlist } from '../../lib/wishlist';
-import { openAuthDrawer, openCartDrawer } from '../../lib/ui';
+import { openAuthDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from '../icons';
 
@@ -488,23 +488,10 @@ const Navbar = () => {
               </nav>
 
                {/* Cart */}
-  <button 
-    type="button"
-    onClick={(e) => {
-      console.log('[Navbar] Cart button clicked');
-      if (!e) return;
-      e.preventDefault();
-      e.stopPropagation();
-      openCartDrawer();
-      // Fallback: dispatch DOM event so drawers can open even if context is not wired
-      if (typeof document !== 'undefined') {
-        try {
-          document.body.dispatchEvent(new CustomEvent('usave:openCart'));
-        } catch {}
-      }
-    }}
+  <Link 
+    href="/cart"
     className="relative text-gray-700 hover:text-blue-600 cursor-pointer"
-    aria-label="Open cart"
+    aria-label="View cart"
   >
     <ShoppingCart size={22} />
     {cartCount > 0 && (
@@ -512,7 +499,7 @@ const Navbar = () => {
         {cartCount}
       </span>
     )}
-  </button>
+  </Link>
 
                 {/* Cart */}
           <span className='flex items-center justify-center gap-2'>
@@ -612,19 +599,10 @@ const Navbar = () => {
             >
               <Search size={20} />
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Cart button clicked, openCartDrawer:', typeof openCartDrawer);
-                if (typeof openCartDrawer === 'function') openCartDrawer();
-                if (typeof document !== 'undefined') {
-                  try { document.body.dispatchEvent(new CustomEvent('usave:openCart')); } catch {}
-                }
-              }}
+            <Link
+              href="/cart"
               className="text-gray-700 hover:text-blue-600 relative cursor-pointer"
-              aria-label="Open cart"
+              aria-label="View cart"
             >
               <ShoppingCart size={20} />
               {getCartCount() > 0 && (
@@ -632,7 +610,7 @@ const Navbar = () => {
                   {getCartCount()}
                 </span>
               )}
-            </button>
+            </Link>
           </div>
         </div>
         

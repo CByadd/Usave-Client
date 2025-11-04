@@ -344,18 +344,14 @@ const CartDrawer = () => {
               <Link
                 href="/checkout"
                 onClick={(e) => {
-                  if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }
-                  if (typeof closeCartDrawer === 'function') {
-                    closeCartDrawer();
-                  }
+                  // Close the drawer before navigating
                   if (typeof document !== 'undefined') {
                     try {
                       document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
                     } catch {}
                   }
+                  setIsCartDrawerOpen(false);
+                  setForceOpen(false);
                 }}
                 className="block w-full bg-[#0B4866] text-white py-3 rounded-lg font-medium text-center hover:bg-[#094058] transition-colors"
               >

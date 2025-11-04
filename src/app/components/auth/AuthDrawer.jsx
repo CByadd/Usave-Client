@@ -21,10 +21,6 @@ const LoginForm = ({ onSwitch, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!login || typeof login !== 'function') {
-      setError('Login function is not available');
-      return;
-    }
 
     setIsLoading(true);
     setError('');
@@ -203,11 +199,6 @@ const RegisterForm = ({ onSwitch, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!register || typeof register !== 'function') {
-      setError('Registration function is not available');
-      return;
-    }
     
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
