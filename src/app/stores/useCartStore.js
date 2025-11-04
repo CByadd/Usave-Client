@@ -51,10 +51,25 @@ const saveCartToDatabase = async (items) => {
   if (!isAuthenticated()) return { success: false };
   
   try {
+    // Format items for API - ensure productId and quantity are present
+    const formattedItems = items.map(item => {
+      // Extract productId from various possible fields
+      const productId = item.productId || item.id || item.product?.id;
+      const quantity = item.quantity || 1;
+      
+      if (!productId) {
+        throw new Error(`Missing product ID for cart item: ${JSON.stringify(item)}`);
+      }
+      
+      return {
+        productId: productId,
+        quantity: quantity,
+      };
+    });
+    
     // Save entire cart as a single object
     const cartData = {
-      items: items,
-      updatedAt: new Date().toISOString(),
+      items: formattedItems,
     };
     
     // Use cart save endpoint (saves entire cart as single object)
