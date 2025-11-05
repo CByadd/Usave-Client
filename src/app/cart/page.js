@@ -77,8 +77,8 @@ const CartPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-semibold text-[#0B4866] mb-2">Your Cart</h1>
@@ -105,19 +105,19 @@ const CartPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 w-full">
             {/* Cart Items - Left Side */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-4 w-full overflow-hidden">
               {cartItems.map((item) => {
                 const product = item.product || item;
                 const itemId = item.id || item.productId;
                 return (
-                  <div key={itemId} className="bg-gray-50 rounded-lg p-6">
-                    <div className="flex gap-6">
+                  <div key={itemId} className="bg-gray-50 rounded-lg p-4 sm:p-6 w-full overflow-hidden">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full">
                       {/* Product Image */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 w-full sm:w-auto">
                         <Link href={`/products/${product.id || itemId}`}>
-                          <div className="w-24 h-24 bg-white rounded-lg overflow-hidden">
+                          <div className="w-full sm:w-24 h-24 bg-white rounded-lg overflow-hidden mx-auto sm:mx-0">
                             <Image
                               src={product.image || item.image}
                               alt={product.title || item.title}
@@ -130,11 +130,11 @@ const CartPage = () => {
                       </div>
 
                       {/* Product Details */}
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
+                      <div className="flex-1 min-w-0 w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-2">
+                          <div className="flex-1 min-w-0">
                             <Link href={`/products/${product.id || itemId}`}>
-                              <h3 className="text-[#0B4866] font-medium hover:underline mb-1">
+                              <h3 className="text-[#0B4866] font-medium hover:underline mb-1 break-words text-sm sm:text-base">
                                 {product.title || item.title}
                               </h3>
                             </Link>
@@ -148,13 +148,13 @@ const CartPage = () => {
                               )}
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right flex-shrink-0">
                             {(product.originalPrice || item.originalPrice) > (product.discountedPrice || product.price || item.discountedPrice || item.price) && (
-                              <div className="text-sm text-gray-500 line-through">
+                              <div className="text-xs sm:text-sm text-gray-500 line-through">
                                 ${(product.originalPrice || item.originalPrice).toFixed(2)}
                               </div>
                             )}
-                            <div className="text-xl font-semibold text-[#0B4866]">
+                            <div className="text-lg sm:text-xl font-semibold text-[#0B4866]">
                               ${((product.discountedPrice || product.price || item.discountedPrice || item.price) * item.quantity).toFixed(2)}
                             </div>
                           </div>
@@ -199,7 +199,7 @@ const CartPage = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 flex-wrap">
                           {/* Quantity Controls */}
                           <div className="flex items-center gap-2 border border-gray-300 rounded-lg">
                             <button
@@ -245,8 +245,8 @@ const CartPage = () => {
             </div>
 
             {/* Order Summary - Right Side */}
-            <div className="lg:col-span-1">
-              <div className="bg-gray-50 rounded-lg p-6 sticky top-24">
+            <div className="lg:col-span-1 w-full">
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 sticky top-24 w-full overflow-hidden">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
                 
                 <div className="space-y-3 mb-6">

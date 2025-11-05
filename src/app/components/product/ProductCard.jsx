@@ -98,7 +98,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
   };
 
   const handleAddToCart = async (e) => {
-    console.log('[ProductCard] handleAddToCart clicked - item:', item?.id, item?.title);
+    console.log('[ProductCard] handleAddToCart clicked - item:', productItem?.id, productItem?.title);
 
     if (!e) return;
     
@@ -131,7 +131,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
   const containerClasses = variant === 'grid' 
 
-    ? "group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full max-h-[300px]"
+    ? "group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full"
 
     : "group min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]";
   
@@ -139,13 +139,13 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
   const imageContainerClasses = variant === 'grid'
 
-    ? "relative bg-transparent p-6 aspect-square flex items-center justify-center"
+    ? "relative bg-transparent p-6 aspect-square flex items-center justify-center w-full"
 
     : "relative flex justify-center items-center w-full h-[250px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden bg-transparent";
 
   return (
 
-    <div>
+    <div className={variant === 'grid' ? 'w-full h-full flex flex-col' : ''}>
 
       {productItem.topSeller && variant === 'carousel' && (
 
@@ -293,7 +293,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
             height={300}
 
-            className="object-contain max-h-[300px] w-[300px]"
+            className="object-contain w-full h-full max-h-full max-w-full"
 
           />
 

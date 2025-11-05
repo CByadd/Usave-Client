@@ -183,21 +183,21 @@ export default function ProductDetailPage() {
   const reviews = Number(product.reviewCount || product.reviews) || 0;
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-          <Link href="/" className="hover:text-[#0B4866]">Home</Link>
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6 overflow-x-auto w-full">
+          <Link href="/" className="hover:text-[#0B4866] whitespace-nowrap">Home</Link>
           <span>/</span>
-          <Link href={`/categories/${product.category || 'products'}`} className="hover:text-[#0B4866] capitalize">
+          <Link href={`/categories/${product.category || 'products'}`} className="hover:text-[#0B4866] capitalize whitespace-nowrap">
             {product.category || 'Products'}
           </Link>
         </div>
 
         {/* Main Product Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 mb-12 w-full">
           {/* Left: Product Image Gallery */}
-          <div className="relative">
+          <div className="relative w-full overflow-hidden">
             {/* Top Seller Badge */}
             {product.topSeller && (
               <div className="absolute top-4 left-4 bg-pink-600 text-white text-xs font-semibold px-3 py-1.5 z-10">
@@ -218,7 +218,7 @@ export default function ProductDetailPage() {
             </button>
 
             {/* Main Image */}
-            <div className="relative bg-gray-50 rounded-lg aspect-square overflow-hidden group mb-4">
+            <div className="relative bg-gray-50 rounded-lg aspect-square overflow-hidden group mb-4 w-full">
               <OptimizedImage
                 src={productImages[selectedImage] || product.image || ''}
                 alt={product.title || 'Product'}
@@ -248,7 +248,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Thumbnails */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
               {productImages.map((image, index) => (
                 <button
                   key={index}
@@ -270,16 +270,16 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Right: Product Details */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full overflow-hidden">
             {/* Product Title */}
-            <h1 className="text-3xl md:text-4xl font-semibold text-[#0B4866]">{product.title || 'Product'}</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-[#0B4866] break-words">{product.title || 'Product'}</h1>
 
             {/* Price */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
               {product.originalPrice && product.discountedPrice && product.originalPrice > product.discountedPrice && (
-                <span className="text-xl text-gray-500 line-through">${(product.originalPrice || 0).toFixed(2)}</span>
+                <span className="text-lg sm:text-xl text-gray-500 line-through">${(product.originalPrice || 0).toFixed(2)}</span>
               )}
-              <span className="text-3xl font-bold text-[#0B4866]">${(product.discountedPrice || product.originalPrice || 0).toFixed(2)}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-[#0B4866]">${(product.discountedPrice || product.originalPrice || 0).toFixed(2)}</span>
             </div>
 
             {/* Rating */}
@@ -321,9 +321,9 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Choose Color */}
-            <div>
+            <div className="w-full overflow-hidden">
               <label className="block text-sm font-medium text-gray-700 mb-3">Choose Color</label>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-2 sm:gap-3 flex-wrap">
                 {colors.map((color) => {
                   const isSelected = selectedColor === color;
                   // Simple color mapping for display
@@ -338,7 +338,7 @@ export default function ProductDetailPage() {
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
-                      className={`relative w-16 h-16 rounded-lg border-2 transition ${isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'}`}
+                      className={`relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 transition ${isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'}`}
                     >
                       <div
                         className="w-full h-full rounded-lg"
@@ -359,14 +359,14 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Choose Size */}
-            <div>
+            <div className="w-full overflow-hidden">
               <label className="block text-sm font-medium text-gray-700 mb-3">Choose Size</label>
               <div className="flex gap-2 flex-wrap">
                 {sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 rounded-lg text-sm font-medium border-2 transition ${
+                    className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg text-xs sm:text-sm font-medium border-2 transition ${
                       selectedSize === size
                         ? 'border-[#0B4866] bg-[#0B4866] text-white'
                         : 'border-gray-300 hover:border-gray-400'
@@ -401,19 +401,19 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 w-full">
               <button
                 onClick={handleQuickShop}
                 disabled={!product.inStock}
-                className="flex-1 border border-[#0B4866] bg-white text-[#0B4866] py-3 px-6 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:flex-1 border border-[#0B4866] bg-white text-[#0B4866] py-3 px-4 sm:px-6 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
-                <ShoppingBag size={20} />
-                Quick Shop
+                <ShoppingBag size={18} className="sm:w-5 sm:h-5" />
+                <span className="whitespace-nowrap">Quick Shop</span>
               </button>
               <button
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className={`flex-1 py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition ${
+                className={`w-full sm:flex-1 py-3 px-4 sm:px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition text-sm sm:text-base ${
                   !product.inStock
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : isInCart(product.id)
@@ -421,17 +421,17 @@ export default function ProductDetailPage() {
                     : 'bg-[#0B4866] text-white hover:bg-[#0a3d55]'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <ShoppingCart size={20} />
-                {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? `In Cart (${getItemQuantity(product.id)})` : 'Add to cart'}
+                <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
+                <span className="whitespace-nowrap">{!product.inStock ? 'Out of Stock' : isInCart(product.id) ? `In Cart (${getItemQuantity(product.id)})` : 'Add to cart'}</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Product Information Tabs */}
-        <div className="mb-12">
-          <div className="border-b border-gray-200">
-            <nav className="flex gap-8">
+        <div className="mb-12 w-full overflow-hidden">
+          <div className="border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <nav className="flex gap-4 sm:gap-8 min-w-max sm:min-w-0">
               {[
                 { id: 'details', label: 'Product Details' },
                 { id: 'reviews', label: 'Product Reviews' },
@@ -442,7 +442,7 @@ export default function ProductDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition ${
+                  className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-[#0B4866] text-[#0B4866]'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -454,10 +454,10 @@ export default function ProductDetailPage() {
             </nav>
           </div>
 
-          <div className="py-8">
+          <div className="py-8 w-full overflow-hidden">
             {activeTab === 'details' && (
-              <div className="space-y-6">
-                <p className="text-gray-700 leading-relaxed">{product.description || 'No description available.'}</p>
+              <div className="space-y-6 w-full overflow-hidden">
+                <p className="text-gray-700 leading-relaxed break-words">{product.description || 'No description available.'}</p>
                 {product.features && Array.isArray(product.features) && product.features.length > 0 && (
                   <ul className="space-y-3">
                     {product.features.map((feature, index) => (
@@ -521,9 +521,9 @@ export default function ProductDetailPage() {
                 <ArrowRight size={18} />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
               {relatedProducts.map((relatedProduct) => (
-                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                <ProductCard key={relatedProduct.id} product={relatedProduct} variant="grid" />
               ))}
             </div>
           </div>

@@ -196,8 +196,8 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -227,12 +227,12 @@ export default function OrdersPage() {
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex gap-2 border-b border-gray-200">
+          <div className="flex gap-2 border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             {['all', 'pending', 'approved', 'rejected'].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-6 py-3 font-medium text-sm transition-colors ${
+                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeFilter === filter
                     ? 'bg-[#0F4C81] text-white border-b-2 border-[#0F4C81]'
                     : 'text-gray-600 hover:text-[#0F4C81] hover:bg-gray-100'
@@ -457,10 +457,10 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
   const status = order.status;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start gap-4">
+    <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
         {/* Product Images */}
-        <div className="flex gap-2 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           {items.slice(0, 4).map((item, index) => (
             <div key={index} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
               {item.product?.image ? (
@@ -484,9 +484,9 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
         </div>
 
         {/* Order Details */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 w-full">
+            <div className="flex-1 min-w-0 w-full sm:w-auto">
               {/* Status Badge */}
               <div className="mb-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(status, order)}`}>
@@ -500,7 +500,7 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
               </h3>
 
               {/* Items */}
-              <p className="text-sm text-gray-600 mb-2 truncate">
+              <p className="text-sm text-gray-600 mb-2 break-words">
                 {formatItems(items)}
               </p>
 
@@ -531,12 +531,12 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-2 flex-shrink-0">
+            <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
               {/* Proceed to Pay - for approved orders with pending payment */}
               {status === 'APPROVED' && order.paymentStatus === 'PENDING' && (
                 <button
                   onClick={() => onProceedToPay(order.id)}
-                  className="px-6 py-2 bg-[#0F4C81] text-white rounded-lg font-medium hover:bg-[#0D3F6A] transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#0F4C81] text-white rounded-lg font-medium hover:bg-[#0D3F6A] transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <CreditCard size={16} />
                   Proceed to Pay
@@ -547,7 +547,7 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
               {(status === 'PENDING_APPROVAL' || status === 'REJECTED') && (
                 <button
                   onClick={() => onReSendApproval(order.id)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <RefreshCw size={16} />
                   Re-Send Approval
@@ -558,7 +558,7 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
               {(status === 'PENDING_APPROVAL' || status === 'REJECTED' || status === 'APPROVED') && (
                 <button
                   onClick={() => onEditOrder(order.id)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <Edit size={16} />
                   Edit Order

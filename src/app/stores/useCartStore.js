@@ -114,7 +114,7 @@ const saveCartToStorage = (items, retries = 3) => {
       } else {
         throw new Error('Save verification failed');
       }
-    } catch (err) {
+  } catch (err) {
       console.error(`[Cart] Error saving cart to localStorage (attempt ${attempt}/${retries}):`, err);
       
       // If quota exceeded, try to clear old data
@@ -222,18 +222,18 @@ const storeCreator = (set, get) => ({
             const apiItems = response.data.items.map(normalizeCartItem).filter(Boolean);
             if (apiItems.length > 0) {
               loadedItems = apiItems;
-              loadedTotals = calculateTotals(loadedItems);
+            loadedTotals = calculateTotals(loadedItems);
               // Save API data to localStorage
-              saveCartToStorage(loadedItems);
+            saveCartToStorage(loadedItems);
             }
           } else if (response.success && response.data?.cart?.items && Array.isArray(response.data.cart.items) && response.data.cart.items.length > 0) {
             // If cart is stored as a single object
             const apiItems = response.data.cart.items.map(normalizeCartItem).filter(Boolean);
             if (apiItems.length > 0) {
               loadedItems = apiItems;
-              loadedTotals = calculateTotals(loadedItems);
+            loadedTotals = calculateTotals(loadedItems);
               // Save API data to localStorage
-              saveCartToStorage(loadedItems);
+            saveCartToStorage(loadedItems);
             }
           }
           // If API returns empty or fails, we already have localStorage data, so continue silently
@@ -303,6 +303,9 @@ const storeCreator = (set, get) => ({
       if (!productId) {
         throw new Error('Product ID is required');
       }
+      
+      // Normalize productId to string for consistent comparison
+      const pid = String(productId);
 
       // Check stock availability if product data is available
       if (productData) {
@@ -318,7 +321,7 @@ const storeCreator = (set, get) => ({
         // Check if adding quantity would exceed available stock
         const { cartItems } = get();
         const existingItem = cartItems.find(
-          item => item.productId === productId || item.id === productId || item.product?.id === productId
+          item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
         );
         const currentQuantity = existingItem ? existingItem.quantity : 0;
         const newQuantity = currentQuantity + quantity;
@@ -334,7 +337,7 @@ const storeCreator = (set, get) => ({
 
       const { cartItems } = get();
       const existingItem = cartItems.find(
-        item => item.productId === productId || item.id === productId || item.product?.id === productId
+        item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
       );
 
       let newItems;
@@ -400,7 +403,7 @@ const storeCreator = (set, get) => ({
         }
         
         newItems = cartItems.map(item =>
-          (item.productId === productId || item.id === productId || item.product?.id === productId)
+          (String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid)
             ? updatedItem
             : item
         );
@@ -408,12 +411,12 @@ const storeCreator = (set, get) => ({
         // Add new item to cart with complete product details
         const newItem = productData
           ? {
-              id: productId,
-              productId: productId,
+              id: pid,
+              productId: pid,
               // Store complete product object with all details properly mapped
               product: {
-                id: productData.id || productId,
-                productId: productData.productId || productId,
+                id: String(productData.id || pid),
+                productId: String(productData.productId || pid),
                 title: productData.title || productData.name || '',
                 name: productData.name || productData.title || '',
                 slug: productData.slug || '',
@@ -451,8 +454,8 @@ const storeCreator = (set, get) => ({
               inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
             }
           : {
-              id: productId,
-              productId: productId,
+              id: pid,
+              productId: pid,
               quantity: safeParseNumber(quantity, 1),
               price: 0,
               discountedPrice: 0,
@@ -481,7 +484,7 @@ const storeCreator = (set, get) => ({
         // Use requestIdleCallback if available, otherwise setTimeout
         const saveToDb = async () => {
           try {
-            await get().saveCart();
+          await get().saveCart();
           } catch (err) {
             // Silently fail - localStorage is the primary storage
             // Only log if it's a meaningful error
@@ -516,9 +519,12 @@ const storeCreator = (set, get) => ({
     try {
       const { cartItems } = get();
       
+      // Normalize productId to string for consistent comparison
+      const pid = String(productId);
+      
       // Remove from local cart
       const newItems = cartItems.filter(
-        item => item.productId !== productId && item.id !== productId && item.product?.id !== productId
+        item => String(item.productId) !== pid && String(item.id) !== pid && String(item.product?.id) !== pid
       );
       const newTotals = calculateTotals(newItems);
       
@@ -538,7 +544,7 @@ const storeCreator = (set, get) => ({
       if (isAuthenticated()) {
         const saveToDb = async () => {
           try {
-            await get().saveCart();
+          await get().saveCart();
           } catch (err) {
             // Silently fail - localStorage is the primary storage
             if (err.message && !err.message.includes('Network') && !err.message.includes('timeout')) {
@@ -576,9 +582,12 @@ const storeCreator = (set, get) => ({
     try {
       const { cartItems } = get();
       
+      // Normalize productId to string for consistent comparison
+      const pid = String(productId);
+      
       // Find the item to update
       const itemToUpdate = cartItems.find(
-        item => item.productId === productId || item.id === productId || item.product?.id === productId
+        item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
       );
       
       if (!itemToUpdate) {
@@ -609,7 +618,7 @@ const storeCreator = (set, get) => ({
       // Update local cart - ensure quantity is a valid number
       const safeQuantity = safeParseNumber(quantity, 1);
       const newItems = cartItems.map(item =>
-        (item.productId === productId || item.id === productId || item.product?.id === productId)
+        (String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid)
           ? { 
               ...item, 
               quantity: safeQuantity,
@@ -638,7 +647,7 @@ const storeCreator = (set, get) => ({
       if (isAuthenticated()) {
         const saveToDb = async () => {
           try {
-            await get().saveCart();
+          await get().saveCart();
           } catch (err) {
             // Silently fail - localStorage is the primary storage
             if (err.message && !err.message.includes('Network') && !err.message.includes('timeout')) {
@@ -687,7 +696,7 @@ const storeCreator = (set, get) => ({
       // If authenticated, save to database as single object
       if (isAuthenticated()) {
         try {
-          await get().saveCart();
+        await get().saveCart();
         } catch (err) {
           console.error('[Cart] Failed to clear cart in database:', err);
           // localStorage is already cleared, so we can continue
@@ -705,19 +714,21 @@ const storeCreator = (set, get) => ({
     }
   },
 
-  // Check if item is in cart
+  // Check if item is in cart (with type-safe comparison)
   isInCart: (productId) => {
     const { cartItems } = get();
+    const pid = String(productId); // Normalize to string for consistent comparison
     return cartItems.some(
-      item => item.productId === productId || item.id === productId || item.product?.id === productId
+      item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
     );
   },
 
   // Get item quantity
   getItemQuantity: (productId) => {
     const { cartItems } = get();
+    const pid = String(productId); // Normalize to string for consistent comparison
     const item = cartItems.find(
-      item => item.productId === productId || item.id === productId || item.product?.id === productId
+      item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
     );
     return item ? item.quantity : 0;
   },

@@ -101,25 +101,54 @@ export const useWishlistStore = create((set, get) => ({
 
       const { wishlistItems } = get();
 
+      // Normalize productId to string for consistent comparison
+      const pid = String(productId);
+      
       // Check if already in wishlist
       if (wishlistItems.some(item => 
-        item.productId === productId || item.id === productId || item.product?.id === productId
+        String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
       )) {
         set({ isLoading: false });
         return { success: true, alreadyInWishlist: true };
       }
 
-      // Add to local state immediately
+      // Add to local state immediately with complete product data
       const newItem = {
         id: `wishlist_${Date.now()}_${productId}`,
-        productId: productId,
+        productId: String(productId), // Ensure consistent string type
         ...(productData && {
-          product: productData,
-          title: productData.title || productData.name,
-          image: productData.image,
-          discountedPrice: productData.discountedPrice || productData.price,
-          originalPrice: productData.originalPrice || productData.price,
-          price: productData.discountedPrice || productData.originalPrice || productData.price,
+          product: {
+            id: String(productData.id || productId),
+            productId: String(productData.productId || productId),
+            title: productData.title || productData.name || '',
+            name: productData.name || productData.title || '',
+            slug: productData.slug || '',
+            image: productData.image || productData.images?.[0] || '',
+            images: Array.isArray(productData.images) ? productData.images : (productData.image ? [productData.image] : []),
+            description: productData.description || '',
+            originalPrice: typeof productData.originalPrice === 'number' ? productData.originalPrice : (productData.originalPrice || productData.price || productData.regularPrice || 0),
+            discountedPrice: typeof productData.discountedPrice === 'number' ? productData.discountedPrice : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || 0),
+            price: typeof productData.price === 'number' ? productData.price : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || 0),
+            regularPrice: typeof productData.regularPrice === 'number' ? productData.regularPrice : (productData.regularPrice || productData.originalPrice || productData.price || 0),
+            salePrice: typeof productData.salePrice === 'number' ? productData.salePrice : (productData.salePrice || productData.discountedPrice || 0),
+            stockQuantity: typeof productData.stockQuantity === 'number' ? productData.stockQuantity : (productData.stockQuantity ?? productData.stock ?? 0),
+            stock: typeof productData.stock === 'number' ? productData.stock : (productData.stock ?? productData.stockQuantity ?? 0),
+            inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
+            category: productData.category || productData.categoryId || '',
+            categoryId: productData.categoryId || productData.category || '',
+            tags: Array.isArray(productData.tags) ? productData.tags : [],
+            rating: typeof productData.rating === 'number' ? productData.rating : (productData.rating || 0),
+            reviews: typeof productData.reviews === 'number' ? productData.reviews : (productData.reviews || productData.reviewCount || 0),
+            reviewCount: typeof productData.reviewCount === 'number' ? productData.reviewCount : (productData.reviewCount || productData.reviews || 0),
+            ...productData, // Preserve any other fields
+          },
+          // Also store commonly used fields at root level
+          title: productData.title || productData.name || '',
+          name: productData.name || productData.title || '',
+          image: productData.image || productData.images?.[0] || '',
+          discountedPrice: typeof productData.discountedPrice === 'number' ? productData.discountedPrice : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || 0),
+          originalPrice: typeof productData.originalPrice === 'number' ? productData.originalPrice : (productData.originalPrice || productData.price || productData.regularPrice || 0),
+          price: typeof productData.price === 'number' ? productData.price : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || 0),
         }),
       };
 
@@ -160,9 +189,12 @@ export const useWishlistStore = create((set, get) => ({
     try {
       const { wishlistItems } = get();
       
+      // Normalize productId to string for consistent comparison
+      const pid = String(productId);
+      
       // Remove from local state immediately
       const newItems = wishlistItems.filter(
-        item => !(item.productId === productId || item.id === productId || item.product?.id === productId)
+        item => !(String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid)
       );
       
       set({ wishlistItems: newItems, isLoading: false });
@@ -258,11 +290,12 @@ export const useWishlistStore = create((set, get) => ({
     }
   },
 
-  // Check if item is in wishlist
+  // Check if item is in wishlist (with type-safe comparison)
   isInWishlist: (productId) => {
     const { wishlistItems } = get();
+    const pid = String(productId); // Normalize to string for consistent comparison
     return wishlistItems.some(
-      item => item.productId === productId || item.id === productId || item.product?.id === productId
+      item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
     );
   },
 
