@@ -194,27 +194,27 @@ const Navbar = () => {
  const renderUserMenu = () => {
   return (
     <div className="hidden md:block relative">
-      {/* Account Icon Button */}
-      <button
-        type="button"
-        className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
-        aria-label={isAuthenticated ? 'User account' : 'Sign in'}
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsAccountMenuOpen(prev => !prev);
-        }}
-      >
-        <UserRound size={20} className="text-gray-700" />
-      </button>
+      {isAuth ? (
+        <>
+          {/* Account Icon Button - Only show when authenticated */}
+          <button
+            type="button"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+            aria-label="User account"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAccountMenuOpen(prev => !prev);
+            }}
+          >
+            <UserRound size={20} className="text-gray-700" />
+          </button>
 
-      {/* Dropdown Menu */}
-      <div
-        className={`fixed right-4 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[1000] transition-all duration-200 ${
-          isAccountMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
-        }`}
-      >
-        {isAuth ? (
-          <>
+          {/* Dropdown Menu */}
+          <div
+            className={`fixed right-4 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[1000] transition-all duration-200 ${
+              isAccountMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
+            }`}
+          >
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm text-gray-600 font-medium">
                 {user?.firstName || user?.name || 'User'}
@@ -247,9 +247,12 @@ const Navbar = () => {
               <LogOut size={16} className="mr-2" />
               Sign Out
             </button>
-          </>
-        ) : (
-          <>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Login/Sign Up Button - Show when not authenticated */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={(e) => {
@@ -257,9 +260,8 @@ const Navbar = () => {
                 e.stopPropagation();
                 console.log('Desktop auth login clicked');
                 openAuthDrawer('login');
-                setIsAccountMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
             >
               Sign In
             </button>
@@ -273,15 +275,14 @@ const Navbar = () => {
                 if (typeof document !== 'undefined') {
                   try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'register' } })); } catch {}
                 }
-                setIsAccountMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
             >
               Sign Up
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -566,43 +567,50 @@ const Navbar = () => {
       </div>
       
       {/* Mobile Navigation */}
-      <div className="md:hidden">
-        <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8 overflow-hidden">
-          {/* Left: Mobile Menu Button */}
-          <button 
-            className="text-gray-500 hover:text-gray-700"
-            onClick={toggleMobile}
-          >
-            <Menu size={24} />
-          </button>
-          
-          {/* Center: Logo */}
-          <div className="flex-shrink-0">
-            {renderLogo()}
-          </div>
-          
-          {/* Right: Icons */}
-          <div className="flex items-center space-x-4">
-            <button 
-              className="text-gray-500 hover:text-gray-700"
-              onClick={toggleSearch}
-            >
-              <Search size={20} />
-            </button>
-            <Link
-              href="/cart"
-              className="text-gray-700 hover:text-blue-600 relative cursor-pointer"
-              aria-label="View cart"
-            >
-              <ShoppingCart size={20} />
-              {getCartCount() > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getCartCount()}
-                </span>
-              )}
-            </Link>
-          </div>
-        </div>
+   <div className="md:hidden">
+  <div className="mx-auto flex h-16  items-center justify-center px-4 sm:px-6 lg:px-8  w-screen">
+    {/* Mobile Navbar Row */}
+    <div className="flex items-center justify-between w-full max-w-[380px]">
+      {/* Left: Mobile Menu Button */}
+      <button 
+        className="text-gray-600 hover:text-blue-600 flex-shrink-0"
+        onClick={toggleMobile}
+        aria-label="Open menu"
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* Center: Logo */}
+      <div className="flex-shrink-0 flex justify-center">
+        {renderLogo()}
+      </div>
+
+      {/* Right: Icons (Search + Cart) */}
+      <div className="flex items-center justify-end space-x-5">
+        <button 
+          className="text-gray-600 hover:text-blue-600"
+          onClick={toggleSearch}
+          aria-label="Search"
+        >
+          <Search size={22} />
+        </button>
+
+        <Link
+          href="/cart"
+          className="relative text-gray-600 hover:text-blue-600 flex items-center"
+          aria-label="View cart"
+        >
+          <ShoppingCart size={22} />
+          {getCartCount() > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              {getCartCount()}
+            </span>
+          )}
+        </Link>
+      </div>
+    </div>
+  </div>
+
         
         {/* Mobile Search Bar */}
         {isSearchExpanded && (
@@ -621,6 +629,10 @@ const Navbar = () => {
         {/* Mobile Categories */}
         {/* {!isSearchExpanded && renderMobileCategories()} */}
         </div>
+
+
+
+        
       </div>
       
       {/* Desktop Categories */}

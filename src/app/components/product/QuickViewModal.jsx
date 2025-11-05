@@ -137,7 +137,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   const discountedPrice = product.discountedPrice || product.salePrice || product.price || 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -145,22 +145,23 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-auto overflow-hidden">
+      <div className="relative bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-5xl mx-auto overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Quick View</h2>
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Quick View</h2>
           <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X size={22} />
+            <X size={20} className="sm:w-[22px] sm:h-[22px]" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="max-h-[80vh]  p-6 grid md:grid-cols-2 gap-6">
+        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-60px)] sm:max-h-[80vh]">
+          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Left: Product Images */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="relative bg-gray-50 rounded-lg aspect-square overflow-hidden group">
               {productImages.length ? (
                 <OptimizedImage
@@ -179,15 +180,15 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                 <>
                   <button
                     onClick={handlePrevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition"
+                    className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 bg-white/90 hover:bg-white rounded-full shadow opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition z-10"
                   >
-                    <ChevronLeft size={22} />
+                    <ChevronLeft size={18} className="sm:w-[22px] sm:h-[22px]" />
                   </button>
                   <button
                     onClick={handleNextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition"
+                    className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 bg-white/90 hover:bg-white rounded-full shadow opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition z-10"
                   >
-                    <ChevronRight size={22} />
+                    <ChevronRight size={18} className="sm:w-[22px] sm:h-[22px]" />
                   </button>
                 </>
               )}
@@ -195,15 +196,15 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">{product.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{product.title}</h1>
 
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
                 {originalPrice > discountedPrice && (
-                  <span className="text-lg text-gray-500 line-through">${originalPrice.toFixed(2)}</span>
+                  <span className="text-base sm:text-lg text-gray-500 line-through">${originalPrice.toFixed(2)}</span>
                 )}
-                <span className="text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center gap-2 mb-3">
@@ -230,21 +231,21 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             {/* Quantity */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">Quantity</label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => handleQuantityChange(-1)}
                   disabled={quantity <= 1}
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  className="p-2 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <Minus size={18} />
+                  <Minus size={18} className="sm:w-[18px] sm:h-[18px]" />
                 </button>
-                <span className="text-lg font-medium w-10 text-center">{quantity}</span>
+                <span className="text-base sm:text-lg font-medium w-10 text-center">{quantity}</span>
                 <button
                   onClick={() => handleQuantityChange(1)}
                   disabled={quantity >= (product.maxQuantity || 10)}
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  className="p-2 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <Plus size={18} />
+                  <Plus size={18} className="sm:w-[18px] sm:h-[18px]" />
                 </button>
               </div>
             </div>
@@ -252,7 +253,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             {/* Colors */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Choose Color</label>
-              <div className="flex gap-4 flex-wrap">
+              <div className="flex gap-2 sm:gap-4 flex-wrap">
                 {colors.map((color) => {
                   const colorName = typeof color === 'string' ? color : color.name;
                   const isSelected = selectedColor === colorName;
@@ -261,7 +262,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                     <button
                       key={colorName}
                       onClick={() => setSelectedColor(colorName)}
-                      className={`relative w-16 h-16 rounded-lg border-2 transition ${
+                      className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 transition ${
                         isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'
                       }`}
                     >
@@ -270,8 +271,8 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                         style={{ backgroundColor: colorValue }}
                       />
                       {isSelected && (
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#0B4866] rounded-full flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#0B4866] rounded-full flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -281,21 +282,21 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                 })}
               </div>
               {selectedColor && (
-                <span className="text-sm text-gray-600 mt-2 block">{selectedColor}</span>
+                <span className="text-xs sm:text-sm text-gray-600 mt-2 block">{selectedColor}</span>
               )}
             </div>
 
             {/* Sizes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Choose Size</label>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3 flex-wrap">
                 {sizes.map((size) => {
                   const isSelected = selectedSize === size;
                   return (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`w-12 h-12 rounded-lg text-sm font-medium border-2 transition ${
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg text-xs sm:text-sm font-medium border-2 transition ${
                         isSelected
                           ? 'bg-[#0B4866] text-white border-[#0B4866]'
                           : 'border-gray-300 hover:border-[#0B4866]'
@@ -309,20 +310,20 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleQuickShop}
                 disabled={!inStock}
-                className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                className="flex-1 px-4 sm:px-5 py-2.5 sm:py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed text-sm sm:text-base"
               >
-                <ShoppingBag size={18} /> Quick Shop
+                <ShoppingBag size={16} className="sm:w-[18px] sm:h-[18px]" /> Quick Shop
               </button>
               <button
                 type="button"
                 onClick={handleAddToCart}
                 disabled={!inStock || productInCart}
-                className={`flex-1 px-5 py-3 rounded-lg text-white flex items-center justify-center gap-2 transition ${
+                className={`flex-1 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg text-white flex items-center justify-center gap-2 transition text-sm sm:text-base ${
                   !inStock
                     ? 'bg-gray-400'
                     : productInCart
@@ -330,19 +331,20 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                     : 'bg-[#0F4C81] hover:bg-[#0D3F6A]'
                 }`}
               >
-                <ShoppingCart size={18} />
+                <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
                 {!inStock ? 'Out of Stock' : productInCart ? 'In Cart' : 'Add to Cart'}
               </button>
             </div>
 
-            <div className="text-center">
+            <div className="text-center pb-2 sm:pb-0">
               <button
                 onClick={handleViewFullDetails}
-                className="text-[#0F4C81] hover:text-[#0D3F6A] text-sm underline font-medium"
+                className="text-[#0F4C81] hover:text-[#0D3F6A] text-xs sm:text-sm underline font-medium"
               >
                 View Full Detail Page
               </button>
             </div>
+          </div>
           </div>
         </div>
       </div>

@@ -42,9 +42,9 @@ export const apiEndpoints = {
   },
   wishlist: {
     get: '/wishlist',
-    add: '/wishlist/add',
-    remove: '/wishlist/remove',
-    clear: '/wishlist/clear',
+    add: '/wishlist',
+    remove: (productId) => `/wishlist/${productId}`,
+    clear: '/wishlist',
   },
 };
 
@@ -561,9 +561,8 @@ export const apiService = {
       const token = getAuthToken();
       try {
         const response = await axios.delete(
-          `${api.defaults.baseURL}${apiEndpoints.wishlist.remove}`,
+          `${api.defaults.baseURL}${apiEndpoints.wishlist.remove(productId)}`,
           {
-            data: { productId },
             headers: {
               'Authorization': token ? `Bearer ${token}` : '',
             },

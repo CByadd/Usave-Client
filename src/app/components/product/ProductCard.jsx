@@ -16,7 +16,7 @@ import QuickViewModal from "./QuickViewModal";
 
 import OptimizedImage from "../shared/OptimizedImage";
 
-const ItemCard = ({ item, variant = 'carousel' }) => {
+const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
   const router = useRouter();
 
@@ -26,18 +26,26 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
   const [showQuickView, setShowQuickView] = useState(false);
 
+  // Support both 'item' and 'product' props for flexibility
+  const productItem = item || product;
+
+  // Early return if no product data
+  if (!productItem) {
+    return null;
+  }
+
   // Calculate stock status
-  const stockQuantity = item.stockQuantity ?? item.stock ?? 0;
-  const inStock = item.inStock !== false && item.inStock !== null;
+  const stockQuantity = productItem.stockQuantity ?? productItem.stock ?? 0;
+  const inStock = productItem.inStock !== false && productItem.inStock !== null;
   const hasStock = inStock && stockQuantity > 0;
 
-  const goToProduct = () => router.push(`/products/${item.id}`);
+  const goToProduct = () => router.push(`/products/${productItem.id}`);
 
   
 
   const handleWishlistToggle = async (e) => {
 
-    console.log('[ProductCard] handleWishlistToggle clicked - item:', item?.id, item?.title);
+    console.log('[ProductCard] handleWishlistToggle clicked - item:', productItem?.id, productItem?.title);
 
     if (e) {
 
@@ -49,7 +57,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
     try {
 
-      const result = await toggleWishlist(item);
+      const result = await toggleWishlist(productItem);
 
       console.log('[ProductCard] handleWishlistToggle - result:', result);
 
@@ -62,7 +70,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
   };
 
   const quickShop = async (e) => {
-    console.log('[ProductCard] quickShop clicked - item:', item?.id, item?.title);
+    console.log('[ProductCard] quickShop clicked - item:', productItem?.id, productItem?.title);
 
     if (e) {
       e.preventDefault();
@@ -76,7 +84,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
     }
     
     try {
-      const result = await addToCart(item, 1);
+      const result = await addToCart(productItem, 1);
       console.log('[ProductCard] quickShop - addToCart result:', result);
 
       if (result?.success) {
@@ -104,7 +112,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
     }
     
     try {
-      const result = await addToCart(item, 1);
+      const result = await addToCart(productItem, 1);
       console.log('[ProductCard] handleAddToCart - addToCart result:', result);
 
       if (result?.success) {
@@ -139,7 +147,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
     <div>
 
-      {item.topSeller && variant === 'carousel' && (
+      {productItem.topSeller && variant === 'carousel' && (
 
         <div className="absolute top-[-12px] left-6 bg-pink-600 text-white text-xs font-semibold px-2 py-1">
 
@@ -153,7 +161,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
         className={containerClasses}
 
-        style={variant === 'carousel' ? { backgroundColor: item.bg } : {}}
+        style={variant === 'carousel' ? { backgroundColor: productItem.bg } : {}}
 
       >
 
@@ -169,13 +177,15 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
           disabled={isWishlistLoading}
 
-          aria-label={isInWishlist(item.id) ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label={isInWishlist(productItem.id) ? "Remove from wishlist" : "Add to wishlist"}
 
-              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition z-10"
+              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition z-50 cursor-pointer"
+
+              type="button"
 
             >
 
-          <Heart size={20} className={isInWishlist(item.id) ? "fill-red-500 text-red-500" : ""} />
+          <Heart size={20} className={isInWishlist(productItem.id) ? "fill-red-500 text-red-500" : ""} />
 
             </button>
 
@@ -193,13 +203,15 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
           disabled={isWishlistLoading}
 
-          aria-label={isInWishlist(item.id) ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label={isInWishlist(productItem.id) ? "Remove from wishlist" : "Add to wishlist"}
 
-              className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
+              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 z-50 cursor-pointer"
+
+              type="button"
 
             >
 
-          {isInWishlist(item.id) ? (
+          {isInWishlist(productItem.id) ? (
 
                 <Heart size={22} className="fill-red-500 text-red-500" />
 
@@ -221,7 +233,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
             className={imageContainerClasses}
 
-            style={item.bg ? { backgroundColor: item.bg } : { backgroundColor: '#f9fafb' }}
+            style={productItem.bg ? { backgroundColor: productItem.bg } : { backgroundColor: '#f9fafb' }}
 
           >
 
@@ -229,9 +241,9 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
             <OptimizedImage
 
-              src={item.image}
+              src={productItem.image}
 
-              alt={item.title}
+              alt={productItem.title}
 
               width={280}
 
@@ -261,11 +273,11 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
         >
 
-          {item.badge && (
+          {productItem.badge && (
 
-            <div className={`absolute top-3 left-3 ${item.badgeColor || 'bg-pink-600'} text-white text-xs font-semibold px-3 py-1 rounded z-10`}>
+            <div className={`absolute top-3 left-3 ${productItem.badgeColor || 'bg-pink-600'} text-white text-xs font-semibold px-3 py-1 rounded z-10`}>
 
-              {item.badge}
+              {productItem.badge}
 
             </div>
 
@@ -273,9 +285,9 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
           <OptimizedImage
 
-            src={item.image}
+            src={productItem.image}
 
-            alt={item.title}
+            alt={productItem.title}
 
             width={300}
 
@@ -343,15 +355,15 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
      <div className={variant === 'grid' ? "flex flex-col flex-1" : "p-3 flex flex-col flex-1"}>
 
-           <h3 onClick={goToProduct} className={`${variant === 'grid' ? 'text-base mb-2' : 'mt-3'} font-medium text-gray-800 hover:text-[#0B4866] cursor-pointer line-clamp-2 min-h-[2.5rem]`}>{item.title}</h3>
+           <h3 onClick={goToProduct} className={`${variant === 'grid' ? 'text-base mb-2' : 'mt-3'} font-medium text-gray-800 hover:text-[#0B4866] cursor-pointer line-clamp-2 min-h-[2.5rem]`}>{productItem.title}</h3>
 
         <div className={`${variant === 'grid' ? 'gap-2 mb-2' : 'mt-1'} flex items-center ${variant === 'grid' ? '' : 'text-sm text-gray-600'}`}>
 
-          <span className="text-gray-500 line-through mr-2 text-sm">${(item.originalPrice || item.price || 0).toFixed(2)}</span>
+          <span className="text-gray-500 line-through mr-2 text-sm">${(productItem.originalPrice || productItem.price || 0).toFixed(2)}</span>
 
           <span className={`${variant === 'grid' ? 'text-xl' : 'text-xl'} font-semibold text-gray-900`}>
 
-            ${(item.discountedPrice || item.price || 0).toFixed(2)}
+            ${(productItem.discountedPrice || productItem.price || 0).toFixed(2)}
 
                 </span>
 
@@ -363,11 +375,11 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
           {[...Array(5)].map((_, i) => (
 
-            <span key={i}>{i < Math.floor(item.rating || 0) ? '★' : '☆'}</span>
+            <span key={i}>{i < Math.floor(productItem.rating || 0) ? '★' : '☆'}</span>
 
           ))}
 
-          <span className="text-gray-500 text-xs ml-1">({item.reviews || 0})</span>
+          <span className="text-gray-500 text-xs ml-1">({productItem.reviews || 0})</span>
 
         </div>
 
@@ -454,7 +466,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                     ? 'bg-gray-400 cursor-not-allowed' 
 
-                    : isInCart(item.id) 
+                    : isInCart(productItem.id) 
 
                       ? 'bg-green-600 hover:bg-green-700' 
 
@@ -466,7 +478,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 <ShoppingCart size={16} />
 
-                {!hasStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
+                {!hasStock ? 'Out of Stock' : isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
 
               </button>
 
@@ -491,7 +503,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
                 }}
 
                 disabled={!hasStock}
-                className="flex-1 border rounded-4xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 border rounded-4xl py-2 sm:py-3 flex items-center justify-center gap-2 hover:bg-gray-100 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 text-sm sm:text-base"
 
               >
 
@@ -517,13 +529,13 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 disabled={!hasStock}
 
-                className={`md:hidden hidden lg:flex flex-1 rounded-4xl py-2 items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
+                className={`flex flex-1 rounded-4xl py-2 sm:py-3 items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed text-sm sm:text-base ${
 
                   !hasStock 
 
                     ? 'bg-gray-400 cursor-not-allowed text-white' 
 
-                    : isInCart(item.id) 
+                    : isInCart(productItem.id) 
 
                       ? 'bg-green-600 hover:bg-green-700 text-white' 
 
@@ -535,7 +547,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 <ShoppingCart size={16} />
 
-                {!hasStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
+                {!hasStock ? 'Out of Stock' : isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
 
             </button>
 
@@ -551,7 +563,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
         <QuickViewModal
 
-          product={item}
+          product={productItem}
 
       isOpen={showQuickView}
 
