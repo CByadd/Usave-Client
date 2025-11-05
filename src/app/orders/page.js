@@ -6,6 +6,7 @@ import { RefreshCw, Edit, CreditCard, AlertCircle } from 'lucide-react';
 import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
+import ReApprovalModal from '../components/orders/ReApprovalModal';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -16,20 +17,26 @@ export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [approvalNotes, setApprovalNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showReApprovalModal, setShowReApprovalModal] = useState(false);
+  const [selectedOrderForReapproval, setSelectedOrderForReapproval] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
+    setMounted(true);
     checkAuth();
   }, [checkAuth]);
 
   useEffect(() => {
+    if (!mounted) return;
+    
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
     }
     fetchOrders();
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
   const fetchOrders = async () => {
     if (!isAuthenticated) return;
@@ -57,28 +64,40 @@ export default function OrdersPage() {
   };
 
   const handleRequestReapproval = async (orderId) => {
+    console.log('handleRequestReapproval called with orderId:', orderId);
     try {
       setIsProcessing(true);
       setError('');
-      const response = await api.orders.requestReapproval(orderId, approvalNotes);
       
-      if (response.success) {
-        setOrders(prev => prev.map(order => 
-          order.id === orderId 
-            ? { ...order, status: 'PENDING_APPROVAL', approvalNotes }
-            : order
-        ));
-        setApprovalNotes('');
-        alert('Order submitted for re-approval');
+      // Fetch full order details including items
+      console.log('Fetching order details for:', orderId);
+      const orderResponse = await api.orders.getById(orderId);
+      console.log('Order response:', orderResponse);
+      
+      if (orderResponse.success) {
+        const order = orderResponse.data?.order || orderResponse.data;
+        console.log('Setting order for reapproval:', order);
+        setSelectedOrderForReapproval(order);
+        setShowReApprovalModal(true);
+        console.log('Modal should be open now');
       } else {
-        setError(response.error || response.message || 'Failed to request re-approval');
+        const errorMsg = orderResponse.message || 'Failed to fetch order details';
+        console.error('Failed to fetch order:', errorMsg);
+        setError(errorMsg);
       }
     } catch (error) {
-      console.error('Error requesting re-approval:', error);
-      setError(error.response?.data?.error || error.message || 'Failed to request re-approval');
+      console.error('Error fetching order details:', error);
+      setError(error.response?.data?.error || error.message || 'Failed to fetch order details');
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleReApprovalSuccess = () => {
+    // Refresh orders list after successful re-approval
+    fetchOrders();
+    setShowReApprovalModal(false);
+    setSelectedOrderForReapproval(null);
   };
 
   const handleProceedToPay = (orderId) => {
@@ -101,13 +120,19 @@ export default function OrdersPage() {
   const getFilteredOrders = () => {
     switch (activeFilter) {
       case 'pending':
-        return orders.filter(o => o.status === 'PENDING_APPROVAL');
+        // Include orders pending owner approval, pending admin approval, or owner approved waiting for admin
+        return orders.filter(o => 
+          o.status === 'PENDING_APPROVAL' || 
+          (o.requiresOwnerApproval && !o.ownerApproved && !o.ownerRejected) ||
+          (o.ownerApproved && !o.adminApproved)
+        );
       case 'approved':
-        return orders.filter(o => o.status === 'APPROVED');
+        return orders.filter(o => o.status === 'APPROVED' || o.adminApproved);
       case 'rejected':
-        return orders.filter(o => o.status === 'REJECTED');
+        // Include orders rejected by owner or admin
+        return orders.filter(o => o.status === 'REJECTED' || o.ownerRejected || o.adminRejected);
       case 'unpaid':
-        return orders.filter(o => o.status === 'APPROVED' && o.paymentStatus === 'PENDING');
+        return orders.filter(o => (o.status === 'APPROVED' || o.adminApproved) && o.paymentStatus === 'PENDING');
       case 'paid':
         return orders.filter(o => o.paymentStatus === 'PAID');
       default:
@@ -117,11 +142,26 @@ export default function OrdersPage() {
 
   // Group orders by status for display
   const groupedOrders = {
-    pending: orders.filter(o => o.status === 'PENDING_APPROVAL'),
-    approved: orders.filter(o => o.status === 'APPROVED'),
-    rejected: orders.filter(o => o.status === 'REJECTED'),
+    pending: orders.filter(o => 
+      o.status === 'PENDING_APPROVAL' || 
+      (o.requiresOwnerApproval && !o.ownerApproved && !o.ownerRejected) ||
+      (o.ownerApproved && !o.adminApproved)
+    ),
+    approved: orders.filter(o => o.status === 'APPROVED' || o.adminApproved),
+    rejected: orders.filter(o => o.status === 'REJECTED' || o.ownerRejected || o.adminRejected),
   };
 
+  // Show loading state on initial mount to prevent hydration mismatch
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0B4866] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -129,17 +169,6 @@ export default function OrdersPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h2>
           <p className="text-gray-600">You need to be logged in to view your orders.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0B4866] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading orders...</p>
         </div>
       </div>
     );
@@ -305,6 +334,17 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Re-Approval Modal */}
+      <ReApprovalModal
+        isOpen={showReApprovalModal}
+        onClose={() => {
+          setShowReApprovalModal(false);
+          setSelectedOrderForReapproval(null);
+        }}
+        order={selectedOrderForReapproval}
+        onDirectSubmit={handleReApprovalSuccess}
+      />
     </div>
   );
 }
@@ -312,7 +352,19 @@ export default function OrdersPage() {
 // Order Card Component
 function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, order) => {
+    // Check owner approval states first
+    if (order?.ownerRejected) {
+      return 'bg-red-100 text-red-800 border-red-200';
+    }
+    if (order?.ownerApproved && !order?.adminApproved) {
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    }
+    
+    // Regular status badges
     switch (status) {
       case 'PENDING_APPROVAL':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -325,10 +377,26 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
     }
   };
 
-  const getStatusLabel = (status) => {
+  const getStatusLabel = (status, order) => {
+    // Check owner approval states first
+    if (order?.ownerRejected) {
+      return 'Rejected by Owner';
+    }
+    if (order?.ownerApproved && !order?.adminApproved) {
+      return 'Owner Approved - Waiting for Admin';
+    }
+    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
+      return 'Pending Owner Approval';
+    }
+    
+    // Regular status labels
     switch (status) {
       case 'PENDING_APPROVAL':
-        return 'Pending';
+        // If it requires owner approval but owner hasn't approved yet, show pending owner
+        if (order?.requiresOwnerApproval && !order?.ownerApproved) {
+          return 'Pending Owner Approval';
+        }
+        return 'Pending Admin Approval';
       case 'APPROVED':
         return 'Approved';
       case 'REJECTED':
@@ -400,8 +468,8 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
             <div className="flex-1 min-w-0">
               {/* Status Badge */}
               <div className="mb-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(status)}`}>
-                  {getStatusLabel(status)}
+                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(status, order)}`}>
+                  {getStatusLabel(status, order)}
                 </span>
               </div>
 

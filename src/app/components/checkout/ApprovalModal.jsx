@@ -12,6 +12,12 @@ export default function ApprovalModal({
   onContinueWithoutApproval,
   cartItems = [],
   totalAmount = 0,
+  flowType = 'owner',
+  shippingAddress = null,
+  subtotal = 0,
+  tax = 0,
+  shipping = 0,
+  warranty = 0,
 }) {
   const router = useRouter(); // ✅ initialize router
   const [user, setUser] = useState(null);
@@ -19,18 +25,24 @@ export default function ApprovalModal({
   useEffect(() => {
     setUser(getCurrentUser());
   }, []);
-  const [adminEmail, setAdminEmail] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState('email');
   const [orderNumber, setOrderNumber] = useState('');
+  const [currentFlowType, setCurrentFlowType] = useState(flowType); // 'owner' or 'direct'
+  
+  // Update flow type when prop changes
+  useEffect(() => {
+    setCurrentFlowType(flowType);
+  }, [flowType]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!adminEmail) {
-      setError('Please enter an email address');
+    if (!ownerEmail) {
+      setError('Please enter owner email address');
       return;
     }
 
@@ -38,6 +50,17 @@ export default function ApprovalModal({
     setError('');
 
     try {
+      // Use provided values or calculate from cart items
+      const calculatedSubtotal = subtotal || cartItems.reduce(
+        (sum, item) => sum + (item.discountedPrice || item.price || item.product?.discountedPrice || item.product?.originalPrice || 0) * (item.quantity || 1),
+        0
+      );
+      
+      const calculatedTax = tax || 0;
+      const calculatedShipping = shipping || 0;
+      const calculatedWarranty = warranty || 0;
+      const calculatedTotal = totalAmount || (calculatedSubtotal + calculatedTax + calculatedShipping + calculatedWarranty);
+
       const orderDetails = {
         items: cartItems.map((item) => ({
           id: item.productId || item.id || item.product?.id || item._id,
@@ -45,32 +68,30 @@ export default function ApprovalModal({
           name: item.name || item.title || item.product?.title,
           price: item.discountedPrice || item.price || item.product?.discountedPrice || item.product?.originalPrice,
           quantity: item.quantity || 1,
-          includeInstallation: item.includeInstallation || false,
-          installationFee: item.includeInstallation ? item.installationFee || 49.99 : 0,
+          product: {
+            id: item.productId || item.id || item.product?.id,
+            title: item.name || item.title || item.product?.title,
+            image: item.image || item.product?.image || '',
+          },
         })),
-        subtotal: cartItems.reduce(
-          (sum, item) => sum + (item.discountedPrice || item.price) * item.quantity,
-          0
-        ),
-        tax: 0,
-        shipping: 0,
-        total: totalAmount,
+        subtotal: calculatedSubtotal,
+        tax: calculatedTax,
+        shipping: calculatedShipping,
+        warranty: calculatedWarranty,
+        total: calculatedTotal,
+        shippingAddress: shippingAddress || {},
       };
 
-      const installationTotal = cartItems
-        .filter((item) => item.includeInstallation)
-        .reduce((sum, item) => sum + (item.installationFee || 49.99) * item.quantity, 0);
-
-      orderDetails.total = orderDetails.subtotal + installationTotal;
-
+      // For owner approval flow, only send owner email - admin email comes from backend
       const response = await fetch('/api/orders/request-approval', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ownerEmail: user?.email || 'guest@example.com',
-          adminEmail,
+          ownerEmail: ownerEmail,
+          adminEmail: null, // Admin email will be fetched from backend
           orderDetails,
           userId: user?.id || 'guest',
+          requiresOwnerApproval: true, // This is owner approval flow
         }),
       });
 
@@ -93,10 +114,12 @@ export default function ApprovalModal({
   // ✅ Modified handleClose: resets state & redirects to /orders
   const handleClose = () => {
     setStep('email');
-    setAdminEmail('');
+    setOwnerEmail('');
     setError('');
     onClose();
-    router.push('/orders'); // ✅ redirect to orders page
+    if (step === 'success') {
+      router.push('/orders'); // ✅ redirect to orders page
+    }
   };
 
   return (
@@ -133,8 +156,8 @@ export default function ApprovalModal({
                   Request Sent Successfully!
                 </h2>
                 <p className="mt-2 text-sm text-gray-600">
-                  An approval request has been sent to <span className="font-medium">{adminEmail}</span> for
-                  Order #{orderNumber}. The administrator will review your order shortly.
+                  An approval request has been sent to <span className="font-medium">{ownerEmail}</span> for
+                  Order #{orderNumber}. The owner will review your order first, then it will be sent to admin.
                 </p>
                 <button
                   onClick={handleClose}
@@ -145,9 +168,9 @@ export default function ApprovalModal({
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Request Approval</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Request Owner Approval</h2>
                 <p className="text-sm text-gray-500 mb-5">
-                  Send this order for administrator approval before checkout.
+                  Submit to owner first, then admin will review after owner approval.
                 </p>
 
                 {error && (
@@ -159,22 +182,22 @@ export default function ApprovalModal({
                 <form onSubmit={handleSubmit}>
                   <div className="mb-5">
                     <label
-                      htmlFor="adminEmail"
+                      htmlFor="ownerEmail"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Administrator's Email
+                      Owner's Email *
                     </label>
                     <input
                       type="email"
-                      id="adminEmail"
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
+                      id="ownerEmail"
+                      value={ownerEmail}
+                      onChange={(e) => setOwnerEmail(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 transition"
-                      placeholder="admin@example.com"
+                      placeholder="owner@example.com"
                       required
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Enter the approver's email address.
+                      Enter the owner's email address who needs to approve first. After owner approval, the order will be sent to admin.
                     </p>
                   </div>
 
@@ -198,7 +221,7 @@ export default function ApprovalModal({
                       </button>
                       <button
                         type="submit"
-                        disabled={isSubmitting || !adminEmail}
+                        disabled={isSubmitting || !ownerEmail}
                         className="px-4 py-2 text-sm rounded-lg bg-[#0B4866] text-white font-medium hover:scale-102 transition ease-in-out focus:ring-2 disabled:opacity-50"
                       >
                         {isSubmitting ? 'Sending...' : 'Send Request'}

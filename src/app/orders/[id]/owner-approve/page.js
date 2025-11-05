@@ -1,0 +1,608 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { config } from '../../../lib/config';
+import AdminOrderEditor from '../../../components/admin/AdminOrderEditor';
+import OptimizedImage from '../../../components/shared/OptimizedImage';
+import { CheckCircle2, XCircle, AlertCircle, Loader2, Edit, ThumbsUp, FileText, X as XIcon } from 'lucide-react';
+
+export const dynamic = 'force-dynamic';
+
+function OwnerApproveOrderPageContent() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [rejectionNotes, setRejectionNotes] = useState('');
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [action, setAction] = useState(''); // 'approved' or 'rejected'
+
+  const orderId = params.id;
+  const token = searchParams.get('token');
+
+  useEffect(() => {
+    if (!orderId) {
+      setError('Order ID is missing');
+      setLoading(false);
+      return;
+    }
+
+    if (!token) {
+      setError('Access token is missing from URL');
+      setLoading(false);
+      return;
+    }
+
+    fetchOrderDetails();
+  }, [orderId, token]);
+
+  const fetchOrderDetails = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await fetch(`${config.api.baseURL}/orders/${orderId}?token=${token}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch order details');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        const orderData = data.data?.order || data.data;
+        setOrder(orderData);
+        
+        // Check if already processed
+        if (orderData.ownerApproved || orderData.ownerRejected) {
+          setSuccess(true);
+          setAction(orderData.ownerApproved ? 'approved' : 'rejected');
+        }
+      } else {
+        throw new Error(data.message || 'Failed to fetch order details');
+      }
+    } catch (err) {
+      console.error('Error fetching order:', err);
+      setError(err.message || 'Failed to load order details. The link may be invalid or expired.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOrderUpdate = (updatedOrder) => {
+    setOrder(updatedOrder);
+  };
+
+  const handleApprove = async () => {
+    if (!orderId || !token) {
+      setError('Missing order ID or token');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to approve this order?')) return;
+
+    try {
+      setProcessing(true);
+      setError('');
+
+      const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          approved: true,
+          approvalNotes: approvalNotes.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to approve order');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOrder(data.data.order);
+        setSuccess(true);
+        setAction('approved');
+        setApprovalNotes('');
+        setShowNotesModal(false);
+      } else {
+        throw new Error(data.message || 'Failed to approve order');
+      }
+    } catch (err) {
+      console.error('Error approving order:', err);
+      setError(err.message || 'Failed to approve order. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!orderId || !token) {
+      setError('Missing order ID or token');
+      return;
+    }
+
+    if (!rejectionNotes.trim()) {
+      setError('Please provide a reason for rejection');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setError('');
+
+      const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          approved: false,
+          rejectionNotes: rejectionNotes.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reject order');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOrder(data.data.order);
+        setSuccess(true);
+        setAction('rejected');
+        setShowRejectForm(false);
+        setRejectionNotes('');
+      } else {
+        throw new Error(data.message || 'Failed to reject order');
+      }
+    } catch (err) {
+      console.error('Error rejecting order:', err);
+      setError(err.message || 'Failed to reject order. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    if (order?.ownerApproved) {
+      return 'bg-green-100 text-green-800 border-green-300';
+    }
+    if (order?.ownerRejected) {
+      return 'bg-red-100 text-red-800 border-red-300';
+    }
+    return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  };
+
+  const getStatusLabel = () => {
+    if (order?.ownerApproved) return 'Approved';
+    if (order?.ownerRejected) return 'Rejected';
+    return 'Pending';
+  };
+
+  const formatItems = (items) => {
+    if (!items || items.length === 0) return 'No items';
+    return items.map(item => item.product?.title || item.name || 'Product').join(', ');
+  };
+
+  const calculateTotal = () => {
+    if (!order) return 0;
+    const subtotal = order.subtotal || 0;
+    const tax = order.tax || 0;
+    const shipping = order.shipping || 0;
+    return subtotal + tax + shipping;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 text-[#0B4866] animate-spin mx-auto mb-4" />
+          <p className="mt-4 text-lg font-medium text-gray-900">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !order) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Error</h2>
+          <p className="text-red-600 mb-6">{error}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
+          >
+            Go to Homepage
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (success || (order && (order.ownerApproved || order.ownerRejected))) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="text-center">
+              {action === 'approved' || order?.ownerApproved ? (
+                <>
+                  <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Approved</h1>
+                  <p className="text-gray-600 mb-6">
+                    This order has been approved and will be sent to admin for final processing.
+                    {order?.ownerApprovalNotes && (
+                      <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-left">
+                        <p className="text-sm font-medium text-green-800 mb-1">Approval Notes:</p>
+                        <p className="text-sm text-green-700">{order.ownerApprovalNotes}</p>
+                      </div>
+                    )}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Rejected</h1>
+                  <p className="text-gray-600 mb-6">
+                    This order has been rejected. It will not be sent to admin.
+                    {order?.ownerRejectionNotes && (
+                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
+                        <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason:</p>
+                        <p className="text-sm text-red-700">{order.ownerRejectionNotes}</p>
+                      </div>
+                    )}
+                  </p>
+                </>
+              )}
+              <button
+                onClick={() => router.push('/')}
+                className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
+              >
+                Go to Homepage
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h2>
+          <p className="text-gray-600 mb-6">The order you are looking for could not be found or the link is invalid.</p>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
+          >
+            Go to Homepage
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const items = order.items || [];
+  const orderTotal = calculateTotal();
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Page Title */}
+        <h1 className="text-3xl font-bold text-[#0B4866] mb-6">Order Approval</h1>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Order Card */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 hover:shadow-md transition-shadow">
+          <div className="flex items-start gap-4">
+            {/* Product Images */}
+            <div className="flex gap-2 flex-shrink-0">
+              {items.slice(0, 4).map((item, index) => (
+                <div key={index} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                  {item.product?.image ? (
+                    <OptimizedImage
+                      src={item.product.image}
+                      alt={item.product.title || 'Product'}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200" />
+                  )}
+                </div>
+              ))}
+              {items.length > 4 && (
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-600 font-medium">
+                  +{items.length - 4}
+                </div>
+              )}
+            </div>
+
+            {/* Order Details */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  {/* Status Badge */}
+                  <div className="mb-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(order.status)}`}>
+                      {getStatusLabel()}
+                    </span>
+                  </div>
+
+                  {/* Order Number */}
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Order #{order.orderNumber}
+                  </h3>
+
+                  {/* Items */}
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-medium">Items:</span> {formatItems(items)}
+                  </p>
+
+                  {/* Delivery Date */}
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-medium">Delivery Date:</span> TBD
+                  </p>
+
+                  {/* Rejection Reason (if rejected) */}
+                  {order.ownerRejected && order.ownerRejectionNotes && (
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-xs font-medium text-red-800 mb-1">Rejected Reason:</p>
+                      <p className="text-sm text-red-700">{order.ownerRejectionNotes}</p>
+                    </div>
+                  )}
+
+                  {/* Price */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-gray-900">
+                      Total Order: ${orderTotal.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button
+                    onClick={handleApprove}
+                    disabled={processing || order.ownerApproved || order.ownerRejected}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  >
+                    <ThumbsUp size={16} />
+                    Approve
+                  </button>
+
+                  <button
+                    onClick={() => setShowRejectForm(true)}
+                    disabled={processing || order.ownerApproved || order.ownerRejected}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  >
+                    <XCircle size={16} />
+                    Reject
+                  </button>
+
+                  <button
+                    onClick={() => setShowNotesModal(true)}
+                    disabled={processing || order.ownerApproved || order.ownerRejected}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  >
+                    <FileText size={16} />
+                    Add Note
+                  </button>
+
+                  <button
+                    onClick={() => setShowEditModal(!showEditModal)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                  >
+                    <Edit size={16} />
+                    Edit Order
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Edit Order Modal */}
+        {showEditModal && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Order</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+            <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} />
+          </div>
+        )}
+
+        {/* Shipping Address */}
+        {(order.shippingAddress || order.billingAddress) && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Shipping Address</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              {order.shippingAddress && typeof order.shippingAddress === 'object' ? (
+                <div className="text-sm text-gray-700 space-y-1">
+                  <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                  <p>{order.shippingAddress.address1}</p>
+                  {order.shippingAddress.address2 && <p>{order.shippingAddress.address2}</p>}
+                  <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}</p>
+                  <p>{order.shippingAddress.country}</p>
+                  {order.shippingAddress.phone && <p>Phone: {order.shippingAddress.phone}</p>}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-700">{JSON.stringify(order.shippingAddress)}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Customer Notes */}
+        {order.notes && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Customer Notes</h3>
+            <p className="text-gray-700">{order.notes}</p>
+          </div>
+        )}
+
+        {/* Notes Modal */}
+        {showNotesModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Approval Notes</h3>
+                <button
+                  onClick={() => {
+                    setShowNotesModal(false);
+                    setApprovalNotes('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XIcon size={20} />
+                </button>
+              </div>
+              <textarea
+                value={approvalNotes}
+                onChange={(e) => setApprovalNotes(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent mb-4"
+                placeholder="Add any notes for this approval..."
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setApprovalNotes('');
+                    setShowNotesModal(false);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowNotesModal(false);
+                    // Notes are saved when approve is clicked
+                  }}
+                  className="flex-1 px-4 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#0a3d55]"
+                >
+                  Save Notes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject Form Modal */}
+        {showRejectForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Reject Order</h3>
+                <button
+                  onClick={() => {
+                    setShowRejectForm(false);
+                    setRejectionNotes('');
+                    setError('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XIcon size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting this order:</p>
+              <textarea
+                value={rejectionNotes}
+                onChange={(e) => setRejectionNotes(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
+                placeholder="Enter rejection reason..."
+                required
+              />
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowRejectForm(false);
+                    setRejectionNotes('');
+                    setError('');
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReject}
+                  disabled={processing || !rejectionNotes.trim()}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {processing ? 'Rejecting...' : 'Confirm Rejection'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Info Note */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>Note:</strong> After approval, this order will be sent to admin for final review. 
+            If you reject this order, it will not proceed to admin.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function OwnerApproveOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 text-[#0B4866] animate-spin mx-auto" />
+          <p className="mt-4 text-lg font-medium text-gray-900">Loading...</p>
+        </div>
+      </div>
+    }>
+      <OwnerApproveOrderPageContent />
+    </Suspense>
+  );
+}

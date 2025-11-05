@@ -138,7 +138,16 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinueWithoutApproval = async () => {
+  const handleSubmitForApproval = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    // Show owner email input modal for owner approval flow
+    showApproval();
+  };
+
+  const handlePlaceOrder = async () => {
     if (!validateForm()) {
       return;
     }
@@ -177,25 +186,46 @@ export default function CheckoutPage() {
       const warrantyFee = warrantyCost;
       const total = subtotal + tax + shipping + warrantyFee;
 
-      // Create order
-      const orderData = {
-        items: orderItems,
-        subtotal,
-        tax,
-        shipping,
-        warranty: warrantyFee,
-        total,
-        shippingAddress,
-        shippingOption,
-        warrantyOption: warranty,
-        status: 'PENDING_APPROVAL',
-        paymentStatus: 'PENDING',
-        
+      // Use request-approval endpoint for direct admin submission
+      const response = await fetch('/api/orders/request-approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ownerEmail: null,
+          adminEmail: null, // Will be fetched from backend
+          orderDetails: {
+            items: orderItems,
+            subtotal,
+            tax,
+            shipping,
+            warranty: warrantyFee,
+            total,
+            shippingAddress,
+          },
+          userId: user?.id || 'guest',
+          requiresOwnerApproval: false, // Direct to admin
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to create order');
+      }
+
+      // Use the response data
+      const orderResponse = {
+        success: responseData.success,
+        data: {
+          order: {
+            id: responseData.data.orderId,
+            orderNumber: responseData.data.orderNumber,
+          },
+        },
+        message: responseData.message,
       };
 
-      const response = await apiService.orders.create(orderData);
-
-      if (response.success) {
+      if (orderResponse.success) {
         // Save shipping address to user's saved addresses
         try {
           await apiService.user.addAddress({
@@ -217,11 +247,11 @@ export default function CheckoutPage() {
         }
 
         // Clear cart and redirect to payment page
-        const orderId = response.data?.order?.id || response.data?.id;
+        const orderId = orderResponse.data?.order?.id || responseData.data?.orderId;
         showSuccess(orderId);
         router.push(`/payment/${orderId}`);
       } else {
-        throw new Error(response.message || 'Failed to create order');
+        throw new Error(orderResponse.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('Order creation error:', error);
@@ -583,10 +613,10 @@ export default function CheckoutPage() {
                 <button 
                   onClick={() => {
                     if (validateForm()) {
-                      showApproval();
+                      handleSubmitForApproval();
                     }
                   }}
-                  className="w-full bg-white  border  border-[#0F4C81] text-[#0F4C81] py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-white border-2 border-[#0F4C81] text-[#0F4C81] py-3 rounded-lg font-semibold hover:bg-[#0F4C81] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Processing...' : 'Submit for Approval'}
@@ -594,7 +624,7 @@ export default function CheckoutPage() {
                 <button 
                   onClick={() => {
                     if (validateForm()) {
-                      showApproval();
+                      handlePlaceOrder();
                     }
                   }}
                   className="w-full bg-[#0F4C81] text-white py-3 rounded-lg font-semibold hover:bg-[#0D3F6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
@@ -621,9 +651,25 @@ export default function CheckoutPage() {
       <ApprovalModal
         isOpen={showApprovalModal}
         onClose={() => hideApproval()}
-        onContinueWithoutApproval={handleContinueWithoutApproval}
+        onContinueWithoutApproval={handlePlaceOrder}
         cartItems={cartItems}
         totalAmount={finalTotal}
+        shippingAddress={{
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address1: formData.address1,
+          address2: formData.address2 || '',
+          city: formData.city,
+          state: formData.state,
+          postalCode: formData.postalCode,
+          country: formData.country,
+          phone: formData.phone,
+          email: formData.email,
+        }}
+        subtotal={totals.subtotal}
+        tax={totals.tax}
+        shipping={shippingCost}
+        warranty={warrantyCost}
       />
 
       <SuccessModal

@@ -386,6 +386,24 @@ export const apiService = {
       }
     },
     
+    async getById(id) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.orders.getById(id)}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get order by ID error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
     async create(orderData) {
       const token = getAuthToken();
       try {
@@ -402,6 +420,79 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('API: Create order error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async approve(orderId, approvalNotes) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.put(
+          `${api.defaults.baseURL}${apiEndpoints.orders.getById(orderId)}/status`,
+          { 
+            status: 'APPROVED',
+            approvalNotes 
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Approve order error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async reject(orderId, rejectionNotes) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.put(
+          `${api.defaults.baseURL}${apiEndpoints.orders.getById(orderId)}/status`,
+          { 
+            status: 'REJECTED',
+            approvalNotes: rejectionNotes 
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Reject order error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async requestReapproval(orderId, orderDetails, requiresOwnerApproval = false, ownerEmail = null) {
+      // This method is kept for backward compatibility but not used directly
+      // The ReApprovalModal handles the request directly
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}/api/orders/request-approval`,
+          {
+            orderDetails,
+            requiresOwnerApproval,
+            ownerEmail,
+            userId: token ? undefined : 'guest', // Will be extracted from token if authenticated
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Request reapproval error:', error.response?.data || error.message);
         throw error;
       }
     },
