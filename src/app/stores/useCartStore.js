@@ -200,6 +200,34 @@ export const useCartStore = create((set, get) => ({
         throw new Error('Product ID is required');
       }
 
+      // Check stock availability if product data is available
+      if (productData) {
+        const stockQuantity = productData.stockQuantity ?? productData.stock ?? 0;
+        const inStock = productData.inStock !== false && productData.inStock !== null;
+        const hasStock = inStock && stockQuantity > 0;
+        
+        if (!hasStock) {
+          set({ isLoading: false });
+          return { success: false, error: 'This product is out of stock' };
+        }
+
+        // Check if adding quantity would exceed available stock
+        const { cartItems } = get();
+        const existingItem = cartItems.find(
+          item => item.productId === productId || item.id === productId || item.product?.id === productId
+        );
+        const currentQuantity = existingItem ? existingItem.quantity : 0;
+        const newQuantity = currentQuantity + quantity;
+        
+        if (newQuantity > stockQuantity) {
+          set({ isLoading: false });
+          return { 
+            success: false, 
+            error: `Only ${stockQuantity} item(s) available in stock` 
+          };
+        }
+      }
+
       const { cartItems } = get();
       const existingItem = cartItems.find(
         item => item.productId === productId || item.id === productId || item.product?.id === productId
@@ -214,16 +242,40 @@ export const useCartStore = create((set, get) => ({
             : item
         );
       } else {
-        // Add new item to cart
+        // Add new item to cart with complete product details
         const newItem = productData
           ? {
               id: productId,
               productId: productId,
-              product: productData,
+              // Store complete product object
+              product: {
+                id: productData.id || productId,
+                title: productData.title || productData.name || '',
+                slug: productData.slug || '',
+                image: productData.image || productData.images?.[0] || '',
+                images: productData.images || [],
+                description: productData.description || '',
+                originalPrice: productData.originalPrice || productData.price || 0,
+                discountedPrice: productData.discountedPrice || productData.originalPrice || productData.price || 0,
+                price: productData.discountedPrice || productData.originalPrice || productData.price || 0,
+                stockQuantity: productData.stockQuantity ?? productData.stock ?? 0,
+                inStock: productData.inStock !== false && productData.inStock !== null,
+                category: productData.category || '',
+                tags: productData.tags || [],
+                rating: productData.rating || 0,
+                reviews: productData.reviews || 0,
+                // Preserve any other product fields
+                ...productData
+              },
+              // Also store commonly used fields at root level for easy access
+              title: productData.title || productData.name || '',
+              image: productData.image || productData.images?.[0] || '',
               quantity: quantity,
               price: productData.discountedPrice || productData.originalPrice || productData.price || 0,
-              discountedPrice: productData.discountedPrice,
-              originalPrice: productData.originalPrice || productData.price,
+              discountedPrice: productData.discountedPrice || productData.originalPrice || productData.price || 0,
+              originalPrice: productData.originalPrice || productData.price || 0,
+              stockQuantity: productData.stockQuantity ?? productData.stock ?? 0,
+              inStock: productData.inStock !== false && productData.inStock !== null,
             }
           : {
               id: productId,
@@ -313,6 +365,36 @@ export const useCartStore = create((set, get) => ({
 
     try {
       const { cartItems } = get();
+      
+      // Find the item to update
+      const itemToUpdate = cartItems.find(
+        item => item.productId === productId || item.id === productId || item.product?.id === productId
+      );
+      
+      if (!itemToUpdate) {
+        throw new Error('Item not found in cart');
+      }
+      
+      // Check stock availability if product data is available
+      const product = itemToUpdate.product || itemToUpdate;
+      if (product.stockQuantity !== undefined || product.stock !== undefined || product.inStock !== undefined) {
+        const stockQuantity = product.stockQuantity ?? product.stock ?? 0;
+        const inStock = product.inStock !== false && product.inStock !== null;
+        const hasStock = inStock && stockQuantity > 0;
+        
+        if (!hasStock) {
+          set({ isLoading: false });
+          return { success: false, error: 'This product is out of stock' };
+        }
+        
+        if (quantity > stockQuantity) {
+          set({ isLoading: false });
+          return { 
+            success: false, 
+            error: `Only ${stockQuantity} item(s) available in stock` 
+          };
+        }
+      }
       
       // Update local cart
       const newItems = cartItems.map(item =>

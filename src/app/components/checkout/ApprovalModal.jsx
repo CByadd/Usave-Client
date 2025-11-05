@@ -40,10 +40,11 @@ export default function ApprovalModal({
     try {
       const orderDetails = {
         items: cartItems.map((item) => ({
-          id: item.id || item._id,
-          name: item.name || item.title,
-          price: item.discountedPrice || item.price,
-          quantity: item.quantity,
+          id: item.productId || item.id || item.product?.id || item._id,
+          productId: item.productId || item.id || item.product?.id,
+          name: item.name || item.title || item.product?.title,
+          price: item.discountedPrice || item.price || item.product?.discountedPrice || item.product?.originalPrice,
+          quantity: item.quantity || 1,
           includeInstallation: item.includeInstallation || false,
           installationFee: item.includeInstallation ? item.installationFee || 49.99 : 0,
         })),

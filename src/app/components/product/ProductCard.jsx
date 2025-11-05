@@ -26,7 +26,10 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
   const [showQuickView, setShowQuickView] = useState(false);
 
-  
+  // Calculate stock status
+  const stockQuantity = item.stockQuantity ?? item.stock ?? 0;
+  const inStock = item.inStock !== false && item.inStock !== null;
+  const hasStock = inStock && stockQuantity > 0;
 
   const goToProduct = () => router.push(`/products/${item.id}`);
 
@@ -59,73 +62,61 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
   };
 
   const quickShop = async (e) => {
-
     console.log('[ProductCard] quickShop clicked - item:', item?.id, item?.title);
 
     if (e) {
-
       e.preventDefault();
-
       e.stopPropagation();
-
     }
-
+    
+    // Check stock before adding to cart
+    if (!hasStock) {
+      console.warn('[ProductCard] Cannot add out of stock item to cart');
+      return;
+    }
+    
     try {
-
       const result = await addToCart(item, 1);
-
       console.log('[ProductCard] quickShop - addToCart result:', result);
 
       if (result?.success) {
-
         router.push('/cart');
-
+      } else if (result?.error) {
+        console.error('[ProductCard] Quick shop error:', result.error);
       }
-
     } catch (error) {
-
       console.error('[ProductCard] Quick shop error:', error);
-
     }
-
   };
 
   const handleAddToCart = async (e) => {
-
     console.log('[ProductCard] handleAddToCart clicked - item:', item?.id, item?.title);
 
     if (!e) return;
-
     
-
     e.preventDefault();
-
     e.stopPropagation();
-
     
-
+    // Check stock before adding to cart
+    if (!hasStock) {
+      console.warn('[ProductCard] Cannot add out of stock item to cart');
+      return;
+    }
+    
     try {
-
       const result = await addToCart(item, 1);
-
       console.log('[ProductCard] handleAddToCart - addToCart result:', result);
 
       if (result?.success) {
-
         // Open cart drawer
-
         openCartDrawer();
-
         console.log('[ProductCard] handleAddToCart - openCartDrawer called');
-
+      } else if (result?.error) {
+        console.error('[ProductCard] Add to cart error:', result.error);
       }
-
     } catch (error) {
-
       console.error('[ProductCard] Add to cart error:', error);
-
     }
-
   };
 
   // Determine classes based on variant
@@ -135,7 +126,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
     ? "group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full max-h-[300px]"
 
     : "group min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]";
-
+  
   
 
   const imageContainerClasses = variant === 'grid'
@@ -148,7 +139,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
     <div>
 
-   {item.topSeller && variant === 'carousel' && (
+      {item.topSeller && variant === 'carousel' && (
 
         <div className="absolute top-[-12px] left-6 bg-pink-600 text-white text-xs font-semibold px-2 py-1">
 
@@ -158,35 +149,35 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
       )}
 
- <div
+      <div
 
-  className={containerClasses}
+        className={containerClasses}
 
-  style={variant === 'carousel' ? { backgroundColor: item.bg } : {}}
+        style={variant === 'carousel' ? { backgroundColor: item.bg } : {}}
 
->
+      >
 
-    {variant === 'grid' ? (
+        {variant === 'grid' ? (
 
-      <>
+          <>
 
         {/* Wishlist icon for grid */}
 
-        <button
+            <button
 
-          onClick={handleWishlistToggle}
+              onClick={handleWishlistToggle}
 
           disabled={isWishlistLoading}
 
           aria-label={isInWishlist(item.id) ? "Remove from wishlist" : "Add to wishlist"}
 
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition z-10"
+              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition z-10"
 
-        >
+            >
 
           <Heart size={20} className={isInWishlist(item.id) ? "fill-red-500 text-red-500" : ""} />
 
-        </button>
+            </button>
 
       </>
 
@@ -196,43 +187,43 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
         {/* Wishlist icon for carousel */}
 
-        <button
+            <button
 
-          onClick={handleWishlistToggle}
+              onClick={handleWishlistToggle}
 
           disabled={isWishlistLoading}
 
           aria-label={isInWishlist(item.id) ? "Remove from wishlist" : "Add to wishlist"}
 
-          className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
+              className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
 
-        >
+            >
 
           {isInWishlist(item.id) ? (
 
-            <Heart size={22} className="fill-red-500 text-red-500" />
+                <Heart size={22} className="fill-red-500 text-red-500" />
 
-          ) : (
+              ) : (
 
-            <Heart size={22} />
+                <Heart size={22} />
 
-          )}
+              )}
 
-        </button>
-
+            </button>
+            
         
 
         {/* Image Section for carousel */}
 
         <div
 
-          onClick={goToProduct}
+            onClick={goToProduct}
 
-          className={imageContainerClasses}
+            className={imageContainerClasses}
 
-          style={item.bg ? { backgroundColor: item.bg } : { backgroundColor: '#f9fafb' }}
+            style={item.bg ? { backgroundColor: item.bg } : { backgroundColor: '#f9fafb' }}
 
-        >
+          >
 
           <div className="relative w-full h-full flex justify-center items-center">
 
@@ -264,7 +255,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
         <div
 
-          onClick={goToProduct}
+            onClick={goToProduct}
 
           className={imageContainerClasses}
 
@@ -362,7 +353,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
             ${(item.discountedPrice || item.price || 0).toFixed(2)}
 
-          </span>
+                </span>
 
         </div>
 
@@ -388,7 +379,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
             className={`h-2 w-2 rounded-full ${
 
-              item.inStock !== false ? "bg-green-500" : "bg-red-500"
+              hasStock ? "bg-green-500" : "bg-red-500"
 
             }`}
 
@@ -396,13 +387,17 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
           <span className="text-sm text-gray-600">
 
-            {item.inStock !== false ? "In Stock" : "Out of Stock"}
+            {hasStock 
+              ? stockQuantity > 0 
+                ? `In Stock (${stockQuantity} available)`
+                : "In Stock"
+              : "Out of Stock"}
 
-          </span>
+                </span>
 
         </div>
 
-     </div>
+          </div>
 
         {/* Buttons */}
 
@@ -426,7 +421,8 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 }}
 
-                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer"
+                disabled={!hasStock}
+                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
 
               >
 
@@ -436,7 +432,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
               </button>
 
-              <button 
+            <button
 
                 type="button"
 
@@ -450,11 +446,11 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 }}
 
-                disabled={item.inStock === false}
+                disabled={!hasStock}
 
                 className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
 
-                  item.inStock === false 
+                  !hasStock 
 
                     ? 'bg-gray-400 cursor-not-allowed' 
 
@@ -470,7 +466,7 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 <ShoppingCart size={16} />
 
-                {item.inStock === false ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
+                {!hasStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
 
               </button>
 
@@ -494,7 +490,8 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 }}
 
-                className="flex-1 border rounded-4xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100 cursor-pointer"
+                disabled={!hasStock}
+                className="flex-1 border rounded-4xl py-3 flex items-center justify-center gap-2 hover:bg-gray-100 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
 
               >
 
@@ -502,9 +499,9 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 Quick Shop
 
-              </button>
-
-              <button 
+            </button>
+            
+            <button
 
                 type="button"
 
@@ -518,11 +515,11 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 }}
 
-                disabled={item.inStock === false}
+                disabled={!hasStock}
 
                 className={`md:hidden hidden lg:flex flex-1 rounded-4xl py-2 items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
 
-                  item.inStock === false 
+                  !hasStock 
 
                     ? 'bg-gray-400 cursor-not-allowed text-white' 
 
@@ -538,9 +535,9 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
 
                 <ShoppingCart size={16} />
 
-                {item.inStock === false ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
+                {!hasStock ? 'Out of Stock' : isInCart(item.id) ? 'In Cart' : 'Add to cart'}
 
-              </button>
+            </button>
 
             </>
 
@@ -549,18 +546,18 @@ const ItemCard = ({ item, variant = 'carousel' }) => {
         </div>
 
       </div>
-
+      
     {/* Quick View Modal */}
 
-    <QuickViewModal 
+        <QuickViewModal
 
-      product={item}
+          product={item}
 
       isOpen={showQuickView}
 
-      onClose={() => setShowQuickView(false)}
+          onClose={() => setShowQuickView(false)}
 
-    />
+        />
 
     </div>
 
