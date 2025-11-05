@@ -280,10 +280,10 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="flex items-center gap-4">
-              {product.originalPrice && product.originalPrice > product.discountedPrice && (
-                <span className="text-xl text-gray-500 line-through">${product.originalPrice.toFixed(2)}</span>
+              {product.originalPrice && product.discountedPrice && product.originalPrice > product.discountedPrice && (
+                <span className="text-xl text-gray-500 line-through">${(product.originalPrice || 0).toFixed(2)}</span>
               )}
-              <span className="text-3xl font-bold text-[#0B4866]">${product.discountedPrice.toFixed(2)}</span>
+              <span className="text-3xl font-bold text-[#0B4866]">${(product.discountedPrice || product.originalPrice || 0).toFixed(2)}</span>
             </div>
 
             {/* Rating */}
