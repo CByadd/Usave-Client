@@ -15,7 +15,7 @@ import OptimizedImage from '../components/shared/OptimizedImage';
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuth();
-  const { cartItems, totals, loadCart } = useCart();
+  const { cartItems, totals, loadCart, clearCart } = useCart();
   const {
     shippingOption,
     warranty,
@@ -155,16 +155,23 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     try {
       // Prepare order items from cart
-      const orderItems = cartItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-        price: item.discountedPrice,
-        product: {
-          id: item.id,
-          title: item.title,
-          image: item.image
-        }
-      }));
+      const orderItems = cartItems.map(item => {
+        const product = item.product || item;
+        const productId = item.productId || item.id || product.id;
+        const price = product.discountedPrice || product.price || product.salePrice || item.discountedPrice || item.price || item.originalPrice || 0;
+        const image = product.image || product.images?.[0] || item.image || item.product?.image || item.product?.images?.[0] || '';
+        
+        return {
+          productId: String(productId),
+          quantity: item.quantity || 1,
+          price: price,
+          product: {
+            id: String(productId),
+            title: product.title || product.name || item.title || item.name || 'Product',
+            image: image
+          }
+        };
+      });
 
       // Prepare shipping address
       const shippingAddress = {
@@ -251,7 +258,16 @@ export default function CheckoutPage() {
           }
         }
 
-        // Clear cart and redirect to orders page
+        // Clear cart after successful order
+        try {
+          await clearCart();
+          console.log('Cart cleared after successful order');
+        } catch (error) {
+          console.error('Failed to clear cart:', error);
+          // Don't block redirect if cart clear fails
+        }
+
+        // Redirect to orders page
         const orderId = orderResponse.data?.order?.id || responseData.data?.orderId;
         showSuccess(orderId);
         router.push('/orders');
@@ -562,24 +578,24 @@ export default function CheckoutPage() {
                         <div key={item.id} className="flex space-x-3">
                           <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                             <OptimizedImage
-                              src={item.image}
-                              alt={item.title}
+                              src={item.product?.image || item.product?.images?.[0] || item.image || item.product?.image || '/placeholder.svg'}
+                              alt={item.product?.title || item.product?.name || item.title || item.name || 'Product'}
                               width={64}
                               height={64}
                               className="w-full h-full object-cover"
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm text-gray-900 truncate">{item.title}</h3>
-                            <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                            <h3 className="font-medium text-sm text-gray-900 truncate">{item.product?.title || item.product?.name || item.title || item.name || 'Product'}</h3>
+                            <p className="text-xs text-gray-600">Qty: {item.quantity || 1}</p>
                             <div className="flex items-center space-x-2 mt-1">
-                              {item.originalPrice > item.discountedPrice && (
+                              {(item.product?.originalPrice || item.originalPrice || 0) > (item.product?.discountedPrice || item.product?.price || item.discountedPrice || item.price || 0) && (
                                 <span className="text-xs line-through text-gray-400">
-                                  ${item.originalPrice}
+                                  ${(item.product?.originalPrice || item.originalPrice || 0).toFixed(2)}
                                 </span>
                               )}
                               <span className="text-sm font-bold text-gray-900">
-                                ${item.discountedPrice}
+                                ${((item.product?.discountedPrice || item.product?.price || item.product?.salePrice || item.discountedPrice || item.price || item.originalPrice || 0) * (item.quantity || 1)).toFixed(2)}
                               </span>
                             </div>
                           </div>

@@ -128,11 +128,14 @@ const CartPage = () => {
                         <Link href={`/products/${product.id || itemId}`}>
                           <div className="w-full sm:w-24 h-24 bg-white rounded-lg overflow-hidden mx-auto sm:mx-0">
                             <Image
-                              src={product.image || item.image}
-                              alt={product.title || item.title}
+                              src={product?.image || product?.images?.[0] || item?.image || item?.product?.image || item?.product?.images?.[0] || '/placeholder.svg'}
+                              alt={product?.title || product?.name || item?.title || item?.name || 'Product'}
                               width={96}
                               height={96}
                               className="w-full h-full object-contain p-2"
+                              onError={(e) => {
+                                e.target.src = '/placeholder.svg';
+                              }}
                             />
                           </div>
                         </Link>
@@ -164,7 +167,7 @@ const CartPage = () => {
                               </div>
                             )}
                             <div className="text-lg sm:text-xl font-semibold text-[#0B4866]">
-                              ${((product.discountedPrice || product.price || item.discountedPrice || item.price) * item.quantity).toFixed(2)}
+                              ${((product?.discountedPrice || product?.price || product?.salePrice || item?.discountedPrice || item?.price || item?.originalPrice || 0) * (item?.quantity || 1)).toFixed(2)}
                             </div>
                           </div>
                         </div>

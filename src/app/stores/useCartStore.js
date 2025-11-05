@@ -181,13 +181,19 @@ const saveCartToDatabase = async (items) => {
 };
 
 // Create store with localStorage persistence middleware
-const storeCreator = (set, get) => ({
-  cartItems: [],
-  totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 },
-  isLoading: false,
-  isSyncing: false,
-  error: null,
-  hasLoadedCart: false,
+const storeCreator = (set, get) => {
+  // Initialize from localStorage synchronously for immediate rendering
+  const initialItems = typeof window !== 'undefined' ? loadCartFromStorage() : [];
+  const initialTotals = calculateTotals(initialItems);
+
+  return {
+    cartItems: initialItems,
+    totals: initialTotals,
+    isLoading: false,
+    isSyncing: false,
+    error: null,
+    hasLoadedCart: typeof window !== 'undefined', // Mark as loaded if we have localStorage data
+    isInitializing: false, // Prevent multiple simultaneous initializations
   
   // Internal method to update cart and auto-save to localStorage
   _updateCart: (items) => {
@@ -202,60 +208,104 @@ const storeCreator = (set, get) => ({
   },
 
   // Load cart from API (for authenticated users) or localStorage
-  loadCart: async () => {
-    set({ isLoading: true, error: null });
+  loadCart: async (forceReload = false) => {
+    const { isInitializing, hasLoadedCart } = get();
+    
+    // Prevent multiple simultaneous loads
+    if (isInitializing && !forceReload) {
+      return { items: get().cartItems, totals: get().totals };
+    }
+
+    // If already loaded and not forcing reload, just return current state
+    if (hasLoadedCart && !forceReload) {
+      return { items: get().cartItems, totals: get().totals };
+    }
+
+    set({ isInitializing: true, isLoading: false, error: null });
 
     try {
       let loadedItems = [];
       let loadedTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
 
-      // Always load from localStorage first (primary source)
-      loadedItems = loadCartFromStorage();
-      loadedTotals = calculateTotals(loadedItems);
+      // Always load from localStorage first (primary source) - already loaded synchronously
+      const currentItems = get().cartItems;
+      if (currentItems && currentItems.length > 0) {
+        loadedItems = currentItems;
+        loadedTotals = calculateTotals(loadedItems);
+      } else {
+        // If no items in state, load from localStorage
+        loadedItems = loadCartFromStorage();
+        loadedTotals = calculateTotals(loadedItems);
+        // Update state immediately with localStorage data
+        set({ cartItems: loadedItems, totals: loadedTotals });
+      }
 
-      // If authenticated, try to sync from API (but don't fail if it doesn't work)
+      // If authenticated, sync from API in the background (non-blocking)
       if (isAuthenticated()) {
-        try {
-          const response = await apiService.cart.get();
-          if (response.success && response.data?.items && Array.isArray(response.data.items) && response.data.items.length > 0) {
-            // API has data, use it - normalize all items
-            const apiItems = response.data.items.map(normalizeCartItem).filter(Boolean);
-            if (apiItems.length > 0) {
-              loadedItems = apiItems;
-            loadedTotals = calculateTotals(loadedItems);
-              // Save API data to localStorage
-            saveCartToStorage(loadedItems);
+        // Use requestIdleCallback or setTimeout to avoid blocking UI
+        const syncWithAPI = async () => {
+          try {
+            const response = await apiService.cart.get();
+            if (response.success && response.data?.items && Array.isArray(response.data.items) && response.data.items.length > 0) {
+              const apiItems = response.data.items.map(normalizeCartItem).filter(Boolean);
+              if (apiItems.length > 0) {
+                // Only update if API has different data
+                const currentIds = new Set(loadedItems.map(item => String(item.id || item.productId)));
+                const apiIds = new Set(apiItems.map(item => String(item.id || item.productId)));
+                const hasChanges = apiItems.length !== loadedItems.length || 
+                  ![...apiIds].every(id => currentIds.has(id));
+                
+                if (hasChanges) {
+                  loadedItems = apiItems;
+                  loadedTotals = calculateTotals(loadedItems);
+                  saveCartToStorage(loadedItems);
+                  set({ cartItems: loadedItems, totals: loadedTotals });
+                }
+              }
+            } else if (response.success && response.data?.cart?.items && Array.isArray(response.data.cart.items) && response.data.cart.items.length > 0) {
+              const apiItems = response.data.cart.items.map(normalizeCartItem).filter(Boolean);
+              if (apiItems.length > 0) {
+                const currentIds = new Set(loadedItems.map(item => String(item.id || item.productId)));
+                const apiIds = new Set(apiItems.map(item => String(item.id || item.productId)));
+                const hasChanges = apiItems.length !== loadedItems.length || 
+                  ![...apiIds].every(id => currentIds.has(id));
+                
+                if (hasChanges) {
+                  loadedItems = apiItems;
+                  loadedTotals = calculateTotals(loadedItems);
+                  saveCartToStorage(loadedItems);
+                  set({ cartItems: loadedItems, totals: loadedTotals });
+                }
+              }
             }
-          } else if (response.success && response.data?.cart?.items && Array.isArray(response.data.cart.items) && response.data.cart.items.length > 0) {
-            // If cart is stored as a single object
-            const apiItems = response.data.cart.items.map(normalizeCartItem).filter(Boolean);
-            if (apiItems.length > 0) {
-              loadedItems = apiItems;
-            loadedTotals = calculateTotals(loadedItems);
-              // Save API data to localStorage
-            saveCartToStorage(loadedItems);
-            }
+          } catch (err) {
+            // API sync failed silently - localStorage is primary source
+            console.debug('[Cart] API sync failed, using localStorage data:', err.message);
           }
-          // If API returns empty or fails, we already have localStorage data, so continue silently
-        } catch (err) {
-          // API failed, but we already have localStorage data, so continue silently
-          // localStorage is the primary source, API is just for syncing
+        };
+
+        // Sync in background without blocking
+        if (typeof window !== 'undefined' && window.requestIdleCallback) {
+          window.requestIdleCallback(syncWithAPI, { timeout: 2000 });
+        } else {
+          setTimeout(syncWithAPI, 100);
         }
       }
 
-      // Always save to localStorage after loading
-      saveCartToStorage(loadedItems);
       set({ 
         cartItems: loadedItems, 
         totals: loadedTotals,
-        isLoading: false 
+        isLoading: false,
+        isInitializing: false,
+        hasLoadedCart: true
       });
       return { items: loadedItems, totals: loadedTotals };
     } catch (err) {
       console.error('Error loading cart:', err);
       set({ 
         error: 'Failed to load cart',
-        isLoading: false 
+        isLoading: false,
+        isInitializing: false
       });
       return { items: [], totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 } };
     }
@@ -744,7 +794,8 @@ const storeCreator = (set, get) => ({
     const { cartItems } = get();
     return saveCartToStorage(cartItems);
   },
-});
+  };
+};
 
 export const useCartStore = create(storeCreator);
 
@@ -767,15 +818,23 @@ if (typeof window !== 'undefined') {
   );
 }
 
-// Client-side initialization
+// Client-side initialization - load from localStorage immediately, sync with API in background
 if (typeof window !== 'undefined') {
-  setTimeout(() => {
+  // Initialize immediately with localStorage data (already done in store creation)
+  // Then sync with API in background if authenticated
+  const initCart = () => {
     const store = useCartStore.getState();
-    if (!store.hasLoadedCart) {
-      useCartStore.setState({ hasLoadedCart: true });
+    if (!store.hasLoadedCart && !store.isInitializing) {
       store.loadCart();
     }
-  }, 100);
+  };
+  
+  // Use requestIdleCallback for non-blocking initialization
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(initCart, { timeout: 1000 });
+  } else {
+    setTimeout(initCart, 50);
+  }
 }
 
 // Export a hook that matches the old API for compatibility

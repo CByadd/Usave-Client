@@ -30,49 +30,94 @@ const saveWishlistToStorage = (items) => {
   }
 };
 
-export const useWishlistStore = create((set, get) => ({
-  wishlistItems: [],
-  isLoading: false,
-  isSyncing: false,
-  error: null,
-  hasLoadedWishlist: false,
+export const useWishlistStore = create((set, get) => {
+  // Initialize from localStorage synchronously for immediate rendering
+  const initialItems = typeof window !== 'undefined' ? loadWishlistFromStorage() : [];
+
+  return {
+    wishlistItems: initialItems,
+    isLoading: false,
+    isSyncing: false,
+    error: null,
+    hasLoadedWishlist: typeof window !== 'undefined', // Mark as loaded if we have localStorage data
+    isInitializing: false, // Prevent multiple simultaneous initializations
 
   // Load wishlist from API (for authenticated users) or localStorage
-  loadWishlist: async () => {
-    set({ isLoading: true, error: null });
+  loadWishlist: async (forceReload = false) => {
+    const { isInitializing, hasLoadedWishlist } = get();
+    
+    // Prevent multiple simultaneous loads
+    if (isInitializing && !forceReload) {
+      return { items: get().wishlistItems };
+    }
+
+    // If already loaded and not forcing reload, just return current state
+    if (hasLoadedWishlist && !forceReload) {
+      return { items: get().wishlistItems };
+    }
+
+    set({ isInitializing: true, isLoading: false, error: null });
 
     try {
       let loadedItems = [];
 
-      // If authenticated, load from API
-      if (isAuthenticated()) {
-        try {
-          const response = await apiService.wishlist.get();
-          if (response.success && response.data?.items) {
-            // API has data, use it
-            loadedItems = response.data.items;
-            set({ wishlistItems: loadedItems, isLoading: false });
-            // Also save to localStorage for offline access
-            saveWishlistToStorage(loadedItems);
-            return { items: loadedItems };
-          }
-        } catch (err) {
-          // API failed, try localStorage
-          console.log('API wishlist unavailable, loading from localStorage');
-          loadedItems = loadWishlistFromStorage();
-        }
+      // Load from current state first (already loaded from localStorage)
+      const currentItems = get().wishlistItems;
+      if (currentItems && currentItems.length > 0) {
+        loadedItems = currentItems;
       } else {
-        // Not authenticated, load from localStorage
+        // If no items in state, load from localStorage
         loadedItems = loadWishlistFromStorage();
+        // Update state immediately with localStorage data
+        set({ wishlistItems: loadedItems });
       }
 
-      set({ wishlistItems: loadedItems, isLoading: false });
+      // If authenticated, sync from API in the background (non-blocking)
+      if (isAuthenticated()) {
+        const syncWithAPI = async () => {
+          try {
+            const response = await apiService.wishlist.get();
+            if (response.success && response.data?.items) {
+              const apiItems = response.data.items;
+              // Only update if API has different data
+              const currentIds = new Set(loadedItems.map(item => String(item.id || item.productId)));
+              const apiIds = new Set(apiItems.map(item => String(item.id || item.productId)));
+              const hasChanges = apiItems.length !== loadedItems.length || 
+                ![...apiIds].every(id => currentIds.has(id));
+              
+              if (hasChanges) {
+                loadedItems = apiItems;
+                saveWishlistToStorage(loadedItems);
+                set({ wishlistItems: loadedItems });
+              }
+            }
+          } catch (err) {
+            // API sync failed silently - localStorage is primary source
+            console.debug('[Wishlist] API sync failed, using localStorage data:', err.message);
+          }
+        };
+
+        // Sync in background without blocking
+        if (typeof window !== 'undefined' && window.requestIdleCallback) {
+          window.requestIdleCallback(syncWithAPI, { timeout: 2000 });
+        } else {
+          setTimeout(syncWithAPI, 100);
+        }
+      }
+
+      set({ 
+        wishlistItems: loadedItems,
+        isLoading: false,
+        isInitializing: false,
+        hasLoadedWishlist: true
+      });
       return { items: loadedItems };
     } catch (err) {
       console.error('Error loading wishlist:', err);
       set({ 
         error: 'Failed to load wishlist',
-        isLoading: false 
+        isLoading: false,
+        isInitializing: false
       });
       return { items: [] };
     }
@@ -306,17 +351,26 @@ export const useWishlistStore = create((set, get) => ({
     const { wishlistItems } = get();
     return wishlistItems.length;
   },
-}));
+  }
+});
 
-// Client-side initialization
+// Client-side initialization - load from localStorage immediately, sync with API in background
 if (typeof window !== 'undefined') {
-  setTimeout(() => {
+  // Initialize immediately with localStorage data (already done in store creation)
+  // Then sync with API in background if authenticated
+  const initWishlist = () => {
     const store = useWishlistStore.getState();
-    if (!store.hasLoadedWishlist && isAuthenticated()) {
-      useWishlistStore.setState({ hasLoadedWishlist: true });
+    if (!store.hasLoadedWishlist && !store.isInitializing) {
       store.loadWishlist();
     }
-  }, 100);
+  };
+  
+  // Use requestIdleCallback for non-blocking initialization
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(initWishlist, { timeout: 1000 });
+  } else {
+    setTimeout(initWishlist, 50);
+  }
 }
 
 // Export a hook that matches the old API for compatibility
