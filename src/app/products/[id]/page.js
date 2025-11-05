@@ -182,9 +182,9 @@ export default function ProductDetailPage() {
     );
   }
 
-  const productImages = product.images || [product.image];
-  const rating = product.rating || 0;
-  const reviews = product.reviews || 0;
+  const productImages = product.images || [product.image || ''];
+  const rating = Number(product.rating) || 0;
+  const reviews = Number(product.reviewCount || product.reviews) || 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -193,8 +193,8 @@ export default function ProductDetailPage() {
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
           <Link href="/" className="hover:text-[#0B4866]">Home</Link>
           <span>/</span>
-          <Link href={`/categories/${product.category}`} className="hover:text-[#0B4866] capitalize">
-            {product.category}
+          <Link href={`/categories/${product.category || 'products'}`} className="hover:text-[#0B4866] capitalize">
+            {product.category || 'Products'}
           </Link>
         </div>
 
@@ -224,8 +224,8 @@ export default function ProductDetailPage() {
             {/* Main Image */}
             <div className="relative bg-gray-50 rounded-lg aspect-square overflow-hidden group mb-4">
               <OptimizedImage
-                src={productImages[selectedImage]}
-                alt={product.title}
+                src={productImages[selectedImage] || product.image || ''}
+                alt={product.title || 'Product'}
                 width={800}
                 height={800}
                 className="w-full h-full object-contain"
@@ -262,8 +262,8 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   <OptimizedImage
-                    src={image}
-                    alt={`${product.title} ${index + 1}`}
+                    src={image || ''}
+                    alt={`${product.title || 'Product'} ${index + 1}`}
                     width={80}
                     height={80}
                     className="w-full h-full object-cover"
@@ -276,7 +276,7 @@ export default function ProductDetailPage() {
           {/* Right: Product Details */}
           <div className="space-y-6">
             {/* Product Title */}
-            <h1 className="text-3xl md:text-4xl font-semibold text-[#0B4866]">{product.title}</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold text-[#0B4866]">{product.title || 'Product'}</h1>
 
             {/* Price */}
             <div className="flex items-center gap-4">
@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
                   <span key={i} className="text-2xl">{i < Math.floor(rating) ? '★' : '☆'}</span>
                 ))}
               </div>
-              <span className="text-gray-600">({reviews})</span>
+              <span className="text-gray-600">({reviews || 0})</span>
             </div>
 
             {/* Stock Status */}
@@ -463,13 +463,13 @@ export default function ProductDetailPage() {
           <div className="py-8">
             {activeTab === 'details' && (
               <div className="space-y-6">
-                <p className="text-gray-700 leading-relaxed">{product.description}</p>
-                {product.features && (
+                <p className="text-gray-700 leading-relaxed">{product.description || 'No description available.'}</p>
+                {product.features && Array.isArray(product.features) && product.features.length > 0 && (
                   <ul className="space-y-3">
                     {product.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-3">
                         <span className="text-[#0B4866] text-xl">•</span>
-                        <span className="text-gray-700">{feature}</span>
+                        <span className="text-gray-700">{String(feature || '')}</span>
                       </li>
                     ))}
                   </ul>
@@ -483,12 +483,12 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {activeTab === 'dimensions' && product.dimensions && (
+            {activeTab === 'dimensions' && product.dimensions && typeof product.dimensions === 'object' && (
               <div className="grid md:grid-cols-3 gap-6">
                 {Object.entries(product.dimensions).map(([key, value]) => (
                   <div key={key} className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#0B4866]">{value}cm</div>
-                    <div className="text-sm text-gray-600 capitalize mt-1">{key}</div>
+                    <div className="text-2xl font-bold text-[#0B4866]">{String(value || 0)}cm</div>
+                    <div className="text-sm text-gray-600 capitalize mt-1">{String(key || '')}</div>
                   </div>
                 ))}
               </div>
