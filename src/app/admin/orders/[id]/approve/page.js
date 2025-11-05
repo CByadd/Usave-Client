@@ -21,6 +21,18 @@ function ApproveOrderPageContent() {
   const [processing, setProcessing] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [tokenValid, setTokenValid] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [sendingPaymentInfo, setSendingPaymentInfo] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState({
+    paymentMethod: '',
+    accountNumber: '',
+    routingNumber: '',
+    bankName: '',
+    paypalEmail: '',
+    instructions: '',
+    dueDate: '',
+    paymentUrl: '',
+  });
 
   const orderId = params.id;
   const token = searchParams.get('token');
@@ -46,6 +58,16 @@ function ApproveOrderPageContent() {
     // Note: This page can be accessed with just the token (from email link)
     // Admin login is optional but recommended for better security
     validateTokenAndFetchOrder();
+    
+    // Set up polling for order updates every 5 seconds
+    const pollInterval = setInterval(() => {
+      if (orderId) {
+        validateTokenAndFetchOrder();
+      }
+    }, 5000);
+    
+    return () => clearInterval(pollInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, token, router]);
 
   const validateTokenAndFetchOrder = async () => {
@@ -104,13 +126,15 @@ function ApproveOrderPageContent() {
         try {
           const response = await apiService.orders.approve(orderId, approvalNotes);
           if (response.success) {
+            // Refresh order data to get updated status
+            await validateTokenAndFetchOrder();
             showAlert({
               title: 'Success',
-              message: 'Order approved successfully!',
+              message: 'Order approved successfully! You can now send payment information to the customer.',
               type: 'success',
               confirmText: 'OK',
-              onConfirm: () => router.push('/admin/dashboard'),
             });
+            // Don't redirect - stay on page to show Send Payment Info button
           } else {
             showAlert({
               title: 'Error',

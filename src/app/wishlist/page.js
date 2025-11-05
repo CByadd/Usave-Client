@@ -40,10 +40,16 @@ const WishlistPage = () => {
   };
 
   const handleMoveToCart = async (item) => {
-    setMovingToCart(prev => ({ ...prev, [item.id]: true }));
+    const itemId = item.id || `wishlist_${item.productId || item.id}`;
+    setMovingToCart(prev => ({ ...prev, [itemId]: true }));
     
     try {
-      const productId = item.productId || item.id;
+      // Always use productId, not the wishlist item ID
+      const productId = item.productId || item.product?.id || item.id;
+      if (!productId) {
+        showToast('Invalid product ID', 'error');
+        return;
+      }
       const result = await addToCart(productId, 1);
       
       if (result?.success) {
@@ -58,7 +64,7 @@ const WishlistPage = () => {
     } catch (err) {
       showToast(err.message || 'Failed to move to cart', 'error');
     } finally {
-      setMovingToCart(prev => ({ ...prev, [item.id]: false }));
+      setMovingToCart(prev => ({ ...prev, [itemId]: false }));
     }
   };
 
@@ -109,13 +115,14 @@ const WishlistPage = () => {
           <div className="space-y-4 w-full overflow-hidden">
             {wishlistItems.map((item) => {
               const product = item.product || item;
-              const itemId = item.id || item.productId;
-              const inCart = cartItems.some(c => c.productId === itemId || c.product?.id === itemId);
+              const productId = item.productId || product.id || item.id;
+              const itemId = item.id || `wishlist_${productId}`;
+              const inCart = cartItems.some(c => c.productId === productId || c.product?.id === productId);
               return (
                 <div key={itemId} className="bg-gray-50 rounded-lg p-4 sm:p-6 w-full overflow-hidden">
                   <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full">
                     <div className="flex-shrink-0 w-full sm:w-auto">
-                      <Link href={`/products/${product.id || itemId}`}>
+                      <Link href={`/products/${product.id || productId}`}>
                         <div className="w-full sm:w-24 h-24 bg-white rounded-lg overflow-hidden mx-auto sm:mx-0">
                           <Image
                             src={product.image || item.image}
@@ -131,7 +138,7 @@ const WishlistPage = () => {
                     <div className="flex-1 min-w-0 w-full sm:w-auto">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-2">
                         <div className="flex-1 min-w-0">
-                          <Link href={`/products/${product.id || itemId}`}>
+                          <Link href={`/products/${product.id || productId}`}>
                             <h3 className="text-[#0B4866] font-medium hover:underline mb-1 break-words text-sm sm:text-base">
                               {product.title || item.title}
                             </h3>
@@ -197,7 +204,7 @@ const WishlistPage = () => {
                         </button>
 
                         <button
-                          onClick={() => handleRemoveItem(itemId)}
+                          onClick={() => handleRemoveItem(productId)}
                           className="flex items-center gap-2 text-sm text-red-600 hover:underline"
                         >
                           <Trash2 size={16} />

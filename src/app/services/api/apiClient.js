@@ -46,6 +46,13 @@ export const apiEndpoints = {
     remove: (productId) => `/wishlist/${productId}`,
     clear: '/wishlist',
   },
+  user: {
+    profile: '/user/profile',
+    addresses: '/user/addresses',
+    addAddress: '/user/addresses',
+    updateAddress: (id) => `/user/addresses/${id}`,
+    deleteAddress: (id) => `/user/addresses/${id}`,
+  },
 };
 
 // Helper to get auth token
@@ -477,6 +484,26 @@ export const apiService = {
       }
     },
     
+    async sendPaymentInfo(orderId, paymentDetails) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.orders.getById(orderId)}/send-payment-info`,
+          { paymentDetails },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Send payment info error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
     async requestReapproval(orderId, orderDetails, requiresOwnerApproval = false, ownerEmail = null) {
       // This method is kept for backward compatibility but not used directly
       // The ReApprovalModal handles the request directly
@@ -559,14 +586,20 @@ export const apiService = {
         const errorMessage = error.message || '';
         const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('timeout');
         
-        // Only log if there's actual error content and it's not a network error
-        if (status && status !== 404 && !isNetworkError && errorData && 
-            Object.keys(errorData).length > 0 && 
-            (errorData.error || errorData.message || Object.keys(errorData).some(key => errorData[key]))) {
-          console.error('API: Add to wishlist error:', errorData);
+        // Log error details for debugging
+        if (status && status !== 404 && !isNetworkError) {
+          const errorMsg = errorData?.error || errorData?.message || error.message || 'Failed to add item to wishlist';
+          console.error('API: Add to wishlist error:', {
+            status,
+            statusText: error.response?.statusText,
+            error: errorMsg,
+            data: errorData,
+            productId,
+          });
         }
         // Return error response instead of throwing
-        return { success: false, error: errorData?.error || error.message || 'Failed to add item to wishlist' };
+        const errorMsg = errorData?.error || errorData?.message || error.message || 'Failed to add item to wishlist';
+        return { success: false, error: errorMsg };
       }
     },
     
@@ -588,13 +621,21 @@ export const apiService = {
         if (status === 404 || !error.response) {
           return { success: false, error: 'Wishlist endpoint not available' };
         }
-        // Only log meaningful errors (not empty objects)
+        // Log error details for debugging
         const errorData = error.response?.data;
-        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
-          console.error('API: Remove from wishlist error:', errorData);
+        if (status && status !== 404) {
+          const errorMsg = errorData?.error || errorData?.message || error.message || 'Failed to remove item from wishlist';
+          console.error('API: Remove from wishlist error:', {
+            status,
+            statusText: error.response?.statusText,
+            error: errorMsg,
+            data: errorData,
+            productId,
+          });
         }
         // Return error response instead of throwing
-        return { success: false, error: errorData?.error || error.message || 'Failed to remove item from wishlist' };
+        const errorMsg = errorData?.error || errorData?.message || error.message || 'Failed to remove item from wishlist';
+        return { success: false, error: errorMsg };
       }
     },
     
@@ -623,6 +664,128 @@ export const apiService = {
         }
         // Return error response instead of throwing
         return { success: false, error: errorData?.error || error.message || 'Failed to clear wishlist' };
+      }
+    },
+  },
+  
+  user: {
+    // Get user profile
+    async getProfile() {
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.user.profile}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get user profile error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    // Update user profile
+    async updateProfile(profileData) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.put(
+          `${api.defaults.baseURL}${apiEndpoints.user.profile}`,
+          profileData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Update user profile error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    // Get user addresses
+    async getAddresses() {
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.user.addresses}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get addresses error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    // Add address
+    async addAddress(addressData) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.user.addAddress}`,
+          addressData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Add address error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    // Update address
+    async updateAddress(addressId, addressData) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.put(
+          `${api.defaults.baseURL}${apiEndpoints.user.updateAddress(addressId)}`,
+          addressData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Update address error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    // Delete address
+    async deleteAddress(addressId) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.delete(
+          `${api.defaults.baseURL}${apiEndpoints.user.deleteAddress(addressId)}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Delete address error:', error.response?.data || error.message);
+        throw error;
       }
     },
   },

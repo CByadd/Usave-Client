@@ -18,6 +18,18 @@ function ApproveOrderPageContent() {
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [sendingPaymentInfo, setSendingPaymentInfo] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState({
+    paymentMethod: '',
+    accountNumber: '',
+    routingNumber: '',
+    bankName: '',
+    paypalEmail: '',
+    instructions: '',
+    dueDate: '',
+    paymentUrl: '',
+  });
 
   const orderId = searchParams.get('orderId');
 
@@ -33,10 +45,20 @@ function ApproveOrderPageContent() {
     
     if (orderId) {
       fetchOrder();
+      
+      // Set up polling for order updates every 5 seconds
+      const pollInterval = setInterval(() => {
+        if (orderId) {
+          fetchOrder();
+        }
+      }, 5000);
+      
+      return () => clearInterval(pollInterval);
     } else {
       setError('Order ID is missing');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, router]);
 
   const fetchOrder = async () => {
@@ -72,13 +94,15 @@ function ApproveOrderPageContent() {
         try {
           const response = await apiService.orders.approve(orderId, approvalNotes);
           if (response.success) {
+            // Refresh order data to get updated status
+            await fetchOrder();
             showAlert({
               title: 'Success',
-              message: 'Order approved successfully!',
+              message: 'Order approved successfully! You can now send payment information to the customer.',
               type: 'success',
               confirmText: 'OK',
-              onConfirm: () => router.push('/admin/dashboard'),
             });
+            // Don't redirect - stay on page to show Send Payment Info button
           } else {
             showAlert({
               title: 'Error',
@@ -142,6 +166,52 @@ function ApproveOrderPageContent() {
       setError('Failed to reject order');
     } finally {
       setProcessing(false);
+      setLoading(false);
+    }
+  };
+
+  const handleSendPaymentInfo = async () => {
+    setSendingPaymentInfo(true);
+    setLoading(true, 'Sending payment information...');
+    try {
+      const response = await apiService.orders.sendPaymentInfo(orderId, paymentDetails);
+      if (response.success) {
+        showAlert({
+          title: 'Success',
+          message: 'Payment information email sent successfully to the customer!',
+          type: 'success',
+          confirmText: 'OK',
+        });
+        setShowPaymentModal(false);
+        // Reset payment details
+        setPaymentDetails({
+          paymentMethod: '',
+          accountNumber: '',
+          routingNumber: '',
+          bankName: '',
+          paypalEmail: '',
+          instructions: '',
+          dueDate: '',
+          paymentUrl: '',
+        });
+      } else {
+        showAlert({
+          title: 'Error',
+          message: response.message || 'Failed to send payment information',
+          type: 'error',
+          confirmText: 'OK',
+        });
+      }
+    } catch (err) {
+      console.error('Error sending payment info:', err);
+      showAlert({
+        title: 'Error',
+        message: 'Failed to send payment information. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
+      });
+    } finally {
+      setSendingPaymentInfo(false);
       setLoading(false);
     }
   };
@@ -294,21 +364,32 @@ function ApproveOrderPageContent() {
                 />
               </div>
 
-              <div className="flex gap-4">
-                <button
-                  onClick={handleApprove}
-                  disabled={processing || order.status !== 'PENDING_APPROVAL'}
-                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-                >
-                  {processing ? 'Processing...' : 'Approve Order'}
-                </button>
-                <button
-                  onClick={handleReject}
-                  disabled={processing || order.status !== 'PENDING_APPROVAL'}
-                  className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-                >
-                  {processing ? 'Processing...' : 'Reject Order'}
-                </button>
+              <div className="flex gap-4 flex-wrap">
+                {order.status === 'PENDING_APPROVAL' ? (
+                  <>
+                    <button
+                      onClick={handleApprove}
+                      disabled={processing}
+                      className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                    >
+                      {processing ? 'Processing...' : 'Approve Order'}
+                    </button>
+                    <button
+                      onClick={handleReject}
+                      disabled={processing}
+                      className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                    >
+                      {processing ? 'Processing...' : 'Reject Order'}
+                    </button>
+                  </>
+                ) : order.status === 'APPROVED' || order.status === 'CONFIRMED' ? (
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="flex-1 bg-[#0B4866] text-white px-6 py-3 rounded-lg hover:bg-[#094058] font-semibold"
+                  >
+                    Send Payment Info
+                  </button>
+                ) : null}
                 <button
                   onClick={handleDelete}
                   disabled={processing}
@@ -317,6 +398,148 @@ function ApproveOrderPageContent() {
                   Delete
                 </button>
               </div>
+              
+              {/* Payment Info Modal */}
+              {showPaymentModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-gray-900">Payment Information</h2>
+                        <button
+                          onClick={() => setShowPaymentModal(false)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Payment Method *
+                          </label>
+                          <input
+                            type="text"
+                            value={paymentDetails.paymentMethod}
+                            onChange={(e) => setPaymentDetails({ ...paymentDetails, paymentMethod: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                            placeholder="e.g., Bank Transfer, PayPal, Credit Card"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Account Number
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentDetails.accountNumber}
+                              onChange={(e) => setPaymentDetails({ ...paymentDetails, accountNumber: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Routing Number
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentDetails.routingNumber}
+                              onChange={(e) => setPaymentDetails({ ...paymentDetails, routingNumber: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Bank Name
+                          </label>
+                          <input
+                            type="text"
+                            value={paymentDetails.bankName}
+                            onChange={(e) => setPaymentDetails({ ...paymentDetails, bankName: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            PayPal Email
+                          </label>
+                          <input
+                            type="email"
+                            value={paymentDetails.paypalEmail}
+                            onChange={(e) => setPaymentDetails({ ...paymentDetails, paypalEmail: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Payment Instructions
+                          </label>
+                          <textarea
+                            value={paymentDetails.instructions}
+                            onChange={(e) => setPaymentDetails({ ...paymentDetails, instructions: e.target.value })}
+                            rows={4}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                            placeholder="Additional payment instructions for the customer..."
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Payment Due Date
+                            </label>
+                            <input
+                              type="date"
+                              value={paymentDetails.dueDate}
+                              onChange={(e) => setPaymentDetails({ ...paymentDetails, dueDate: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Payment URL (Optional)
+                            </label>
+                            <input
+                              type="url"
+                              value={paymentDetails.paymentUrl}
+                              onChange={(e) => setPaymentDetails({ ...paymentDetails, paymentUrl: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent"
+                              placeholder="https://..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-4 mt-6">
+                        <button
+                          onClick={handleSendPaymentInfo}
+                          disabled={sendingPaymentInfo || !paymentDetails.paymentMethod}
+                          className="flex-1 bg-[#0B4866] text-white px-6 py-3 rounded-lg hover:bg-[#094058] disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                        >
+                          {sendingPaymentInfo ? 'Sending...' : 'Send Payment Info'}
+                        </button>
+                        <button
+                          onClick={() => setShowPaymentModal(false)}
+                          disabled={sendingPaymentInfo}
+                          className="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed font-semibold"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

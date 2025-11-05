@@ -1,10 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, Eye, EyeOff, Mail, Lock, User, LogOut } from 'lucide-react';
 import { login as loginUser, getCurrentUser, logout as logoutUser, register as registerUser, isAuthenticated as checkAuth } from '../../lib/auth';
+import { useUIStore } from '../../stores/useUIStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginForm = ({ onSwitch, onClose }) => {
+  const router = useRouter();
+  const authRedirectPath = useUIStore((state) => state.authRedirectPath);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +36,25 @@ const LoginForm = ({ onSwitch, onClose }) => {
       
       if (result && result.success) {
         console.log('AuthDrawer: Login successful, closing drawer');
-        if (onClose && typeof onClose === 'function') {
-          onClose();
-        }
         setFormData({ email: '', password: '' });
-        // Reload page to update auth state
-        window.location.reload();
+        
+        // Check if there's a redirect path (e.g., from checkout flow)
+        if (authRedirectPath) {
+          // Close drawer first
+          if (onClose && typeof onClose === 'function') {
+            onClose();
+          }
+          // Small delay to ensure auth state is updated, then redirect
+          setTimeout(() => {
+            router.push(authRedirectPath);
+          }, 100);
+        } else {
+          // Close drawer and reload page to update auth state
+          if (onClose && typeof onClose === 'function') {
+            onClose();
+          }
+          window.location.reload();
+        }
       } else {
         const errorMsg = result?.error || 'Login failed. Please try again.';
         console.error('AuthDrawer: Login failed:', errorMsg);
@@ -82,7 +99,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
               placeholder="Enter your email"
             />
           </div>
@@ -103,7 +120,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
               placeholder="Enter your password"
             />
             <button
@@ -126,7 +143,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
               id="remember-me"
               name="remember-me"
               type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-[#0B4866] focus:ring-[#0B4866] border-gray-300 rounded"
             />
             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
               Remember me
@@ -134,7 +151,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
           </div>
           
           <div className="text-sm">
-            <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+            <a href="#" className="font-medium text-[#0B4866] hover:text-[#094058]">
               Forgot password?
             </a>
           </div>
@@ -144,7 +161,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#003B8E] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0B4866] hover:bg-[#094058] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B4866] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
@@ -176,6 +193,8 @@ const LoginForm = ({ onSwitch, onClose }) => {
 };
 
 const RegisterForm = ({ onSwitch, onClose }) => {
+  const router = useRouter();
+  const authRedirectPath = useUIStore((state) => state.authRedirectPath);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -216,11 +235,25 @@ const RegisterForm = ({ onSwitch, onClose }) => {
       });
       
       if (result && result.success) {
-        if (onClose && typeof onClose === 'function') {
-          onClose();
-        }
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-        window.location.reload();
+        
+        // Check if there's a redirect path (e.g., from checkout flow)
+        if (authRedirectPath) {
+          // Close drawer first
+          if (onClose && typeof onClose === 'function') {
+            onClose();
+          }
+          // Small delay to ensure auth state is updated, then redirect
+          setTimeout(() => {
+            router.push(authRedirectPath);
+          }, 100);
+        } else {
+          // Close drawer and reload page to update auth state
+          if (onClose && typeof onClose === 'function') {
+            onClose();
+          }
+          window.location.reload();
+        }
       } else {
         setError(result?.error || 'Registration failed. Please try again.');
       }
@@ -262,7 +295,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
               placeholder="Enter your full name"
             />
           </div>
@@ -283,7 +316,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
               placeholder="Enter your email"
             />
           </div>
@@ -305,7 +338,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
               onChange={handleChange}
               required
               minLength={6}
-              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
               placeholder="Create a password"
             />
             <button
@@ -338,7 +371,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
               onChange={handleChange}
               required
               minLength={6}
-              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
               placeholder="Confirm your password"
             />
           </div>
@@ -362,7 +395,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0B4866] hover:bg-[#094058] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B4866] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Creating account...' : 'Sign up'}
           </button>
@@ -457,7 +490,11 @@ const UserDropdown = ({ user, onClose, onLogout }) => {
 };
 
 const AuthDrawer = () => {
-  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const router = useRouter();
+  const isAuthDrawerOpen = useUIStore((state) => state.isAuthDrawerOpen);
+  const authRedirectPath = useUIStore((state) => state.authRedirectPath);
+  const closeAuthDrawer = useUIStore((state) => state.closeAuthDrawer);
+  const setAuthRedirectPath = useUIStore((state) => state.setAuthRedirectPath);
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
@@ -476,18 +513,25 @@ const AuthDrawer = () => {
     const onOpen = (e) => {
       try {
         const tab = e?.detail?.tab || 'login';
+        const redirectPath = e?.detail?.redirectPath || null;
         setActiveTab(tab);
+        if (redirectPath) {
+          setAuthRedirectPath(redirectPath);
+        }
       } catch {}
       setForceOpen(true);
     };
-    const onClose = () => setForceOpen(false);
+    const onClose = () => {
+      setForceOpen(false);
+      setAuthRedirectPath(null);
+    };
     document.body.addEventListener('usave:openAuth', onOpen);
     document.body.addEventListener('usave:closeAuth', onClose);
     return () => {
       document.body.removeEventListener('usave:openAuth', onOpen);
       document.body.removeEventListener('usave:closeAuth', onClose);
     };
-  }, []);
+  }, [setAuthRedirectPath]);
   
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -497,8 +541,9 @@ const AuthDrawer = () => {
     await logoutUser();
     setUser(null);
     setIsAuthenticated(false);
-    setIsAuthDrawerOpen(false);
+    closeAuthDrawer();
     setForceOpen(false);
+    setAuthRedirectPath(null);
     window.location.reload();
   };
   
@@ -507,8 +552,9 @@ const AuthDrawer = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    setIsAuthDrawerOpen(false);
+    closeAuthDrawer();
     setForceOpen(false);
+    setAuthRedirectPath(null);
     // Fallback: dispatch close event
     if (typeof document !== 'undefined') {
       try {

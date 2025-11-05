@@ -29,6 +29,9 @@ export const useUIStore = create((set) => ({
   isLoading: false,
   loadingMessage: 'Loading...',
   
+  // Redirect path after auth (used for checkout flow)
+  authRedirectPath: null,
+  
   // Filter states
   productFilters: {
     category: null,
@@ -48,9 +51,10 @@ export const useUIStore = create((set) => ({
   closeCartDrawer: () => set({ isCartDrawerOpen: false }),
   toggleCartDrawer: () => set((state) => ({ isCartDrawerOpen: !state.isCartDrawerOpen })),
   
-  openAuthDrawer: () => set({ isAuthDrawerOpen: true }),
-  closeAuthDrawer: () => set({ isAuthDrawerOpen: false }),
+  openAuthDrawer: (redirectPath = null) => set({ isAuthDrawerOpen: true, authRedirectPath: redirectPath }),
+  closeAuthDrawer: () => set({ isAuthDrawerOpen: false, authRedirectPath: null }),
   toggleAuthDrawer: () => set((state) => ({ isAuthDrawerOpen: !state.isAuthDrawerOpen })),
+  setAuthRedirectPath: (path) => set({ authRedirectPath: path }),
   
   openSearchDrawer: () => set({ isSearchDrawerOpen: true }),
   closeSearchDrawer: () => set({ isSearchDrawerOpen: false }),

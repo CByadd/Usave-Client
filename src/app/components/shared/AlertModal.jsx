@@ -23,7 +23,7 @@ export default function AlertModal({
       case 'error':
         return <AlertCircle className="w-12 h-12 text-red-500" />;
       default:
-        return <Info className="w-12 h-12 text-blue-500" />;
+        return <Info className="w-12 h-12 text-[#0B4866]" />;
     }
   };
 

@@ -52,14 +52,14 @@ const getUIStore = () => {
   return uiStore;
 };
 
-export const openAuthDrawer = (tab = 'login') => {
+export const openAuthDrawer = (tab = 'login', redirectPath = null) => {
   const store = getUIStore();
   if (store) {
-    store.getState().openAuthDrawer();
+    store.getState().openAuthDrawer(redirectPath);
   }
   // Also dispatch event for backward compatibility
   if (typeof window !== 'undefined') {
-    const event = new CustomEvent('usave:openAuth', { detail: { tab } });
+    const event = new CustomEvent('usave:openAuth', { detail: { tab, redirectPath } });
     document.body.dispatchEvent(event);
   }
 };

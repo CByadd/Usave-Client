@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { fetchCart, getCartItems, getCartTotals, removeFromCart, addToCart } from '../../lib/cart';
 import { useRouter } from 'next/navigation';
-import { showToast } from '../../lib/ui';
+import { isAuthenticated } from '../../lib/auth';
+import { showToast, openAuthDrawer } from '../../lib/ui';
 
 const CartModal = memo(({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
@@ -59,8 +60,17 @@ const CartModal = memo(({ isOpen, onClose }) => {
   };
 
   const handleCheckout = () => {
-    onClose();
-    router.push('/checkout');
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+      // Not authenticated - open auth drawer with redirect to checkout
+      onClose();
+      openAuthDrawer('login', '/checkout');
+      showToast('Please login to proceed to checkout', 'info');
+    } else {
+      // Authenticated - proceed to checkout
+      onClose();
+      router.push('/checkout');
+    }
   };
 
   const handleContinueShopping = () => {

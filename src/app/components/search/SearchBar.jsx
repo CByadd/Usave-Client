@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from 'react-dom';
 import { Search, Loader2, X } from 'lucide-react';
 import { useSearch } from '../../stores/useSearchStore';
 import { useRouter } from 'next/navigation';
@@ -11,6 +12,9 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimerRef = useRef(null);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
+  const [suggestionsPosition, setSuggestionsPosition] = useState({ top: 0, left: 0, width: 0 });
   const router = useRouter();
 
 
@@ -87,65 +91,114 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
     setTimeout(() => setShowSuggestions(false), 120);
   };
 
+  // Update suggestions position when input position changes
+  useEffect(() => {
+    if (!showSuggestions || !inputRef.current) {
+      return;
+    }
+
+    const updatePosition = () => {
+      if (inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        // Use getBoundingClientRect() directly for fixed positioning (viewport coordinates)
+        // Fixed positioning is relative to viewport, so we don't add scrollY
+        setSuggestionsPosition({
+          top: rect.bottom + 8, // Fixed positioning uses viewport coordinates
+          left: isMobile ? (containerRect?.left || rect.left) : (containerRect?.left || rect.left) + 28,
+          width: isMobile ? (containerRect?.width || rect.width) : rect.width,
+        });
+      }
+    };
+
+    // Initial position
+    updatePosition();
+    
+    // Update on scroll and resize
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showSuggestions, isMobile]); // Keep dependency array constant
+
   return (
     <>
       {/* Background blur when suggestions are open */}
-      {showSuggestions && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]" />
+      {showSuggestions && suggestions.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
+          onClick={() => setShowSuggestions(false)}
+        />
       )}
       
-     <div
-  className={`relative w-full z-[65] ${
-    isMobile && !isExpanded ? 'hidden' : ''
-  }`}
-  ref={containerRef}
->
-  <form
-    onSubmit={handleSubmit}
-    className={`flex items-center w-full mx-auto bg-white/80 backdrop-blur-md rounded-xl shadow-sm overflow-hidden border border-gray-500 transition-all duration-200 ${
-      isMobile ? 'ml-0 px-0' : 'ml-7'
-    }`}
-  >
-    <button
-      type="submit"
-      className="px-2 py-2 bg-transparent text-dark rounded-full hover:opacity-90 transition duration-200"
-      aria-label="Search"
-    >
-      {isSearching ? <Loader2 className="animate-spin" /> : <Search />}
-    </button>
-
-    {/* Close button for mobile */}
-    {isMobile && onToggle && (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="px-2 py-2 bg-transparent text-dark rounded-full hover:opacity-90 transition duration-200"
-        aria-label="Close search"
+      <div
+        className={`relative w-full z-[65] ${
+          isMobile && !isExpanded ? 'hidden' : ''
+        }`}
+        ref={containerRef}
       >
-        <X size={16} />
-      </button>
-    )}
+        <form
+          onSubmit={handleSubmit}
+          className={`flex items-center w-full mx-auto bg-white/80 backdrop-blur-md rounded-xl shadow-sm overflow-hidden border border-gray-500 transition-all duration-200 ${
+            isMobile ? 'ml-0 px-0' : 'ml-7'
+          }`}
+        >
+          <button
+            type="submit"
+            className="px-2 sm:px-3 py-2 bg-transparent text-dark rounded-full hover:opacity-90 transition duration-200 flex-shrink-0"
+            aria-label="Search"
+          >
+            {isSearching ? <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5" /> : <Search className="w-4 h-4 sm:w-5 sm:h-5" />}
+          </button>
 
-    <input
-      type="text"
-      value={query}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      className="flex-1 px-4 py-2 bg-white placeholder-black/40 focus:outline-none text-sm md:text-base"
-      disabled={isSearching}
-      aria-autocomplete="list"
-      aria-expanded={showSuggestions}
-      aria-controls="search-suggestions"
-    />
-  </form>
+          {/* Close button for mobile */}
+          {isMobile && onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              className="px-2 py-2 bg-transparent text-dark rounded-full hover:opacity-90 transition duration-200 flex-shrink-0"
+              aria-label="Close search"
+            >
+              <X size={16} />
+            </button>
+          )}
 
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            onFocus={() => {
+              if (suggestions.length > 0) {
+                setShowSuggestions(true);
+              }
+            }}
+            placeholder={placeholder}
+            className="flex-1 px-2 sm:px-4 py-2 bg-white placeholder-black/40 focus:outline-none text-xs sm:text-sm md:text-base min-w-0"
+            disabled={isSearching}
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions}
+            aria-controls="search-suggestions"
+          />
+        </form>
+      </div>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {/* Render suggestions outside navbar using portal */}
+      {typeof window !== 'undefined' && showSuggestions && suggestions.length > 0 && createPortal(
         <ul
+          ref={suggestionsRef}
           id="search-suggestions"
-          className="absolute left-7 right-0 mt-2 z-[70] bg-white border border-gray-200 rounded-xl shadow-lg max-h-72 overflow-auto text-sm md:text-base"
+          className="fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-lg max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-auto text-xs sm:text-sm md:text-base"
+          style={{
+            top: `${suggestionsPosition.top}px`,
+            left: `${suggestionsPosition.left}px`,
+            width: `${suggestionsPosition.width}px`,
+          }}
           role="listbox"
         >
           {suggestions.map((s, idx) => {
@@ -155,18 +208,23 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
                 key={`${label}-${idx}`}
                 role="option"
                 aria-selected={idx === highlightedIndex}
-                className={`px-4 py-2 cursor-pointer hover:bg-gray-50 ${idx === highlightedIndex ? 'bg-gray-100' : ''}`}
+                className={`px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors break-words ${
+                  idx === highlightedIndex ? 'bg-gray-100' : ''
+                }`}
                 onMouseEnter={() => setHighlightedIndex(idx)}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  submitQuery(String(label));
+                }}
                 onClick={() => submitQuery(String(label))}
               >
                 {String(label)}
               </li>
             );
           })}
-        </ul>
+        </ul>,
+        document.body
       )}
-      </div>
     </>
   );
 };

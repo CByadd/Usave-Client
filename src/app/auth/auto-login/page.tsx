@@ -141,7 +141,7 @@ const AutoLoginPageContent = () => {
             <div className="mt-6">
               <a
                 href="/auth/login"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0B4866] hover:bg-[#094058] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B4866]"
               >
                 Go to Login Page
               </a>
@@ -155,7 +155,7 @@ const AutoLoginPageContent = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#0B4866] mx-auto"></div>
         <p className="mt-4 text-lg font-medium text-gray-900">{status}</p>
         <p className="mt-2 text-sm text-gray-500">Please wait while we log you in automatically.</p>
       </div>
@@ -168,7 +168,7 @@ export default function AutoLoginPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#0B4866] mx-auto"></div>
           <p className="mt-4 text-lg font-medium text-gray-900">Loading...</p>
         </div>
       </div>

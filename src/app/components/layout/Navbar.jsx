@@ -261,7 +261,7 @@ const Navbar = () => {
                 console.log('Desktop auth login clicked');
                 openAuthDrawer('login');
               }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-[#0B4866] transition-colors"
             >
               Sign In
             </button>
@@ -276,7 +276,7 @@ const Navbar = () => {
                   try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'register' } })); } catch {}
                 }
               }}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-[#0B4866] hover:bg-[#094058] rounded-md transition-colors"
             >
               Sign Up
             </button>
@@ -388,7 +388,7 @@ const Navbar = () => {
                   <div className="space-y-4">
                     <Link
                       href="/account"
-                      className="flex items-center text-base font-medium text-gray-900 hover:text-blue-600"
+                      className="flex items-center text-base font-medium text-gray-900 hover:text-[#0B4866]"
                       onClick={() => {
                         setIsMobileOpen(false);
                         setIsAccountMenuOpen(false);
@@ -419,7 +419,7 @@ const Navbar = () => {
                 setIsMobileOpen(false);
                 setIsAccountMenuOpen(false);
               }}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0B4866] hover:bg-[#094058] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B4866]"
             >
               Sign In
             </button>
@@ -435,7 +435,7 @@ const Navbar = () => {
                   setIsMobileOpen(false);
                   setIsAccountMenuOpen(false);
                 }}
-                className="text-blue-600 font-medium hover:text-blue-500"
+                className="text-[#0B4866] font-medium hover:text-[#094058]"
               >
                 Start here
               </button>
@@ -471,7 +471,7 @@ const Navbar = () => {
                   <Link 
                     key={item.name}
                     href={item.href} 
-                    className="text-gray-700 hover:text-blue-600 text-sm font-medium transition-colors"
+                    className="text-gray-700 hover:text-[#0B4866] text-sm font-medium transition-colors"
                   >
                     {item.name}
                   </Link>
@@ -481,7 +481,7 @@ const Navbar = () => {
                {/* Cart */}
   <Link 
     href="/cart"
-    className="relative text-gray-700 hover:text-blue-600 cursor-pointer"
+    className="relative text-gray-700 hover:text-[#0B4866] cursor-pointer"
     aria-label="View cart"
   >
     <ShoppingCart size={22} />
@@ -494,7 +494,7 @@ const Navbar = () => {
 
                 {/* Cart */}
           <span className='flex items-center justify-center gap-2'>
-             <Link href="/wishlist" className="relative text-gray-700 hover:text-blue-600">
+             <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
     <Heart size={22} />
     {getWishlistCount() > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -573,7 +573,7 @@ const Navbar = () => {
     <div className="flex items-center justify-between w-full max-w-[380px]">
       {/* Left: Mobile Menu Button */}
       <button 
-        className="text-gray-600 hover:text-blue-600 flex-shrink-0"
+        className="text-gray-600 hover:text-[#0B4866] flex-shrink-0"
         onClick={toggleMobile}
         aria-label="Open menu"
       >
@@ -588,7 +588,7 @@ const Navbar = () => {
       {/* Right: Icons (Search + Cart) */}
       <div className="flex items-center justify-end space-x-5">
         <button 
-          className="text-gray-600 hover:text-blue-600"
+          className="text-gray-600 hover:text-[#0B4866]"
           onClick={toggleSearch}
           aria-label="Search"
         >
@@ -597,7 +597,7 @@ const Navbar = () => {
 
         <Link
           href="/cart"
-          className="relative text-gray-600 hover:text-blue-600 flex items-center"
+          className="relative text-gray-600 hover:text-[#0B4866] flex items-center"
           aria-label="View cart"
         >
           <ShoppingCart size={22} />
@@ -660,7 +660,7 @@ const Navbar = () => {
                   <li key={sub.name}>
                     <Link
                       href={sub.href}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#0B4866]"
                     >
                       {sub.name}
                     </Link>

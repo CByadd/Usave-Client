@@ -564,7 +564,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                       ? 'bg-green-600 hover:bg-green-700 text-white' 
 
-                      : 'bg-blue-900 hover:bg-blue-800 text-white'
+                      : 'bg-[#0B4866] hover:bg-[#094058] text-white'
 
                 }`}
 

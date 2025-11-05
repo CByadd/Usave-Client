@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Plus, Minus, Heart, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '../stores/useCartStore';
 import { useWishlist } from '../stores/useWishlistStore';
-import { showToast } from '../lib/ui';
+import { isAuthenticated } from '../lib/auth';
+import { showToast, openAuthDrawer } from '../lib/ui';
 
 const CartPage = () => {
   const router = useRouter();
@@ -58,7 +59,15 @@ const CartPage = () => {
   };
 
   const handleCheckout = () => {
-    router.push('/checkout');
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+      // Not authenticated - open auth drawer with redirect to checkout
+      openAuthDrawer('login', '/checkout');
+      showToast('Please login to proceed to checkout', 'info');
+    } else {
+      // Authenticated - proceed to checkout
+      router.push('/checkout');
+    }
   };
 
   const handleAddToWishlist = async (item) => {

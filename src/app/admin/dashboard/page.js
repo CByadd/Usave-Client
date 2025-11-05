@@ -20,9 +20,18 @@ export default function AdminDashboard() {
     
     if (!authenticated || (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'SUPER_ADMIN')) {
       router.push('/admin/login');
-    } else {
-      fetchOrders();
+      return;
     }
+    
+    fetchOrders();
+    
+    // Set up polling for order updates every 5 seconds
+    const pollInterval = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+    
+    return () => clearInterval(pollInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   const fetchOrders = async () => {

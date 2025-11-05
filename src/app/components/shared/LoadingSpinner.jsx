@@ -25,7 +25,7 @@ const LoadingSpinner = ({
   return (
     <div className={`flex items-center justify-center ${className}`}>
       <div className="flex flex-col items-center space-y-2">
-        <Loader2 className={`${sizeClasses[size]} animate-spin text-blue-600`} />
+        <Loader2 className={`${sizeClasses[size]} animate-spin text-[#0B4866]`} />
         {showText && (
           <p className={`${textSizeClasses[size]} text-gray-600`}>
             {text}

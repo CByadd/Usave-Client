@@ -226,30 +226,35 @@ export default function CheckoutPage() {
       };
 
       if (orderResponse.success) {
-        // Save shipping address to user's saved addresses
-        try {
-          await apiService.user.addAddress({
-            type: 'shipping',
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            address1: formData.address1,
-            address2: formData.address2,
-            city: formData.city,
-            state: formData.state,
-            postalCode: formData.postalCode,
-            country: formData.country,
-            phone: formData.phone,
-            isDefault: false
-          });
-        } catch (error) {
-          console.error('Failed to save address:', error);
-          // Don't block order creation if address save fails
+        // Save shipping address to user's saved addresses (optional - don't block order creation)
+        if (isAuthenticated && user?.id) {
+          try {
+            // Check if user service exists before calling
+            if (apiService.user && typeof apiService.user.addAddress === 'function') {
+              await apiService.user.addAddress({
+                type: 'shipping',
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                address1: formData.address1,
+                address2: formData.address2,
+                city: formData.city,
+                state: formData.state,
+                postalCode: formData.postalCode,
+                country: formData.country,
+                phone: formData.phone,
+                isDefault: false
+              });
+            }
+          } catch (error) {
+            console.error('Failed to save address:', error);
+            // Don't block order creation if address save fails
+          }
         }
 
-        // Clear cart and redirect to payment page
+        // Clear cart and redirect to orders page
         const orderId = orderResponse.data?.order?.id || responseData.data?.orderId;
         showSuccess(orderId);
-        router.push(`/payment/${orderId}`);
+        router.push('/orders');
       } else {
         throw new Error(orderResponse.message || 'Failed to create order');
       }

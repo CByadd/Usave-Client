@@ -96,7 +96,7 @@ const LoggingToggle = () => {
                         <span className={`px-1 py-0.5 rounded text-xs ${
                           log.level === 'ERROR' ? 'bg-red-100 text-red-700' :
                           log.level === 'WARN' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-blue-100 text-blue-700'
+                          'bg-[#0B4866]/10 text-[#0B4866]'
                         }`}>
                           {log.level}
                         </span>
@@ -116,7 +116,7 @@ const LoggingToggle = () => {
             <div className="flex gap-2">
               <button
                 onClick={exportLogs}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#0B4866] text-white rounded hover:bg-[#094058] transition-colors text-sm"
               >
                 <Download size={14} />
                 Export

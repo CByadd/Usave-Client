@@ -142,7 +142,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
         <h3 className="text-lg font-semibold text-gray-900">Edit Order Items</h3>
         <button
           onClick={() => setIsEditing(!isEditing)}
-          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          className="text-sm text-[#0B4866] hover:text-[#094058] font-medium"
         >
           {isEditing ? 'Done Editing' : 'Edit Items'}
         </button>
@@ -286,7 +286,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
                       <p className="text-sm font-medium text-gray-900">{product.title}</p>
                       <p className="text-xs text-gray-600">${product.discountedPrice}</p>
                     </div>
-                    <Plus size={18} className="text-blue-600" />
+                    <Plus size={18} className="text-[#0B4866]" />
                   </div>
                 ))}
               </div>
@@ -313,7 +313,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
         </div>
         <div className="flex justify-between text-base font-semibold border-t border-gray-200 pt-2">
           <span>Total:</span>
-          <span className="text-blue-600">${(order.total || 0).toFixed(2)}</span>
+          <span className="text-[#0B4866]">${(order.total || 0).toFixed(2)}</span>
         </div>
       </div>
     </div>

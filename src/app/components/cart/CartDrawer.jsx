@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '../../stores/useCartStore';
 import { useUIStore } from '../../stores/useUIStore';
+import { isAuthenticated } from '../../lib/auth';
+import { openAuthDrawer } from '../../lib/ui';
 import OptimizedImage from '../shared/OptimizedImage';
 
 const CartDrawer = () => {
@@ -20,6 +23,7 @@ const CartDrawer = () => {
   const isCartDrawerOpen = useUIStore((state) => state.isCartDrawerOpen);
   const closeCartDrawer = useUIStore((state) => state.closeCartDrawer);
   
+  const router = useRouter();
   const [isUpdating, setIsUpdating] = useState({});
 
   // Load cart on mount
@@ -308,8 +312,8 @@ const CartDrawer = () => {
               <h3 className="text-lg font-semibold text-gray-900">Order Summary</h3>
               
               {cartItems.some(item => item.includeInstallation) && (
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-blue-800 flex items-center gap-2">
+                <div className="bg-[#0B4866]/10 p-3 rounded-lg">
+                  <p className="text-sm text-[#0B4866] flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
                     </svg>
@@ -349,22 +353,24 @@ const CartDrawer = () => {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Link
-                href="/checkout"
+              <button
                 onClick={(e) => {
-                  // Close the drawer before navigating
-                  if (typeof document !== 'undefined') {
-                    try {
-                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
-                    } catch {}
+                  e.preventDefault();
+                  // Check if user is authenticated
+                  if (!isAuthenticated()) {
+                    // Not authenticated - open auth drawer with redirect to checkout
+                    closeCartDrawer();
+                    openAuthDrawer('login', '/checkout');
+                  } else {
+                    // Authenticated - proceed to checkout
+                    closeCartDrawer();
+                    router.push('/checkout');
                   }
-                  setIsCartDrawerOpen(false);
-                  setForceOpen(false);
                 }}
                 className="block w-full bg-[#0B4866] text-white py-3 rounded-lg font-medium text-center hover:bg-[#094058] transition-colors"
               >
                 Proceed to Checkout
-              </Link>
+              </button>
               
               <Link
                 href="/cart"

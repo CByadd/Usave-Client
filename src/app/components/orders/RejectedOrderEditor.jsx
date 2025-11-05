@@ -185,7 +185,7 @@ const RejectedOrderEditor = ({ order, onOrderUpdate, onResubmit }) => {
 
         <button
           onClick={handleSaveItems}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="w-full bg-[#0B4866] text-white py-2 rounded-lg font-medium hover:bg-[#094058] transition-colors"
         >
           Save Item Changes
         </button>
@@ -255,7 +255,7 @@ const RejectedOrderEditor = ({ order, onOrderUpdate, onResubmit }) => {
 
         <button
           onClick={handleSaveAddresses}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="w-full bg-[#0B4866] text-white py-2 rounded-lg font-medium hover:bg-[#094058] transition-colors"
         >
           Save Address Changes
         </button>

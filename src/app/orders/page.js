@@ -379,7 +379,7 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
       return 'bg-red-100 text-red-800 border-red-200';
     }
     if (order?.ownerApproved && !order?.adminApproved) {
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30';
     }
     if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
       return 'bg-orange-100 text-orange-800 border-orange-200';

@@ -444,7 +444,7 @@ function OwnerApproveOrderPageContent() {
 
                   <button
                     onClick={() => setShowEditModal(!showEditModal)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                    className="px-4 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#094058] transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
                   >
                     <Edit size={16} />
                     Edit Order
@@ -602,8 +602,8 @@ function OwnerApproveOrderPageContent() {
         )}
 
         {/* Info Note */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
+        <div className="bg-[#0B4866]/10 border border-[#0B4866]/30 rounded-lg p-4">
+          <p className="text-sm text-[#0B4866]">
             <strong>Note:</strong> After approval, this order will be sent to admin for final review. 
             If you reject this order, it will not proceed to admin.
           </p>

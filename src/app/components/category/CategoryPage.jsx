@@ -250,7 +250,7 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
               onClick={() => toggleFilter('price')}
               className={`px-3 md:px-4 py-2 border rounded-md text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 whitespace-nowrap ${
                 selectedPriceRange 
-                  ? 'border-[#0B4866] text-[#0B4866] bg-blue-50' 
+                  ? 'border-[#0B4866] text-[#0B4866] bg-[#0B4866]/10' 
                   : 'border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >

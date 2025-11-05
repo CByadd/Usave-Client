@@ -328,7 +328,7 @@ const PaymentPage = () => {
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-4 h-4 text-[#0B4866]"
                   />
-                  <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-xs">
+                  <div className="w-6 h-6 bg-[#0B4866] rounded flex items-center justify-center text-white font-bold text-xs">
                     P
                   </div>
                   <div className="flex-1">
@@ -429,8 +429,8 @@ const PaymentPage = () => {
 
             {paymentMethod === 'paypal' && (
               <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-16 h-16 bg-[#0B4866]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-12 h-12 bg-[#0B4866] rounded-full flex items-center justify-center text-white font-bold text-xl">
                     P
                   </div>
                 </div>

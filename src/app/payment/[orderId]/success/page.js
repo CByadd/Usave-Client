@@ -275,13 +275,13 @@ const PaymentSuccessPage = () => {
         </div>
 
         {/* Additional Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <h3 className="font-semibold text-blue-900 mb-2">What's Next?</h3>
-          <p className="text-sm text-blue-700 mb-4">
+        <div className="bg-[#0B4866]/10 border border-[#0B4866]/30 rounded-lg p-6 text-center">
+          <h3 className="font-semibold text-[#0B4866] mb-2">What's Next?</h3>
+          <p className="text-sm text-[#0B4866] mb-4">
             We've sent a confirmation email to <span className="font-medium">{user?.email}</span> with your order details.
             You'll receive another email when your order ships.
           </p>
-          <p className="text-xs text-blue-600">
+          <p className="text-xs text-[#0B4866]">
             Need help? Contact our support team at support@usave.com
           </p>
         </div>

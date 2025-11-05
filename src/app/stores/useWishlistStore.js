@@ -113,8 +113,10 @@ export const useWishlistStore = create((set, get) => ({
       }
 
       // Add to local state immediately with complete product data
+      // Generate unique ID using timestamp + random number to avoid duplicates
+      const uniqueId = `wishlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${productId}`;
       const newItem = {
-        id: `wishlist_${Date.now()}_${productId}`,
+        id: uniqueId,
         productId: String(productId), // Ensure consistent string type
         ...(productData && {
           product: {
