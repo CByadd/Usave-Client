@@ -93,45 +93,66 @@ function OwnerApproveOrderPageContent() {
       return;
     }
 
-    if (!confirm('Are you sure you want to approve this order?')) return;
+    showAlert({
+      title: 'Approve Order',
+      message: 'Are you sure you want to approve this order?',
+      type: 'warning',
+      confirmText: 'Approve',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          setProcessing(true);
+          setGlobalLoading(true, 'Approving order...');
+          setError('');
 
-    try {
-      setProcessing(true);
-      setError('');
+          const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              token,
+              approved: true,
+              approvalNotes: approvalNotes.trim() || null,
+            }),
+          });
 
-      const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          approved: true,
-          approvalNotes: approvalNotes.trim() || null,
-        }),
-      });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to approve order');
+          }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to approve order');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setOrder(data.data.order);
-        setSuccess(true);
-        setAction('approved');
-        setApprovalNotes('');
-        setShowNotesModal(false);
-      } else {
-        throw new Error(data.message || 'Failed to approve order');
-      }
-    } catch (err) {
-      console.error('Error approving order:', err);
-      setError(err.message || 'Failed to approve order. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
+          const data = await response.json();
+          if (data.success) {
+            setOrder(data.data.order);
+            setSuccess(true);
+            setAction('approved');
+            setApprovalNotes('');
+            setShowNotesModal(false);
+            showAlert({
+              title: 'Success',
+              message: 'Order approved successfully!',
+              type: 'success',
+              confirmText: 'OK',
+            });
+          } else {
+            throw new Error(data.message || 'Failed to approve order');
+          }
+        } catch (err) {
+          console.error('Error approving order:', err);
+          showAlert({
+            title: 'Error',
+            message: err.message || 'Failed to approve order',
+            type: 'error',
+            confirmText: 'OK',
+          });
+          setError(err.message || 'Failed to approve order');
+        } finally {
+          setProcessing(false);
+          setGlobalLoading(false);
+        }
+      },
+    });
   };
 
   const handleReject = async () => {

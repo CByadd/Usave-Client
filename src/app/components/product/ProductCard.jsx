@@ -139,9 +139,9 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
   const imageContainerClasses = variant === 'grid'
 
-    ? "relative bg-gray-50 p-6 aspect-square flex items-center justify-center"
+    ? "relative bg-transparent p-6 aspect-square flex items-center justify-center"
 
-    : "relative flex justify-center items-center w-full h-[250px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden";
+    : "relative flex justify-center items-center w-full h-[250px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden bg-transparent";
 
   return (
 
@@ -179,7 +179,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
           aria-label={isInWishlist(productItem.id) ? "Remove from wishlist" : "Add to wishlist"}
 
-              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition z-50 cursor-pointer"
+              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition z-10 cursor-pointer"
 
               type="button"
 
@@ -205,7 +205,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
           aria-label={isInWishlist(productItem.id) ? "Remove from wishlist" : "Add to wishlist"}
 
-              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 z-50 cursor-pointer"
+              className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 z-10 cursor-pointer"
 
               type="button"
 
@@ -233,11 +233,11 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
             className={imageContainerClasses}
 
-            style={productItem.bg ? { backgroundColor: productItem.bg } : { backgroundColor: '#f9fafb' }}
+            style={productItem.bg ? { backgroundColor: productItem.bg } : { backgroundColor: 'transparent' }}
 
           >
 
-          <div className="relative w-full h-full flex justify-center items-center">
+          <div className="relative w-full h-full flex justify-center items-center bg-transparent">
 
             <OptimizedImage
 
@@ -249,7 +249,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
               height={280}
 
-              className="object-contain max-h-full max-w-full rounded-xl transition-transform duration-300 ease-in-out group-hover:scale-105"
+              className="object-contain max-h-full max-w-full rounded-xl transition-transform duration-300 ease-in-out group-hover:scale-105 bg-transparent"
 
             />
 
@@ -413,7 +413,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
         {/* Buttons */}
 
-        <div className={`flex ${variant === 'grid' ? 'gap-2 mt-auto' : 'gap-3 mt-auto'} flex-shrink-0`}>
+        <div className={`flex ${variant === 'grid' ? 'gap-2 mt-auto' : 'gap-2 sm:gap-3 mt-auto flex-col sm:flex-row'} flex-shrink-0`}>
 
           {variant === 'grid' ? (
 
@@ -487,6 +487,31 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
           ) : (
 
             <>
+
+              {/* Wishlist button for mobile - visible only on mobile */}
+              <button
+
+                type="button"
+
+                onClick={handleWishlistToggle}
+
+                disabled={isWishlistLoading}
+
+                aria-label={isInWishlist(productItem.id) ? "Remove from wishlist" : "Add to wishlist"}
+
+                className={`flex sm:hidden w-full rounded-4xl py-2.5 items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed text-sm border ${
+                  isInWishlist(productItem.id)
+                    ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+
+              >
+
+                <Heart size={16} className={isInWishlist(productItem.id) ? "fill-red-500 text-red-500" : ""} />
+
+                {isInWishlist(productItem.id) ? 'In Wishlist' : 'Add to Wishlist'}
+
+              </button>
 
               <button
 

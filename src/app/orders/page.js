@@ -7,6 +7,7 @@ import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
 import ReApprovalModal from '../components/orders/ReApprovalModal';
+import { showAlert, setLoading as setGlobalLoading } from '../lib/ui';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -67,6 +68,7 @@ export default function OrdersPage() {
     console.log('handleRequestReapproval called with orderId:', orderId);
     try {
       setIsProcessing(true);
+      setGlobalLoading(true, 'Loading order details...');
       setError('');
       
       // Fetch full order details including items
@@ -84,12 +86,26 @@ export default function OrdersPage() {
         const errorMsg = orderResponse.message || 'Failed to fetch order details';
         console.error('Failed to fetch order:', errorMsg);
         setError(errorMsg);
+        showAlert({
+          title: 'Error',
+          message: errorMsg,
+          type: 'error',
+          confirmText: 'OK',
+        });
       }
     } catch (error) {
       console.error('Error fetching order details:', error);
-      setError(error.response?.data?.error || error.message || 'Failed to fetch order details');
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to fetch order details';
+      setError(errorMsg);
+      showAlert({
+        title: 'Error',
+        message: errorMsg,
+        type: 'error',
+        confirmText: 'OK',
+      });
     } finally {
       setIsProcessing(false);
+      setGlobalLoading(false);
     }
   };
 
@@ -112,7 +128,12 @@ export default function OrdersPage() {
       router.push(`/checkout?editOrder=${orderId}`);
     } else {
       // For pending orders, show details
-      alert('Order editing is available for rejected orders. Please wait for approval or rejection.');
+      showAlert({
+        title: 'Order Information',
+        message: 'Order editing is available for rejected orders. Please wait for approval or rejection.',
+        type: 'info',
+        confirmText: 'OK',
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
+import { showAlert, setLoading } from '../lib/ui';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -18,18 +19,41 @@ export default function ContactPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Handle form submission
     console.log('Form submitted:', formData);
-    alert('Thank you for your message! We will get back to you soon.');
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: ''
-    });
+    
+    setLoading(true, 'Sending message...');
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      showAlert({
+        title: 'Message Sent!',
+        message: 'Thank you for your message! We will get back to you soon.',
+        type: 'success',
+        confirmText: 'OK',
+      });
+      
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        message: 'Failed to send message. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

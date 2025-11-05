@@ -9,6 +9,8 @@ import CartInitializer from "./components/cart/CartInitializer";
 import WishlistInitializer from "./components/wishlist/WishlistInitializer";
 import LoggingToggle from "./components/debug/LoggingToggle";
 import ToastContainerWrapper from "./components/shared/ToastContainerWrapper";
+import AlertModalWrapper from "./components/shared/AlertModalWrapper";
+import LoadingOverlayWrapper from "./components/shared/LoadingOverlayWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +46,8 @@ export default function RootLayout({ children }) {
           <CartDrawer />
           <LoggingToggle />
           <ToastContainerWrapper />
+          <AlertModalWrapper />
+          <LoadingOverlayWrapper />
         </Providers>
       </body>
     </html>

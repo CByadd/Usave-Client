@@ -97,3 +97,26 @@ export const closeCartDrawer = () => {
   }
 };
 
+// Alert Modal helpers
+export const showAlert = (config) => {
+  const store = getUIStore();
+  if (store) {
+    store.getState().showAlert(config);
+  }
+};
+
+export const closeAlert = () => {
+  const store = getUIStore();
+  if (store) {
+    store.getState().closeAlert();
+  }
+};
+
+// Loading helpers
+export const setLoading = (isLoading, message = 'Loading...') => {
+  const store = getUIStore();
+  if (store) {
+    store.getState().setLoading(isLoading, message);
+  }
+};
+

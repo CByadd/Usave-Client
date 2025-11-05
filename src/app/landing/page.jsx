@@ -19,34 +19,32 @@ import InspirationSection from '../components/home/InspirationSection'
 // import name from './../components/product/ProductCard.jsx';
 export default function LandingPage() {
   return (
-    <div className=' flex flex-col items-center justify-center mx-auto '>
-   <div className="md:w-[90dvw] w-full   overflow-hidden">
+    <div className='flex flex-col items-center justify-center mx-auto gap-16 md:gap-20'>
+   <div className="md:w-[90dvw] w-full overflow-hidden">
        <HeroSection/>
-      {/* Explore By Category */}
    </div>
 
-    <section className='w-[90dvw] overflow-hidden mt-20 mb-20'>
+    <section className='w-[90dvw] overflow-hidden'>
         <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room"/>
         <CategoryCarousel/>
       </section>
 
       {/* Explore By Category */}
-      <section className='w-[99dvw] mt-20 mb-20 flex flex-col items-center justify-center overflow-hidden '>
+      <section className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden'>
         <div className="w-[90%]">
           <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
         </div>
        <div className="w-[99dvw] overflow-hidden">
-        {/* <FullWCategory/> */}
         <FullWidthCategory/>
        <InfoSection/>
        </div>
       </section>
 
-<section className='md:w-[90dvw] w-[100dvw] mt-20 mb-20'>
+<section className='md:w-[90dvw] w-[100dvw]'>
   <CategoryShowcase/>
 </section>
 
-<section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
+<section className='w-[90dvw] overflow-hidden'>
   <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {items.map((item) => (
@@ -55,8 +53,7 @@ export default function LandingPage() {
   </ProductCarousel>
 </section>
 
-
-<section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
+<section className='w-[90dvw] overflow-hidden'>
   <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {Bitems.map((item) => (
@@ -65,9 +62,7 @@ export default function LandingPage() {
   </ProductCarousel>
 </section>
 
-
-
-<section className='w-[90dvw] mt-20 mb-20 overflow-hidden'>
+<section className='w-[90dvw] overflow-hidden'>
   <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/living-room"/>
   <ProductCarousel>
      {Aitems.map((item) => (
@@ -76,11 +71,11 @@ export default function LandingPage() {
   </ProductCarousel>
 </section>
 
-<InspirationSection/>
+<section className='w-full'>
+  <InspirationSection/>
+</section>
 
-
-
-<section className="w-[99dvw] mt-20 mb-20 relative overflow-hidden">
+<section className="w-[99dvw] relative overflow-hidden">
   <div className="relative w-full">
     <Image
       src="https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264173/Usave/unsplash_c0JoR_-2x3E_v543gf.jpg"

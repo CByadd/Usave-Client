@@ -6,20 +6,79 @@ import { isAuthenticated } from '../lib/auth';
 
 const CART_STORAGE_KEY = 'usave_cart';
 
+// Helper function to safely parse number
+const safeParseNumber = (value, defaultValue = 0) => {
+  if (value === null || value === undefined || value === '') return defaultValue;
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
 // Calculate totals from cart items
 const calculateTotals = (items) => {
+  if (!items || !Array.isArray(items)) {
+    return { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
+  }
+
   const subtotal = items.reduce((sum, item) => {
-    const price = item.product?.discountedPrice || item.product?.originalPrice || 
-                  item.discountedPrice || item.originalPrice || item.price || 0;
-    return sum + (price * item.quantity);
+    if (!item) return sum;
+    
+    // Try to get price from multiple possible locations
+    const price = safeParseNumber(
+      item.product?.discountedPrice || 
+      item.product?.originalPrice || 
+      item.product?.price ||
+      item.discountedPrice || 
+      item.originalPrice || 
+      item.price
+    );
+    
+    // Ensure quantity is a valid number
+    const quantity = safeParseNumber(item.quantity, 1);
+    
+    const itemTotal = price * quantity;
+    return sum + (isNaN(itemTotal) ? 0 : itemTotal);
   }, 0);
   
-  const tax = subtotal * 0.1; // 10% tax
+  const tax = safeParseNumber(subtotal * 0.1); // 10% tax
   const shipping = subtotal > 100 ? 0 : 10; // Free shipping over $100
-  const total = subtotal + tax + shipping;
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = safeParseNumber(subtotal + tax + shipping);
+  const itemCount = items.reduce((sum, item) => {
+    const quantity = safeParseNumber(item?.quantity, 0);
+    return sum + quantity;
+  }, 0);
 
-  return { subtotal, tax, shipping, total, itemCount };
+  return { 
+    subtotal: isNaN(subtotal) ? 0 : subtotal,
+    tax: isNaN(tax) ? 0 : tax,
+    shipping: isNaN(shipping) ? 0 : shipping,
+    total: isNaN(total) ? 0 : total,
+    itemCount: isNaN(itemCount) ? 0 : itemCount
+  };
+};
+
+// Normalize cart item to ensure all numeric fields are valid numbers
+const normalizeCartItem = (item) => {
+  if (!item) return null;
+  
+  return {
+    ...item,
+    quantity: safeParseNumber(item.quantity, 1),
+    price: safeParseNumber(item.price || item.product?.price),
+    discountedPrice: safeParseNumber(item.discountedPrice || item.product?.discountedPrice),
+    originalPrice: safeParseNumber(item.originalPrice || item.product?.originalPrice),
+    product: item.product ? {
+      ...item.product,
+      originalPrice: safeParseNumber(item.product.originalPrice || item.product.price || item.product.regularPrice),
+      discountedPrice: safeParseNumber(item.product.discountedPrice || item.product.salePrice || item.product.originalPrice || item.product.price),
+      price: safeParseNumber(item.product.discountedPrice || item.product.salePrice || item.product.originalPrice || item.product.price || item.product.regularPrice),
+      regularPrice: safeParseNumber(item.product.regularPrice || item.product.originalPrice || item.product.price),
+      salePrice: safeParseNumber(item.product.salePrice || item.product.discountedPrice),
+      stockQuantity: safeParseNumber(item.product.stockQuantity ?? item.product.stock ?? 0),
+      stock: safeParseNumber(item.product.stock ?? item.product.stockQuantity ?? 0),
+      rating: safeParseNumber(item.product.rating),
+      reviews: safeParseNumber(item.product.reviews),
+    } : undefined,
+  };
 };
 
 // Load cart from localStorage
@@ -28,7 +87,9 @@ const loadCartFromStorage = () => {
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const items = JSON.parse(stored);
+      // Normalize all items to ensure numeric fields are valid
+      return Array.isArray(items) ? items.map(normalizeCartItem).filter(Boolean) : [];
     }
   } catch (err) {
     console.error('Error loading cart from localStorage:', err);
@@ -36,14 +97,48 @@ const loadCartFromStorage = () => {
   return [];
 };
 
-// Save cart to localStorage
-const saveCartToStorage = (items) => {
+// Save cart to localStorage with retry mechanism
+const saveCartToStorage = (items, retries = 3) => {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  } catch (err) {
-    console.error('Error saving cart to localStorage:', err);
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const serialized = JSON.stringify(items);
+      localStorage.setItem(CART_STORAGE_KEY, serialized);
+      
+      // Verify the save was successful
+      const verification = localStorage.getItem(CART_STORAGE_KEY);
+      if (verification === serialized) {
+        console.log('[Cart] Successfully saved to localStorage');
+        return true;
+      } else {
+        throw new Error('Save verification failed');
+      }
+    } catch (err) {
+      console.error(`[Cart] Error saving cart to localStorage (attempt ${attempt}/${retries}):`, err);
+      
+      // If quota exceeded, try to clear old data
+      if (err.name === 'QuotaExceededError' || err.code === 22) {
+        console.warn('[Cart] localStorage quota exceeded, attempting to clear old data');
+        try {
+          // Clear old cart data and try once more
+          localStorage.removeItem(CART_STORAGE_KEY);
+          if (attempt < retries) {
+            continue;
+          }
+        } catch (clearErr) {
+          console.error('[Cart] Failed to clear localStorage:', clearErr);
+        }
+      }
+      
+      if (attempt === retries) {
+        console.error('[Cart] Failed to save cart to localStorage after all retries');
+        return false;
+      }
+    }
   }
+  
+  return false;
 };
 
 // Save cart to database as single object (for authenticated users)
@@ -85,13 +180,26 @@ const saveCartToDatabase = async (items) => {
   }
 };
 
-export const useCartStore = create((set, get) => ({
+// Create store with localStorage persistence middleware
+const storeCreator = (set, get) => ({
   cartItems: [],
   totals: { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 },
   isLoading: false,
   isSyncing: false,
   error: null,
   hasLoadedCart: false,
+  
+  // Internal method to update cart and auto-save to localStorage
+  _updateCart: (items) => {
+    const newTotals = calculateTotals(items);
+    set({ 
+      cartItems: items, 
+      totals: newTotals
+    });
+    // Always save to localStorage immediately
+    saveCartToStorage(items);
+    return { items, totals: newTotals };
+  },
 
   // Load cart from API (for authenticated users) or localStorage
   loadCart: async () => {
@@ -101,46 +209,42 @@ export const useCartStore = create((set, get) => ({
       let loadedItems = [];
       let loadedTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
 
-      // If authenticated, load from API
+      // Always load from localStorage first (primary source)
+      loadedItems = loadCartFromStorage();
+      loadedTotals = calculateTotals(loadedItems);
+
+      // If authenticated, try to sync from API (but don't fail if it doesn't work)
       if (isAuthenticated()) {
         try {
           const response = await apiService.cart.get();
-          if (response.success && response.data?.items) {
-            // API has data, use it
-            loadedItems = response.data.items;
-            loadedTotals = calculateTotals(loadedItems);
-            set({ 
-              cartItems: loadedItems, 
-              totals: loadedTotals,
-              isLoading: false 
-            });
-            // Also save to localStorage for offline access
-            saveCartToStorage(loadedItems);
-            return { items: loadedItems, totals: loadedTotals };
-          } else if (response.success && response.data?.cart) {
+          if (response.success && response.data?.items && Array.isArray(response.data.items) && response.data.items.length > 0) {
+            // API has data, use it - normalize all items
+            const apiItems = response.data.items.map(normalizeCartItem).filter(Boolean);
+            if (apiItems.length > 0) {
+              loadedItems = apiItems;
+              loadedTotals = calculateTotals(loadedItems);
+              // Save API data to localStorage
+              saveCartToStorage(loadedItems);
+            }
+          } else if (response.success && response.data?.cart?.items && Array.isArray(response.data.cart.items) && response.data.cart.items.length > 0) {
             // If cart is stored as a single object
-            loadedItems = response.data.cart.items || [];
-            loadedTotals = calculateTotals(loadedItems);
-            set({ 
-              cartItems: loadedItems, 
-              totals: loadedTotals,
-              isLoading: false 
-            });
-            saveCartToStorage(loadedItems);
-            return { items: loadedItems, totals: loadedTotals };
+            const apiItems = response.data.cart.items.map(normalizeCartItem).filter(Boolean);
+            if (apiItems.length > 0) {
+              loadedItems = apiItems;
+              loadedTotals = calculateTotals(loadedItems);
+              // Save API data to localStorage
+              saveCartToStorage(loadedItems);
+            }
           }
+          // If API returns empty or fails, we already have localStorage data, so continue silently
         } catch (err) {
-          // API failed, try localStorage
-          console.log('API cart unavailable, loading from localStorage');
-          loadedItems = loadCartFromStorage();
-          loadedTotals = calculateTotals(loadedItems);
+          // API failed, but we already have localStorage data, so continue silently
+          // localStorage is the primary source, API is just for syncing
         }
-      } else {
-        // Not authenticated, load from localStorage
-        loadedItems = loadCartFromStorage();
-        loadedTotals = calculateTotals(loadedItems);
       }
 
+      // Always save to localStorage after loading
+      saveCartToStorage(loadedItems);
       set({ 
         cartItems: loadedItems, 
         totals: loadedTotals,
@@ -235,10 +339,69 @@ export const useCartStore = create((set, get) => ({
 
       let newItems;
       if (existingItem) {
-        // Update quantity of existing item
+        // Update quantity of existing item - ensure quantity is a valid number
+        const currentQuantity = safeParseNumber(existingItem.quantity, 1);
+        const addQuantity = safeParseNumber(quantity, 1);
+        const newQuantity = currentQuantity + addQuantity;
+        
+        // If product data is provided, ensure we update all product details
+        let updatedItem = { ...existingItem, quantity: newQuantity };
+        
+        if (productData) {
+          // Update product details if provided
+          updatedItem = {
+            ...updatedItem,
+            product: {
+              ...existingItem.product,
+              id: productData.id || existingItem.product?.id || productId,
+              productId: productData.productId || existingItem.product?.productId || productId,
+              title: productData.title || productData.name || existingItem.product?.title || existingItem.title || '',
+              name: productData.name || productData.title || existingItem.product?.name || existingItem.title || '',
+              slug: productData.slug || existingItem.product?.slug || '',
+              image: productData.image || productData.images?.[0] || existingItem.product?.image || existingItem.image || '',
+              images: Array.isArray(productData.images) ? productData.images : (existingItem.product?.images || []),
+              description: productData.description || existingItem.product?.description || '',
+              originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice || existingItem.product?.originalPrice || existingItem.originalPrice),
+              discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || existingItem.product?.discountedPrice || existingItem.discountedPrice),
+              price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || existingItem.product?.price || existingItem.price),
+              regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price || existingItem.product?.regularPrice || existingItem.originalPrice),
+              salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice || existingItem.product?.salePrice || existingItem.discountedPrice),
+              stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? existingItem.product?.stockQuantity ?? existingItem.stockQuantity ?? 0),
+              stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? existingItem.product?.stock ?? existingItem.stockQuantity ?? 0),
+              inStock: productData.inStock !== undefined ? (productData.inStock !== false && productData.inStock !== null) : (existingItem.product?.inStock ?? existingItem.inStock ?? true),
+              category: productData.category || productData.categoryId || existingItem.product?.category || existingItem.category || '',
+              categoryId: productData.categoryId || productData.category || existingItem.product?.categoryId || existingItem.category || '',
+              tags: Array.isArray(productData.tags) ? productData.tags : (existingItem.product?.tags || []),
+              rating: safeParseNumber(productData.rating ?? existingItem.product?.rating),
+              reviews: safeParseNumber(productData.reviews ?? existingItem.product?.reviews),
+              ...productData,
+            },
+            // Update root level fields
+            title: productData.title || productData.name || existingItem.title || '',
+            name: productData.name || productData.title || existingItem.title || '',
+            image: productData.image || productData.images?.[0] || existingItem.image || '',
+            price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || existingItem.price || existingItem.product?.price),
+            discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || existingItem.discountedPrice || existingItem.product?.discountedPrice),
+            originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice || existingItem.originalPrice || existingItem.product?.originalPrice),
+            regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price || existingItem.originalPrice || existingItem.product?.regularPrice),
+            salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice || existingItem.discountedPrice || existingItem.product?.salePrice),
+            stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? existingItem.stockQuantity ?? existingItem.product?.stockQuantity ?? 0),
+            stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? existingItem.stockQuantity ?? existingItem.product?.stock ?? 0),
+            inStock: productData.inStock !== undefined ? (productData.inStock !== false && productData.inStock !== null) : (existingItem.inStock ?? true),
+          };
+        } else {
+          // Just ensure price fields are valid numbers
+          updatedItem = {
+            ...updatedItem,
+            price: safeParseNumber(existingItem.price || existingItem.product?.price),
+            discountedPrice: safeParseNumber(existingItem.discountedPrice || existingItem.product?.discountedPrice),
+            originalPrice: safeParseNumber(existingItem.originalPrice || existingItem.product?.originalPrice),
+          };
+        }
+        
         newItems = cartItems.map(item =>
           (item.productId === productId || item.id === productId || item.product?.id === productId)
-            ? { ...item, quantity: item.quantity + quantity }
+            ? updatedItem
             : item
         );
       } else {
@@ -247,60 +410,92 @@ export const useCartStore = create((set, get) => ({
           ? {
               id: productId,
               productId: productId,
-              // Store complete product object
+              // Store complete product object with all details properly mapped
               product: {
                 id: productData.id || productId,
+                productId: productData.productId || productId,
                 title: productData.title || productData.name || '',
+                name: productData.name || productData.title || '',
                 slug: productData.slug || '',
                 image: productData.image || productData.images?.[0] || '',
-                images: productData.images || [],
+                images: Array.isArray(productData.images) ? productData.images : (productData.image ? [productData.image] : []),
                 description: productData.description || '',
-                originalPrice: productData.originalPrice || productData.price || 0,
-                discountedPrice: productData.discountedPrice || productData.originalPrice || productData.price || 0,
-                price: productData.discountedPrice || productData.originalPrice || productData.price || 0,
-                stockQuantity: productData.stockQuantity ?? productData.stock ?? 0,
-                inStock: productData.inStock !== false && productData.inStock !== null,
-                category: productData.category || '',
-                tags: productData.tags || [],
-                rating: productData.rating || 0,
-                reviews: productData.reviews || 0,
+                originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice),
+                discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price),
+                price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice),
+                regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price),
+                salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice),
+                stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? 0),
+                stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? 0),
+                inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
+                category: productData.category || productData.categoryId || '',
+                categoryId: productData.categoryId || productData.category || '',
+                tags: Array.isArray(productData.tags) ? productData.tags : [],
+                rating: safeParseNumber(productData.rating),
+                reviews: safeParseNumber(productData.reviews),
                 // Preserve any other product fields
                 ...productData
               },
               // Also store commonly used fields at root level for easy access
               title: productData.title || productData.name || '',
+              name: productData.name || productData.title || '',
               image: productData.image || productData.images?.[0] || '',
-              quantity: quantity,
-              price: productData.discountedPrice || productData.originalPrice || productData.price || 0,
-              discountedPrice: productData.discountedPrice || productData.originalPrice || productData.price || 0,
-              originalPrice: productData.originalPrice || productData.price || 0,
-              stockQuantity: productData.stockQuantity ?? productData.stock ?? 0,
-              inStock: productData.inStock !== false && productData.inStock !== null,
+              quantity: safeParseNumber(quantity, 1),
+              price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice),
+              discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price),
+              originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice),
+              regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price),
+              salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice),
+              stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? 0),
+              stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? 0),
+              inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
             }
           : {
               id: productId,
               productId: productId,
-              quantity: quantity,
+              quantity: safeParseNumber(quantity, 1),
+              price: 0,
+              discountedPrice: 0,
+              originalPrice: 0,
             };
         newItems = [...cartItems, newItem];
       }
 
       const newTotals = calculateTotals(newItems);
+      
+      // Save to localStorage FIRST (before state update for reliability)
+      // localStorage is the primary storage, API is just for syncing
+      const saved = saveCartToStorage(newItems);
+      if (!saved) {
+        console.warn('[Cart] Failed to save to localStorage, but continuing with state update');
+      }
+      
       set({ 
         cartItems: newItems, 
         totals: newTotals,
         isLoading: false 
       });
       
-      // Save to localStorage immediately
-      saveCartToStorage(newItems);
-      
-      // If authenticated, save to database as single object
+      // If authenticated, try to sync to database (async, non-blocking, don't fail if it doesn't work)
       if (isAuthenticated()) {
-        // Debounce database save
-        setTimeout(async () => {
-          await get().saveCart();
-        }, 500);
+        // Use requestIdleCallback if available, otherwise setTimeout
+        const saveToDb = async () => {
+          try {
+            await get().saveCart();
+          } catch (err) {
+            // Silently fail - localStorage is the primary storage
+            // Only log if it's a meaningful error
+            if (err.message && !err.message.includes('Network') && !err.message.includes('timeout')) {
+              console.warn('[Cart] Failed to sync to database (localStorage saved):', err.message);
+            }
+          }
+        };
+        
+        if (typeof window !== 'undefined' && window.requestIdleCallback) {
+          window.requestIdleCallback(saveToDb, { timeout: 1000 });
+        } else {
+          setTimeout(saveToDb, 300);
+        }
       }
 
       return { success: true };
@@ -327,21 +522,36 @@ export const useCartStore = create((set, get) => ({
       );
       const newTotals = calculateTotals(newItems);
       
+      // Save to localStorage FIRST (primary storage)
+      const saved = saveCartToStorage(newItems);
+      if (!saved) {
+        console.warn('[Cart] Failed to save to localStorage after remove');
+      }
+      
       set({ 
         cartItems: newItems, 
         totals: newTotals,
         isLoading: false 
       });
       
-      // Save to localStorage immediately
-      saveCartToStorage(newItems);
-      
-      // If authenticated, save to database as single object
+      // If authenticated, try to sync to database (async, non-blocking, don't fail if it doesn't work)
       if (isAuthenticated()) {
-        // Debounce database save
-        setTimeout(async () => {
-          await get().saveCart();
-        }, 500);
+        const saveToDb = async () => {
+          try {
+            await get().saveCart();
+          } catch (err) {
+            // Silently fail - localStorage is the primary storage
+            if (err.message && !err.message.includes('Network') && !err.message.includes('timeout')) {
+              console.warn('[Cart] Failed to sync to database (localStorage saved):', err.message);
+            }
+          }
+        };
+        
+        if (typeof window !== 'undefined' && window.requestIdleCallback) {
+          window.requestIdleCallback(saveToDb, { timeout: 1000 });
+        } else {
+          setTimeout(saveToDb, 300);
+        }
       }
 
       return { success: true };
@@ -396,13 +606,27 @@ export const useCartStore = create((set, get) => ({
         }
       }
       
-      // Update local cart
+      // Update local cart - ensure quantity is a valid number
+      const safeQuantity = safeParseNumber(quantity, 1);
       const newItems = cartItems.map(item =>
         (item.productId === productId || item.id === productId || item.product?.id === productId)
-          ? { ...item, quantity: quantity }
+          ? { 
+              ...item, 
+              quantity: safeQuantity,
+              // Ensure price fields are valid numbers
+              price: safeParseNumber(item.price || item.product?.price),
+              discountedPrice: safeParseNumber(item.discountedPrice || item.product?.discountedPrice),
+              originalPrice: safeParseNumber(item.originalPrice || item.product?.originalPrice),
+            }
           : item
       );
       const newTotals = calculateTotals(newItems);
+      
+      // Save to localStorage FIRST (primary storage)
+      const saved = saveCartToStorage(newItems);
+      if (!saved) {
+        console.warn('[Cart] Failed to save to localStorage after quantity update');
+      }
       
       set({ 
         cartItems: newItems, 
@@ -410,15 +634,24 @@ export const useCartStore = create((set, get) => ({
         isLoading: false 
       });
       
-      // Save to localStorage immediately
-      saveCartToStorage(newItems);
-      
-      // If authenticated, save to database as single object
+      // If authenticated, try to sync to database (async, non-blocking, don't fail if it doesn't work)
       if (isAuthenticated()) {
-        // Debounce database save
-        setTimeout(async () => {
-          await get().saveCart();
-        }, 500);
+        const saveToDb = async () => {
+          try {
+            await get().saveCart();
+          } catch (err) {
+            // Silently fail - localStorage is the primary storage
+            if (err.message && !err.message.includes('Network') && !err.message.includes('timeout')) {
+              console.warn('[Cart] Failed to sync to database (localStorage saved):', err.message);
+            }
+          }
+        };
+        
+        if (typeof window !== 'undefined' && window.requestIdleCallback) {
+          window.requestIdleCallback(saveToDb, { timeout: 1000 });
+        } else {
+          setTimeout(saveToDb, 300);
+        }
       }
 
       return { success: true };
@@ -438,18 +671,27 @@ export const useCartStore = create((set, get) => ({
 
     try {
       const emptyTotals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
+      
+      // Clear localStorage FIRST
+      const saved = saveCartToStorage([]);
+      if (!saved) {
+        console.warn('[Cart] Failed to clear localStorage');
+      }
+      
       set({ 
         cartItems: [],
         totals: emptyTotals,
         isLoading: false 
       });
       
-      // Clear localStorage
-      saveCartToStorage([]);
-      
       // If authenticated, save to database as single object
       if (isAuthenticated()) {
-        await get().saveCart();
+        try {
+          await get().saveCart();
+        } catch (err) {
+          console.error('[Cart] Failed to clear cart in database:', err);
+          // localStorage is already cleared, so we can continue
+        }
       }
 
       return { success: true };
@@ -485,7 +727,34 @@ export const useCartStore = create((set, get) => ({
     const { totals, cartItems } = get();
     return totals.itemCount || cartItems.reduce((sum, item) => sum + item.quantity, 0);
   },
-}));
+  
+  // Force save to localStorage (manual trigger)
+  forceSaveToLocalStorage: () => {
+    const { cartItems } = get();
+    return saveCartToStorage(cartItems);
+  },
+});
+
+export const useCartStore = create(storeCreator);
+
+// Add subscription to auto-save to localStorage on cart changes
+if (typeof window !== 'undefined') {
+  useCartStore.subscribe(
+    (state) => state.cartItems,
+    (cartItems) => {
+      // Only save if cart has actually changed (not during initial load)
+      const currentState = useCartStore.getState();
+      if (currentState.hasLoadedCart && cartItems) {
+        try {
+          saveCartToStorage(cartItems);
+        } catch (err) {
+          console.error('[Cart] Auto-save to localStorage failed:', err);
+        }
+      }
+    },
+    { equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) }
+  );
+}
 
 // Client-side initialization
 if (typeof window !== 'undefined') {

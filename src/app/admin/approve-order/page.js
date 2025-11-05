@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getCurrentUser, isAuthenticated } from '../../lib/auth';
 import { apiService } from '../../services/api/apiClient';
 import AdminOrderEditor from '../../components/admin/AdminOrderEditor';
+import { showAlert, setLoading } from '../../lib/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,71 +60,143 @@ function ApproveOrderPageContent() {
   };
 
   const handleApprove = async () => {
-    if (!confirm('Are you sure you want to approve this order?')) return;
-    
-    setProcessing(true);
-    try {
-      const response = await apiService.orders.approve(orderId, approvalNotes);
-      if (response.success) {
-        alert('Order approved successfully!');
-        router.push('/admin/dashboard');
-      } else {
-        setError(response.message || 'Failed to approve order');
-      }
-    } catch (err) {
-      console.error('Error approving order:', err);
-      setError('Failed to approve order');
-    } finally {
-      setProcessing(false);
-    }
+    showAlert({
+      title: 'Approve Order',
+      message: 'Are you sure you want to approve this order?',
+      type: 'warning',
+      confirmText: 'Approve',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setProcessing(true);
+        setLoading(true, 'Approving order...');
+        try {
+          const response = await apiService.orders.approve(orderId, approvalNotes);
+          if (response.success) {
+            showAlert({
+              title: 'Success',
+              message: 'Order approved successfully!',
+              type: 'success',
+              confirmText: 'OK',
+              onConfirm: () => router.push('/admin/dashboard'),
+            });
+          } else {
+            showAlert({
+              title: 'Error',
+              message: response.message || 'Failed to approve order',
+              type: 'error',
+              confirmText: 'OK',
+            });
+            setError(response.message || 'Failed to approve order');
+          }
+        } catch (err) {
+          console.error('Error approving order:', err);
+          showAlert({
+            title: 'Error',
+            message: 'Failed to approve order',
+            type: 'error',
+            confirmText: 'OK',
+          });
+          setError('Failed to approve order');
+        } finally {
+          setProcessing(false);
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleReject = async () => {
-    const notes = prompt('Please provide a reason for rejection:');
+    // Use a simple state-based prompt for rejection notes
+    const notes = window.prompt('Please provide a reason for rejection:');
     if (!notes) return;
 
     setProcessing(true);
+    setLoading(true, 'Rejecting order...');
     try {
       const response = await apiService.orders.reject(orderId, notes);
       if (response.success) {
-        alert('Order rejected');
-        router.push('/admin/dashboard');
+        showAlert({
+          title: 'Order Rejected',
+          message: 'Order has been rejected successfully.',
+          type: 'success',
+          confirmText: 'OK',
+          onConfirm: () => router.push('/admin/dashboard'),
+        });
       } else {
+        showAlert({
+          title: 'Error',
+          message: response.message || 'Failed to reject order',
+          type: 'error',
+          confirmText: 'OK',
+        });
         setError(response.message || 'Failed to reject order');
       }
     } catch (err) {
       console.error('Error rejecting order:', err);
+      showAlert({
+        title: 'Error',
+        message: 'Failed to reject order',
+        type: 'error',
+        confirmText: 'OK',
+      });
       setError('Failed to reject order');
     } finally {
       setProcessing(false);
+      setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
-    
-    setProcessing(true);
-    try {
-      // Note: Delete endpoint might not exist, adjust based on your API
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+    showAlert({
+      title: 'Delete Order',
+      message: 'Are you sure you want to delete this order? This action cannot be undone.',
+      type: 'error',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setProcessing(true);
+        setLoading(true, 'Deleting order...');
+        try {
+          // Note: Delete endpoint might not exist, adjust based on your API
+          const response = await fetch(`/api/orders/${orderId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+          });
+          
+          if (response.ok) {
+            showAlert({
+              title: 'Success',
+              message: 'Order deleted successfully',
+              type: 'success',
+              confirmText: 'OK',
+              onConfirm: () => router.push('/admin/dashboard'),
+            });
+          } else {
+            showAlert({
+              title: 'Error',
+              message: 'Failed to delete order',
+              type: 'error',
+              confirmText: 'OK',
+            });
+            setError('Failed to delete order');
+          }
+        } catch (err) {
+          console.error('Error deleting order:', err);
+          showAlert({
+            title: 'Error',
+            message: 'Failed to delete order',
+            type: 'error',
+            confirmText: 'OK',
+          });
+          setError('Failed to delete order');
+        } finally {
+          setProcessing(false);
+          setLoading(false);
         }
-      });
-      
-      if (response.ok) {
-        alert('Order deleted successfully');
-        router.push('/admin/dashboard');
-      } else {
-        setError('Failed to delete order');
-      }
-    } catch (err) {
-      console.error('Error deleting order:', err);
-      setError('Failed to delete order');
-    } finally {
-      setProcessing(false);
-    }
+      },
+    });
   };
 
   if (loading) {

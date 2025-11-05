@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, Search, Filter, Eye, EyeOff, Star, X } from 'lucide
 import { getCurrentUser, isAuthenticated } from '../lib/auth';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import { apiService } from '../services/api/apiClient';
+import { showAlert, setLoading } from '../lib/ui';
 
 const AdminDashboard = () => {
   const router = useRouter();
@@ -89,42 +90,87 @@ const AdminDashboard = () => {
 
   const validateProductForm = () => {
     if (!productForm.title.trim()) {
-      alert('Product title is required');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Product title is required',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (!productForm.description.trim()) {
-      alert('Product description is required');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Product description is required',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (!productForm.category) {
-      alert('Product category is required');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Product category is required',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (!productForm.originalPrice || parseFloat(productForm.originalPrice) <= 0) {
-      alert('Please enter a valid original price');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Please enter a valid original price',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (!productForm.discountedPrice || parseFloat(productForm.discountedPrice) <= 0) {
-      alert('Please enter a valid discounted price');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Please enter a valid discounted price',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (parseFloat(productForm.discountedPrice) > parseFloat(productForm.originalPrice)) {
-      alert('Discounted price cannot be greater than original price');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Discounted price cannot be greater than original price',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (!productForm.stockQuantity || parseInt(productForm.stockQuantity) < 0) {
-      alert('Please enter a valid stock quantity');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Please enter a valid stock quantity',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     if (!productForm.image.trim()) {
-      alert('Product image URL is required');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Product image URL is required',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     // Validate URL format
     try {
       new URL(productForm.image);
     } catch {
-      alert('Please enter a valid image URL');
+      showAlert({
+        title: 'Validation Error',
+        message: 'Please enter a valid image URL',
+        type: 'error',
+        confirmText: 'OK',
+      });
       return false;
     }
     return true;
@@ -136,6 +182,7 @@ const AdminDashboard = () => {
     }
 
     setIsCreating(true);
+    setLoading(true, 'Creating product...');
     try {
       // Prepare product data
       const productData = {
@@ -151,15 +198,31 @@ const AdminDashboard = () => {
         setShowProductForm(false);
         resetForm();
         loadProducts();
-        alert('Product created successfully');
+        showAlert({
+          title: 'Success',
+          message: 'Product created successfully',
+          type: 'success',
+          confirmText: 'OK',
+        });
       } else {
-        alert(response.message || 'Failed to create product');
+        showAlert({
+          title: 'Error',
+          message: response.message || 'Failed to create product',
+          type: 'error',
+          confirmText: 'OK',
+        });
       }
     } catch (error) {
       console.error('Failed to create product:', error);
-      alert(error.message || 'Failed to create product. Please try again.');
+      showAlert({
+        title: 'Error',
+        message: error.message || 'Failed to create product. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
+      });
     } finally {
       setIsCreating(false);
+      setLoading(false);
     }
   };
 
@@ -171,6 +234,7 @@ const AdminDashboard = () => {
     }
 
     setIsCreating(true);
+    setLoading(true, 'Updating product...');
     try {
       // Prepare product data
       const productData = {
@@ -187,29 +251,74 @@ const AdminDashboard = () => {
         setShowProductForm(false);
         resetForm();
         loadProducts();
-        alert('Product updated successfully');
+        showAlert({
+          title: 'Success',
+          message: 'Product updated successfully',
+          type: 'success',
+          confirmText: 'OK',
+        });
       } else {
-        alert(response.message || 'Failed to update product');
+        showAlert({
+          title: 'Error',
+          message: response.message || 'Failed to update product',
+          type: 'error',
+          confirmText: 'OK',
+        });
       }
     } catch (error) {
       console.error('Failed to update product:', error);
-      alert(error.message || 'Failed to update product. Please try again.');
+      showAlert({
+        title: 'Error',
+        message: error.message || 'Failed to update product. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
+      });
     } finally {
       setIsCreating(false);
+      setLoading(false);
     }
   };
 
   const handleDeleteProduct = async (productId) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    
-    try {
-      const response = await apiService.admin.products.delete(productId);
-      if (response.success) {
-        loadProducts();
-      }
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-    }
+    showAlert({
+      title: 'Delete Product',
+      message: 'Are you sure you want to delete this product? This action cannot be undone.',
+      type: 'error',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setLoading(true, 'Deleting product...');
+        try {
+          const response = await apiService.admin.products.delete(productId);
+          if (response.success) {
+            loadProducts();
+            showAlert({
+              title: 'Success',
+              message: 'Product deleted successfully',
+              type: 'success',
+              confirmText: 'OK',
+            });
+          } else {
+            showAlert({
+              title: 'Error',
+              message: response.message || 'Failed to delete product',
+              type: 'error',
+              confirmText: 'OK',
+            });
+          }
+        } catch (error) {
+          console.error('Failed to delete product:', error);
+          showAlert({
+            title: 'Error',
+            message: error.message || 'Failed to delete product',
+            type: 'error',
+            confirmText: 'OK',
+          });
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleEditProduct = (product) => {

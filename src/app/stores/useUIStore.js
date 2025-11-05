@@ -13,6 +13,22 @@ export const useUIStore = create((set) => ({
   isQuickViewModalOpen: false,
   quickViewProduct: null,
   
+  // Alert Modal state
+  alertModal: {
+    isOpen: false,
+    title: null,
+    message: null,
+    type: 'info',
+    confirmText: 'OK',
+    cancelText: null,
+    onConfirm: null,
+    onCancel: null,
+  },
+  
+  // Loading state
+  isLoading: false,
+  loadingMessage: 'Loading...',
+  
   // Filter states
   productFilters: {
     category: null,
@@ -48,6 +64,38 @@ export const useUIStore = create((set) => ({
   closeQuickViewModal: () => set({ 
     isQuickViewModalOpen: false, 
     quickViewProduct: null 
+  }),
+  
+  // Actions - Alert Modal
+  showAlert: (config) => set({
+    alertModal: {
+      isOpen: true,
+      title: config.title || null,
+      message: config.message || null,
+      type: config.type || 'info',
+      confirmText: config.confirmText || 'OK',
+      cancelText: config.cancelText || null,
+      onConfirm: config.onConfirm || null,
+      onCancel: config.onCancel || null,
+    }
+  }),
+  closeAlert: () => set({
+    alertModal: {
+      isOpen: false,
+      title: null,
+      message: null,
+      type: 'info',
+      confirmText: 'OK',
+      cancelText: null,
+      onConfirm: null,
+      onCancel: null,
+    }
+  }),
+  
+  // Actions - Loading
+  setLoading: (isLoading, message = 'Loading...') => set({
+    isLoading,
+    loadingMessage: message,
   }),
   
   // Actions - Filters

@@ -4,6 +4,7 @@ import { Plus, Minus, Trash2, Search, X } from 'lucide-react';
 import { apiService } from '../../services/api/apiClient';
 import productService from '../../services/api/productService';
 import OptimizedImage from '../shared/OptimizedImage';
+import { showAlert, setLoading } from '../../lib/ui';
 
 const AdminOrderEditor = ({ order, onOrderUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -89,21 +90,50 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
   };
 
   const handleRemoveItem = async (itemId) => {
-    if (!confirm('Remove this item from the order?')) return;
-    
-    setError('');
-    setSuccess('');
-    try {
-      const response = await apiService.orders.removeItemFromOrder(order.id, itemId);
-      if (response.success) {
-        onOrderUpdate(response.data);
-        setSuccess('Item removed');
-      } else {
-        setError(response.message || 'Failed to remove item');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to remove item');
-    }
+    showAlert({
+      title: 'Remove Item',
+      message: 'Are you sure you want to remove this item from the order?',
+      type: 'warning',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setError('');
+        setSuccess('');
+        setLoading(true, 'Removing item...');
+        try {
+          const response = await apiService.orders.removeItemFromOrder(order.id, itemId);
+          if (response.success) {
+            onOrderUpdate(response.data);
+            setSuccess('Item removed');
+            showAlert({
+              title: 'Success',
+              message: 'Item removed successfully',
+              type: 'success',
+              confirmText: 'OK',
+            });
+          } else {
+            setError(response.message || 'Failed to remove item');
+            showAlert({
+              title: 'Error',
+              message: response.message || 'Failed to remove item',
+              type: 'error',
+              confirmText: 'OK',
+            });
+          }
+        } catch (err) {
+          const errorMsg = err.response?.data?.message || err.message || 'Failed to remove item';
+          setError(errorMsg);
+          showAlert({
+            title: 'Error',
+            message: errorMsg,
+            type: 'error',
+            confirmText: 'OK',
+          });
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   return (

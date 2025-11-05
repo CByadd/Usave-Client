@@ -150,7 +150,7 @@ const OptimizedImage = ({
   return (
     <div className={`relative overflow-hidden ${className}`} style={style}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       )}
@@ -177,7 +177,7 @@ const OptimizedImage = ({
       />
       
       {hasError && currentSrc === fallbackSrc && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+        <div className="absolute inset-0 flex items-center justify-center bg-transparent">
           <div className="text-center text-gray-500">
             <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded flex items-center justify-center">
               <span className="text-xs">No Image</span>

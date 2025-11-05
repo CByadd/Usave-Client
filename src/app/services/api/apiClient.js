@@ -213,14 +213,21 @@ export const apiService = {
         // Handle 404 and other errors gracefully - endpoint may not exist yet
         const status = error.response?.status;
         if (status === 404 || !error.response) {
+          // Silently fall back to localStorage
           return { success: true, data: { items: [] } };
         }
-        // Only log meaningful errors (not empty objects)
+        // Only log meaningful errors (not empty objects or common network errors)
         const errorData = error.response?.data;
-        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+        const errorMessage = error.message || '';
+        const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('timeout');
+        
+        // Only log if there's actual error content and it's not a network error
+        if (status && status !== 404 && !isNetworkError && errorData && 
+            Object.keys(errorData).length > 0 && 
+            (errorData.error || errorData.message || Object.keys(errorData).some(key => errorData[key]))) {
           console.error('API: Get cart error:', errorData);
         }
-        // Return empty cart on error instead of throwing
+        // Return empty cart on error instead of throwing - will use localStorage
         return { success: true, data: { items: [] } };
       }
     },
@@ -547,9 +554,15 @@ export const apiService = {
         if (status === 404 || !error.response) {
           return { success: false, error: 'Wishlist endpoint not available' };
         }
-        // Only log meaningful errors (not empty objects)
+        // Only log meaningful errors (not empty objects or common network errors)
         const errorData = error.response?.data;
-        if (status && status !== 404 && errorData && Object.keys(errorData).length > 0) {
+        const errorMessage = error.message || '';
+        const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('timeout');
+        
+        // Only log if there's actual error content and it's not a network error
+        if (status && status !== 404 && !isNetworkError && errorData && 
+            Object.keys(errorData).length > 0 && 
+            (errorData.error || errorData.message || Object.keys(errorData).some(key => errorData[key]))) {
           console.error('API: Add to wishlist error:', errorData);
         }
         // Return error response instead of throwing
