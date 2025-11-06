@@ -487,7 +487,7 @@ const Navbar = () => {
         <div className=" justify-between items-center h-16 hidden md:flex">
           {/* Left side - Logo and Navigation Links */}
           <div className="flex items-center space-x-8">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 h-full">
               {renderLogo()}
             </div>
             
@@ -610,8 +610,8 @@ const Navbar = () => {
       </button>
 
       {/* Center: Logo */}
-      <div className="flex-1 flex justify-center items-center absolute left-0 right-0 pointer-events-none">
-        <div className="pointer-events-auto">
+      <div className="flex-1 flex justify-center items-center absolute left-0 right-0 pointer-events-none h-full">
+        <div className="pointer-events-auto h-full overflow-hidden">
           {renderLogo()}
         </div>
       </div>
