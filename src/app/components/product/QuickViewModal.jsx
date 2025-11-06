@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, ShoppingBag, ShoppingCart, Minus, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAnimationStore } from '../../stores/useAnimationStore';
@@ -149,11 +150,12 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
 
   if (!isOpen || !product) return null;
 
-  return (
+  // Render to document.body using Portal to avoid parent container constraints
+  const modalContent = (
     <AnimatePresence mode="wait">
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
-          {/* Backdrop */}
+        <>
+          {/* Backdrop - moved to parent level for full screen coverage */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -162,20 +164,22 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               duration: modalConfig.backdrop.duration, 
               ease: modalConfig.backdrop.ease 
             }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
             onClick={onClose}
             style={{ willChange: 'opacity' }}
           />
 
           {/* Modal Container */}
-          <motion.div
-            initial={{ scale: 0.96, opacity: 0, y: 15 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.96, opacity: 0, y: 15 }}
-            transition={modalConfig.content}
-            className="relative bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-5xl mx-auto overflow-hidden flex flex-col"
-            style={{ willChange: 'transform, opacity' }}
-          >
+          <div className="fixed inset-0 z-[51] flex items-center justify-center p-2 sm:p-4 pointer-events-none">
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 15 }}
+              transition={modalConfig.content}
+              className="relative bg-white rounded-lg sm:rounded-2xl shadow-2xl w-full max-w-[95vw] h-[95vh] sm:h-auto sm:max-h-[90vh] sm:max-w-5xl mx-auto overflow-hidden flex flex-col pointer-events-auto"
+              style={{ willChange: 'transform, opacity' }}
+              onClick={(e) => e.stopPropagation()}
+            >
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">Quick View</h2>
@@ -188,11 +192,11 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-60px)] sm:max-h-[80vh]">
-          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="p-2 sm:p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6 flex-1 min-h-0">
           {/* Left: Product Images */}
-          <div className="space-y-3 sm:space-y-4">
-            <div className="relative bg-gray-50 rounded-lg aspect-square overflow-hidden group">
+          <div className="flex flex-col min-h-0">
+            <div className="relative bg-transparent rounded-lg overflow-hidden group flex-shrink-0" style={{ aspectRatio: '1 / 1', maxHeight: '50vh' }}>
               {productImages.length ? (
                 <OptimizedImage
                   src={currentImage}
@@ -200,9 +204,10 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                   width={600}
                   height={600}
                   className="w-full h-full object-contain"
+                  fill
                 />
               ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+                <div className="w-full h-full bg-transparent flex items-center justify-center text-gray-400">
                   No image
                 </div>
               )}
@@ -226,32 +231,32 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{product?.title || product?.name || 'Product'}</h1>
+          <div className="flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-shrink-0 mb-2">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 line-clamp-2">{product?.title || product?.name || 'Product'}</h1>
 
-              <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 {originalPrice > discountedPrice && (
-                  <span className="text-base sm:text-lg text-gray-500 line-through">${originalPrice.toFixed(2)}</span>
+                  <span className="text-sm sm:text-base text-gray-500 line-through">${originalPrice.toFixed(2)}</span>
                 )}
-                <span className="text-2xl sm:text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
               </div>
 
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex text-yellow-400">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex text-yellow-400 text-xs sm:text-sm">
                   {[...Array(5)].map((_, i) => (
                     <span key={i}>{i < Math.floor(rating) ? '★' : '☆'}</span>
                   ))}
                 </div>
-                <span className="text-sm text-gray-600">({reviews})</span>
+                <span className="text-xs sm:text-sm text-gray-600">({reviews})</span>
               </div>
 
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <span
-                  className={`h-2 w-2 rounded-full ${inStock ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${inStock ? 'bg-green-500' : 'bg-red-500'}`}
                 />
                 <span
-                  className={`text-sm font-medium ${inStock ? 'text-green-600' : 'text-red-600'}`}
+                  className={`text-xs sm:text-sm font-medium ${inStock ? 'text-green-600' : 'text-red-600'}`}
                 >
                   {inStock ? 'In Stock' : 'Out of Stock'}
                 </span>
@@ -259,41 +264,41 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             </div>
 
             {/* Quantity */}
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Quantity</label>
-              <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex-shrink-0 mb-2">
+              <label className="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Quantity</label>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleQuantityChange(-1)}
                   disabled={quantity <= 1}
-                  className="p-2 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <Minus size={18} className="sm:w-[18px] sm:h-[18px]" />
+                  <Minus size={14} className="sm:w-[16px] sm:h-[16px]" />
                 </button>
-                <span className="text-base sm:text-lg font-medium w-10 text-center">{quantity}</span>
+                <span className="text-sm sm:text-base font-medium w-8 sm:w-10 text-center">{quantity}</span>
                 <button
                   onClick={() => handleQuantityChange(1)}
                   disabled={quantity >= (product?.maxQuantity || 10)}
-                  className="p-2 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <Plus size={18} className="sm:w-[18px] sm:h-[18px]" />
+                  <Plus size={14} className="sm:w-[16px] sm:h-[16px]" />
                 </button>
               </div>
             </div>
 
             {/* Colors */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Choose Color</label>
-              <div className="flex gap-2 sm:gap-4 flex-wrap">
+            <div className="flex-shrink-0 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Choose Color</label>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 ml-1">
                 {colors.map((color) => {
-                  const colorName = typeof color === 'string' ? color : color.name;
-                  const isSelected = selectedColor === colorName;
-                  const colorValue = colorName.toLowerCase() === 'beige' ? '#F5F5DC' : colorName.toLowerCase() === 'brown' ? '#8B4513' : colorName;
+                  const isSelected = selectedColor === color;
+                  const colorValue = typeof color === 'string' ? color : color.value || '#000';
+                  const colorName = typeof color === 'string' ? color : color.name || color;
                   return (
                     <button
                       key={colorName}
-                      onClick={() => setSelectedColor(colorName)}
-                      className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 transition ${
-                        isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'
+                      onClick={() => setSelectedColor(color)}
+                      className={`relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg border-2 transition ${
+                        isSelected ? 'border-[#0B4866] ring-1 ring-[#0B4866]' : 'border-gray-300 hover:border-gray-400'
                       }`}
                     >
                       <div
@@ -301,8 +306,8 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                         style={{ backgroundColor: colorValue }}
                       />
                       {isSelected && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#0B4866] rounded-full flex items-center justify-center">
-                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-[#0B4866] rounded-full flex items-center justify-center">
+                          <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -311,28 +316,27 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                   );
                 })}
               </div>
-              {selectedColor && (
-                <span className="text-xs sm:text-sm text-gray-600 mt-2 block">{selectedColor}</span>
-              )}
             </div>
 
             {/* Sizes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Choose Size</label>
-              <div className="flex gap-2 sm:gap-3 flex-wrap">
+            <div className="flex-shrink-0 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Choose Size</label>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {sizes.map((size) => {
                   const isSelected = selectedSize === size;
+                  const sizeValue = typeof size === 'string' ? size : size.value || size;
+                  const sizeLabel = typeof size === 'string' ? size : size.label || size;
                   return (
                     <button
-                      key={size}
+                      key={sizeValue}
                       onClick={() => setSelectedSize(size)}
-                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg text-xs sm:text-sm font-medium border-2 transition ${
+                      className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg text-xs sm:text-sm font-medium border-2 transition ${
                         isSelected
                           ? 'bg-[#0B4866] text-white border-[#0B4866]'
                           : 'border-gray-300 hover:border-[#0B4866]'
                       }`}
                     >
-                      {size}
+                      {sizeLabel}
                     </button>
                   );
                 })}
@@ -340,20 +344,22 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 mt-auto pt-2 sm:pt-3 border-t border-gray-200 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleQuickShop}
                 disabled={!inStock}
-                className="flex-1 px-4 sm:px-5 py-2.5 sm:py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed text-sm sm:text-base"
+                className="flex-1 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-1 sm:gap-2 cursor-pointer disabled:cursor-not-allowed text-xs sm:text-sm md:text-base"
               >
-                <ShoppingBag size={16} className="sm:w-[18px] sm:h-[18px]" /> Quick Shop
+                <ShoppingBag size={12} className="sm:w-[14px] sm:h-[14px] md:w-[16px] md:h-[16px]" /> 
+                <span className="hidden sm:inline">Quick Shop</span>
+                <span className="sm:hidden">Quick</span>
               </button>
               <button
                 type="button"
                 onClick={handleAddToCart}
                 disabled={!inStock || productInCart}
-                className={`flex-1 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg text-white flex items-center justify-center gap-2 transition text-sm sm:text-base ${
+                className={`flex-1 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-white flex items-center justify-center gap-1 sm:gap-2 transition text-xs sm:text-sm md:text-base ${
                   !inStock
                     ? 'bg-gray-400'
                     : productInCart
@@ -361,13 +367,13 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                     : 'bg-[#0F4C81] hover:bg-[#0D3F6A]'
                 }`}
               >
-                <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" />
-                {!inStock ? 'Out of Stock' : productInCart ? 'In Cart' : 'Add to Cart'}
+                <ShoppingCart size={12} className="sm:w-[14px] sm:h-[14px] md:w-[16px] md:h-[16px]" />
+                <span className="hidden sm:inline">{!inStock ? 'Out of Stock' : productInCart ? 'In Cart' : 'Add to Cart'}</span>
+                <span className="sm:hidden">{!inStock ? 'Out' : productInCart ? 'In Cart' : 'Add'}</span>
               </button>
             </div>
 
-            <div className="text-center pb-2 sm:pb-0">
-              <button
+            <div className="text-center pb-1 sm:pb-2 flex-shrink-0">              <button
                 onClick={handleViewFullDetails}
                 className="text-[#0F4C81] hover:text-[#0D3F6A] text-xs sm:text-sm underline font-medium"
               >
@@ -377,11 +383,19 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
           </div>
           </div>
         </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          </div>
+        </>
       )}
     </AnimatePresence>
   );
+
+  // Render to document.body using Portal to avoid parent container constraints
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return createPortal(modalContent, document.body);
 };
 
 export default QuickViewModal;

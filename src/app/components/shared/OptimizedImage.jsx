@@ -65,33 +65,18 @@ const OptimizedImage = ({
     
     const generateBlurDataURL = (w, h) => {
       try {
-        // Create a simple gradient blur placeholder
+        // Create a simple neutral blur placeholder (no blue gradient)
         const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         
-        // Create a subtle gradient background
-        const gradient = ctx.createLinearGradient(0, 0, w, h);
-        gradient.addColorStop(0, '#f8fafc');
-        gradient.addColorStop(0.5, '#f1f5f9');
-        gradient.addColorStop(1, '#e2e8f0');
+        // Create a fully transparent placeholder - no background color at all
+        // Just return a transparent data URL
+        ctx.clearRect(0, 0, w, h);
         
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, w, h);
-        
-        // Add some subtle noise for texture
-        const imageData = ctx.getImageData(0, 0, w, h);
-        const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-          const noise = (Math.random() - 0.5) * 10;
-          data[i] = Math.max(0, Math.min(255, data[i] + noise));     // R
-          data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise)); // G
-          data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise)); // B
-        }
-        ctx.putImageData(imageData, 0, 0);
-        
-        return canvas.toDataURL();
+        // Return transparent PNG data URL
+        return canvas.toDataURL('image/png');
       } catch (error) {
         console.error('Error generating blur data URL:', error);
         return null;
@@ -115,9 +100,9 @@ const OptimizedImage = ({
   // Don't render if we don't have a valid src
   if (isEmpty || (hasError && isDataURI)) {
     return (
-      <div className={`relative overflow-hidden bg-gray-100 flex items-center justify-center ${className}`} style={{ width: width || 400, height: height || 400, ...style }}>
+      <div className={`relative overflow-hidden bg-transparent flex items-center justify-center ${className}`} style={{ width: width || 400, height: height || 400, ...style }}>
         <div className="text-center text-gray-500">
-          <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto mb-2 bg-transparent rounded flex items-center justify-center">
             <span className="text-xs">No Image</span>
           </div>
           <p className="text-xs">Image unavailable</p>
@@ -135,10 +120,13 @@ const OptimizedImage = ({
           alt={normalizedAlt}
           width={width || 400}
           height={height || 400}
-          className={`transition-opacity duration-300 ${
-            isLoading ? 'opacity-0' : 'opacity-100'
+          className={`transition-all duration-300 ${
+            isLoading ? 'opacity-0 blur-md' : 'opacity-100 blur-0'
           } ${className}`}
-          style={style}
+          style={{ 
+            filter: isLoading ? 'blur(8px)' : 'blur(0px)',
+            ...style 
+          }}
           onLoad={handleLoad}
           onError={handleError}
           {...props}
@@ -148,7 +136,15 @@ const OptimizedImage = ({
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={style}>
+    <div 
+      className={`relative overflow-hidden bg-transparent ${className}`} 
+      style={{
+        filter: isLoading ? 'blur(8px)' : 'blur(0px)',
+        transition: 'filter 0.3s ease-in-out',
+        backgroundColor: 'transparent',
+        ...style
+      }}
+    >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -161,9 +157,10 @@ const OptimizedImage = ({
         width={fill ? undefined : (width || 400)}
         height={fill ? undefined : (height || 400)}
         fill={fill}
-        className={`transition-opacity duration-300 ${
+        className={`transition-opacity duration-300 bg-transparent ${
           isLoading ? 'opacity-0' : 'opacity-100'
         } ${hasError ? 'object-cover' : ''}`}
+        style={{ backgroundColor: 'transparent' }}
         priority={priority}
         quality={quality}
         {...(imagePlaceholder && defaultBlurDataURL ? {
@@ -179,7 +176,7 @@ const OptimizedImage = ({
       {hasError && currentSrc === fallbackSrc && (
         <div className="absolute inset-0 flex items-center justify-center bg-transparent">
           <div className="text-center text-gray-500">
-            <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto mb-2 bg-transparent rounded flex items-center justify-center">
               <span className="text-xs">No Image</span>
             </div>
             <p className="text-xs">Image unavailable</p>

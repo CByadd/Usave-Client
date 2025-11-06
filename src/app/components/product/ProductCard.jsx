@@ -156,7 +156,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
         className={containerClasses}
 
-        style={variant === 'carousel' ? { backgroundColor: productItem.bg } : {}}
+        style={variant === 'carousel' && productItem.bg ? { backgroundColor: productItem.bg } : {}}
 
       >
 
@@ -234,7 +234,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
             className={imageContainerClasses}
 
-            style={productItem.bg ? { backgroundColor: productItem.bg } : { backgroundColor: 'transparent' }}
+            style={productItem.bg ? { backgroundColor: productItem.bg } : {}}
 
           >
 

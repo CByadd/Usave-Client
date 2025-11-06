@@ -209,7 +209,7 @@ const ProductListingPage = () => {
             {products.map((product) => (
               <div key={product.id} className="min-w-[calc(50%-0.5rem)] snap-center">
                 <div className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                  <div className="relative bg-gray-50 p-6 aspect-square flex items-center justify-center">
+                  <div className="relative bg-transparent p-6 aspect-square flex items-center justify-center">
                     {product.badge && (
                       <div className={`${product.badgeColor} absolute top-3 left-3 text-white text-xs font-semibold px-3 py-1 rounded`}>
                         {product.badge}
@@ -342,7 +342,7 @@ const ProductListingPage = () => {
               key={product.id}
               className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="relative bg-gray-50 p-6 aspect-square flex items-center justify-center">
+              <div className="relative bg-transparent p-6 aspect-square flex items-center justify-center">
                 {product.badge && (
                   <div className={`absolute top-3 left-3 ${product.badgeColor} text-white text-xs font-semibold px-3 py-1 rounded`}>
                     {product.badge}
