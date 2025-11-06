@@ -86,6 +86,7 @@ const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Auth state
   const [user, setUser] = useState(null);
@@ -96,6 +97,8 @@ const Navbar = () => {
   const { getWishlistCount } = useWishlist();
 
   useEffect(() => {
+    // Mark as mounted after hydration
+    setIsMounted(true);
     const currentUser = getCurrentUser();
     const authStatus = isAuthenticated();
     setUser(currentUser);
@@ -365,17 +368,43 @@ const Navbar = () => {
                       <h3 className="text-sm font-medium text-gray-500 mb-2">Categories</h3>
                       <div className="space-y-1">
                         {categoryLinks.map((item) => (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            className="flex items-center p-2 -m-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md"
-                            onClick={() => {
-                              setIsMobileOpen(false);
-                              setIsAccountMenuOpen(false);
-                            }}
-                          >
-                            {item.name}
-                          </Link>
+                          <div key={item.name} className="space-y-1">
+                            <Link
+                              href={item.href}
+                              className="flex items-center justify-between p-2 -m-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md group"
+                              onClick={() => {
+                                if (!item.subcategories || item.subcategories.length === 0) {
+                                  setIsMobileOpen(false);
+                                  setIsAccountMenuOpen(false);
+                                }
+                              }}
+                            >
+                              <span>{item.name}</span>
+                              {item.subcategories && item.subcategories.length > 0 && (
+                                <ChevronDown
+                                  size={16}
+                                  className="ml-2 transition-transform duration-200 group-hover:rotate-180"
+                                />
+                              )}
+                            </Link>
+                            {item.subcategories && item.subcategories.length > 0 && (
+                              <div className="ml-4 space-y-1">
+                                {item.subcategories.map((sub) => (
+                                  <Link
+                                    key={sub.name}
+                                    href={sub.href}
+                                    className="flex items-center p-2 -m-2 text-xs text-gray-500 hover:bg-gray-50 hover:text-[#0B4866] rounded-md"
+                                    onClick={() => {
+                                      setIsMobileOpen(false);
+                                      setIsAccountMenuOpen(false);
+                                    }}
+                                  >
+                                    {sub.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -452,7 +481,7 @@ const Navbar = () => {
   );
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40 overflow-hidden">
+    <header className="bg-white shadow-sm sticky top-0 z-40">
       <div className="w-full max-w-[95dvw] overflow-visible h-max flex items-center justify-center relative ">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className=" justify-between items-center h-16 hidden md:flex">
@@ -485,7 +514,7 @@ const Navbar = () => {
     aria-label="View cart"
   >
     <ShoppingCart size={22} />
-    {getCartCount() > 0 && (
+    {isMounted && getCartCount() > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
         {getCartCount()}
       </span>
@@ -496,7 +525,7 @@ const Navbar = () => {
           <span className='flex items-center justify-center gap-2'>
              <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
     <Heart size={22} />
-    {getWishlistCount() > 0 && (
+    {isMounted && getWishlistCount() > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
         {getWishlistCount()}
       </span>
@@ -581,8 +610,10 @@ const Navbar = () => {
       </button>
 
       {/* Center: Logo */}
-      <div className="flex-shrink-0 flex justify-center">
-        {renderLogo()}
+      <div className="flex-1 flex justify-center items-center absolute left-0 right-0 pointer-events-none">
+        <div className="pointer-events-auto">
+          {renderLogo()}
+        </div>
       </div>
 
       {/* Right: Icons (Search + Cart) */}
@@ -601,12 +632,21 @@ const Navbar = () => {
           aria-label="View cart"
         >
           <ShoppingCart size={22} />
-          {getCartCount() > 0 && (
+          {isMounted && getCartCount() > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
               {getCartCount()}
             </span>
           )}
         </Link>
+
+             <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
+    <Heart size={22} />
+    {isMounted && getWishlistCount() > 0 && (
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+        {getWishlistCount()}
+      </span>
+    )}
+  </Link>
       </div>
     </div>
   </div>
@@ -646,21 +686,23 @@ const Navbar = () => {
             className="flex items-center text-sm font-medium text-gray-700 hover:text-[#003B8E] py-2"
           >
             {item.name}
-            <ChevronDown
-              size={16}
-              className="ml-1 transition-transform duration-200 group-hover:rotate-180"
-            />
+            {item.subcategories && item.subcategories.length > 0 && (
+              <ChevronDown
+                size={16}
+                className="ml-1 transition-transform duration-200 group-hover:rotate-180"
+              />
+            )}
           </Link>
 
           {/* Dropdown */}
           {item.subcategories && item.subcategories.length > 0 && (
-            <div className="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200 z-[1000]">
+            <div className="absolute left-0 top-full mt-0 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-[1000]">
               <ul className="py-2">
                 {item.subcategories.map((sub) => (
                   <li key={sub.name}>
                     <Link
                       href={sub.href}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#0B4866]"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#0B4866] transition-colors"
                     >
                       {sub.name}
                     </Link>

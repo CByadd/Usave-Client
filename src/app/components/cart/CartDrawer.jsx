@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../stores/useCartStore';
 import { useUIStore } from '../../stores/useUIStore';
+import { useAnimationStore } from '../../stores/useAnimationStore';
 import { isAuthenticated } from '../../lib/auth';
 import { openAuthDrawer } from '../../lib/ui';
 import OptimizedImage from '../shared/OptimizedImage';
@@ -22,6 +24,8 @@ const CartDrawer = () => {
   // Use UI store for drawer state
   const isCartDrawerOpen = useUIStore((state) => state.isCartDrawerOpen);
   const closeCartDrawer = useUIStore((state) => state.closeCartDrawer);
+  const { getAnimationConfig } = useAnimationStore();
+  const drawerConfig = getAnimationConfig('drawer');
   
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState({});
@@ -99,39 +103,62 @@ const CartDrawer = () => {
     };
   }, [isCartDrawerOpen]);
 
-  if (!isCartDrawerOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={(e) => {
-                console.log('[CartDrawer] Backdrop clicked');
-                if (e) {
-                  e.preventDefault();
-                  e.stopPropagation();
+    <AnimatePresence mode="wait" initial={false}>
+      {isCartDrawerOpen && (
+        <motion.div
+          key="cart-drawer"
+          className="fixed inset-0 z-50 overflow-hidden"
+          initial="closed"
+          animate="open"
+          exit="closed"
+          variants={{
+            open: { transition: { staggerChildren: 0.05 } },
+            closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
+          }}
+        >
+          {/* Backdrop */}
+          <motion.div
+            variants={{
+              open: { opacity: 1 },
+              closed: { opacity: 0 },
+            }}
+            transition={{ 
+              duration: drawerConfig.backdrop.duration, 
+              ease: drawerConfig.backdrop.ease 
+            }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            style={{ willChange: 'opacity' }}
+            onClick={(e) => {
+              console.log('[CartDrawer] Backdrop clicked');
+              if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              closeCartDrawer();
+              // Fallback: dispatch close event
+              if (typeof document !== 'undefined') {
+                try {
+                  document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                  console.log('[CartDrawer] Dispatched usave:closeCart event');
+                } catch (err) {
+                  console.error('[CartDrawer] Error dispatching close event:', err);
                 }
-                closeCartDrawer();
-                // Fallback: dispatch close event
-                if (typeof document !== 'undefined') {
-                  try {
-                    document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
-                    console.log('[CartDrawer] Dispatched usave:closeCart event');
-                  } catch (err) {
-                    console.error('[CartDrawer] Error dispatching close event:', err);
-                  }
-                }
-              }}
-            />
-    
+              }
+            }}
+          />
 
-      
-      {/* Drawer */}
-      <div 
-        className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+          {/* Drawer */}
+          <motion.div
+            variants={{
+              open: { x: 0 },
+              closed: { x: '100%' },
+            }}
+            transition={drawerConfig.panel}
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{ willChange: 'transform' }}
+          >
 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -396,8 +423,10 @@ const CartDrawer = () => {
           </div>
           )}
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

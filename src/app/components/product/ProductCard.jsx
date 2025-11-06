@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { Heart, ShoppingCart, Search, ShoppingBag } from "lucide-react";
 
@@ -25,6 +25,12 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
   const { toggleWishlist, isInWishlist, isLoading: isWishlistLoading } = useWishlist();
 
   const [showQuickView, setShowQuickView] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Check if mounted to avoid hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Support both 'item' and 'product' props for flexibility
   const productItem = item || product;
@@ -145,18 +151,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
   return (
 
-    <div className={variant === 'grid' ? 'w-full h-full flex flex-col' : ''}>
-
-      {productItem.topSeller && variant === 'carousel' && (
-
-        <div className="absolute top-[-12px] left-6 bg-pink-600 text-white text-xs font-semibold px-2 py-1">
-
-          Top seller
-
-        </div>
-
-      )}
-
+    <div className={variant === 'grid' ? 'w-full h-full flex flex-col' : 'relative'}>
       <div
 
         className={containerClasses}
@@ -194,6 +189,12 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     ) : (
 
       <div className="w-full flex items-center justify-center flex-col relative" >
+        {/* Top seller badge for carousel */}
+        {productItem.topSeller && (
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-pink-600 text-white text-xs font-semibold px-2 py-1 rounded z-10">
+            Top seller
+          </div>
+        )}
 
         {/* Wishlist icon for carousel */}
 
@@ -466,7 +467,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                     ? 'bg-gray-400 cursor-not-allowed' 
 
-                    : isInCart(productItem.id) 
+                    : isMounted && isInCart(productItem.id) 
 
                       ? 'bg-green-600 hover:bg-green-700' 
 
@@ -478,7 +479,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                 <ShoppingCart size={16} />
 
-                {!hasStock ? 'Out of Stock' : isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
+                        {!hasStock ? 'Out of Stock' : isMounted && isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
 
               </button>
 
@@ -560,7 +561,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                     ? 'bg-gray-400 cursor-not-allowed text-white' 
 
-                    : isInCart(productItem.id) 
+                    : isMounted && isInCart(productItem.id) 
 
                       ? 'bg-green-600 hover:bg-green-700 text-white' 
 
@@ -572,7 +573,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                 <ShoppingCart size={16} />
 
-                {!hasStock ? 'Out of Stock' : isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
+                        {!hasStock ? 'Out of Stock' : isMounted && isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
 
             </button>
 

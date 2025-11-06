@@ -28,6 +28,7 @@ export const useUIStore = create((set) => ({
   // Loading state
   isLoading: false,
   loadingMessage: 'Loading...',
+  loadingProgress: 0, // 0-100 for progress indication
   
   // Redirect path after auth (used for checkout flow)
   authRedirectPath: null,
@@ -97,10 +98,14 @@ export const useUIStore = create((set) => ({
   }),
   
   // Actions - Loading
-  setLoading: (isLoading, message = 'Loading...') => set({
+  setLoading: (isLoading, message = 'Loading...', progress = 0) => set({
     isLoading,
     loadingMessage: message,
+    loadingProgress: progress,
   }),
+  setLoadingProgress: (progress) => set((state) => ({
+    loadingProgress: Math.max(0, Math.min(100, progress)),
+  })),
   
   // Actions - Filters
   setProductFilters: (filters) => set((state) => ({

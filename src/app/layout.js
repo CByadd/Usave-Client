@@ -11,6 +11,7 @@ import LoggingToggle from "./components/debug/LoggingToggle";
 import ToastContainerWrapper from "./components/shared/ToastContainerWrapper";
 import AlertModalWrapper from "./components/shared/AlertModalWrapper";
 import LoadingOverlayWrapper from "./components/shared/LoadingOverlayWrapper";
+import AnimationInitializer from "./components/shared/AnimationInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body suppressHydrationWarning={true} className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white min-h-screen flex flex-col`}>
         <Providers>
+          <AnimationInitializer />
           <CartInitializer />
           <WishlistInitializer />
           <Navbar />

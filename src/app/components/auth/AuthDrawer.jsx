@@ -5,6 +5,7 @@ import { X, Eye, EyeOff, Mail, Lock, User, LogOut } from 'lucide-react';
 import { login as loginUser, getCurrentUser, logout as logoutUser, register as registerUser, isAuthenticated as checkAuth } from '../../lib/auth';
 import { useUIStore } from '../../stores/useUIStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAnimationStore } from '../../stores/useAnimationStore';
 
 const LoginForm = ({ onSwitch, onClose }) => {
   const router = useRouter();
@@ -495,6 +496,8 @@ const AuthDrawer = () => {
   const authRedirectPath = useUIStore((state) => state.authRedirectPath);
   const closeAuthDrawer = useUIStore((state) => state.closeAuthDrawer);
   const setAuthRedirectPath = useUIStore((state) => state.setAuthRedirectPath);
+  const { getAnimationConfig } = useAnimationStore();
+  const drawerConfig = getAnimationConfig('drawer');
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
@@ -567,32 +570,47 @@ const AuthDrawer = () => {
   
   console.log('AuthDrawer render - isAuthDrawerOpen:', isAuthDrawerOpen, 'forceOpen:', forceOpen);
   
-  if (!isAuthDrawerOpen && !forceOpen) return null;
-  
   return (
-    <div className="fixed inset-0 z-[100] overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <AnimatePresence>
-          <motion.div 
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={safeCloseAuthDrawer}
-            aria-hidden="true"
-          />
-        </AnimatePresence>
-        
-        <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex z-20">
-          <motion.div 
-            className="w-screen max-w-md"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+    <AnimatePresence mode="wait" initial={false}>
+      {(isAuthDrawerOpen || forceOpen) && (
+        <motion.div
+          key="auth-drawer"
+          className="fixed inset-0 z-[100] overflow-hidden"
+          initial="closed"
+          animate="open"
+          exit="closed"
+          variants={{
+            open: { transition: { staggerChildren: 0.05 } },
+            closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
+          }}
+        >
+          <div className="absolute inset-0 overflow-hidden">
+            <motion.div 
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10"
+              variants={{
+                open: { opacity: 1 },
+                closed: { opacity: 0 },
+              }}
+              transition={{ 
+                duration: drawerConfig.backdrop.duration, 
+                ease: drawerConfig.backdrop.ease 
+              }}
+              onClick={safeCloseAuthDrawer}
+              aria-hidden="true"
+              style={{ willChange: 'opacity' }}
+            />
+            
+            <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex z-20">
+              <motion.div 
+                className="w-screen max-w-md"
+                variants={{
+                  open: { x: 0 },
+                  closed: { x: '100%' },
+                }}
+                transition={drawerConfig.panel}
+                onClick={(e) => e.stopPropagation()}
+                style={{ willChange: 'transform' }}
+              >
             <div className="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
               {isAuthenticated ? (
                 <div className="p-6">
@@ -702,10 +720,12 @@ const AuthDrawer = () => {
                 </>
               )}
             </div>
-          </motion.div>
-        </div>
-      </div>
-    </div>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

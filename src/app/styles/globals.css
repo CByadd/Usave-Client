@@ -18,6 +18,23 @@
 
 @import "tailwindcss";
 
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure smooth scrolling works everywhere */
+* {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  * {
+    scroll-behavior: auto;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -58,18 +75,31 @@
   }
 }
 
-*{
+/* Base font - Inter for body text */
+* {
   font-family: "Inter Custom", "Inter", sans-serif;
 }
 
-/* Custom font classes for specific use cases */
-.font-serifx {
+/* Source Serif 4 for headings and titles */
+h1, h2, h3, h4, h5, h6,
+.title,
+.heading,
+[class*="title"],
+[class*="heading"] {
   font-family: "Source Serif 4", serif;
-
-  
+  font-weight: 400;
 }
 
-.font-inter-custom {
+/* Custom font classes for specific use cases */
+.font-serifx,
+.font-serif,
+.font-heading {
+  font-family: "Source Serif 4", serif;
+  font-weight: 400;
+}
+
+.font-inter-custom,
+.font-body {
   font-family: "Inter Custom", "Inter", sans-serif;
 }
 

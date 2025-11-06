@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, ShoppingBag, ShoppingCart, Minus, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAnimationStore } from '../../stores/useAnimationStore';
 import OptimizedImage from '../shared/OptimizedImage';
 import { addToCart, fetchCart, getCartItems, isInCart } from '../../lib/cart';
 import { useRouter } from 'next/navigation';
@@ -8,6 +10,8 @@ import { openCartDrawer, showToast } from '../../lib/ui';
 
 const QuickViewModal = ({ product, isOpen, onClose }) => {
   const router = useRouter();
+  const { getAnimationConfig, animationsEnabled } = useAnimationStore();
+  const modalConfig = getAnimationConfig('modal');
   const [cartItems, setCartItems] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -54,11 +58,9 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen || !product) return null;
-
   const handleNextImage = () => setCurrentImageIndex((p) => (p + 1) % productImages.length);
   const handlePrevImage = () => setCurrentImageIndex((p) => (p - 1 + productImages.length) % productImages.length);
-  const handleQuantityChange = (d) => setQuantity((p) => Math.max(1, Math.min(p + d, product.maxQuantity || 10)));
+  const handleQuantityChange = (d) => setQuantity((p) => Math.max(1, Math.min(p + d, product?.maxQuantity || 10)));
 
   const handleQuickShop = async (e) => {
     if (e) {
@@ -66,13 +68,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
       e.stopPropagation();
     }
     
-    if (product.inStock === false) {
+    if (!product || product?.inStock === false) {
       showToast('This product is out of stock', 'error');
       return;
     }
 
     try {
-      const productId = product.id || product.productId;
+      const productId = product?.id || product?.productId;
+      if (!productId) {
+        showToast('Invalid product ID', 'error');
+        return;
+      }
       const result = await addToCart(productId, quantity);
       if (result?.success) {
         const { items } = await fetchCart();
@@ -97,13 +103,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
       e.stopPropagation();
     }
     
-    if (product.inStock === false) {
+    if (!product || product?.inStock === false) {
       showToast('This product is out of stock', 'error');
       return;
     }
 
     try {
-      const productId = product.id || product.productId;
+      const productId = product?.id || product?.productId;
+      if (!productId) {
+        showToast('Invalid product ID', 'error');
+        return;
+      }
       const result = await addToCart(productId, quantity);
       if (result?.success) {
         const { items } = await fetchCart();
@@ -123,29 +133,49 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   };
 
   const handleViewFullDetails = () => {
-    router.push(`/products/${product.id}`);
+    if (!product?.id) return;
+    router.push(`/products/${product?.id}`);
     onClose();
   };
 
-  const currentImage = productImages[currentImageIndex] || product.image;
-  const rating = product.rating || 0;
-  const reviews = product.reviews || 0;
-  const inStock = product.inStock !== false;
-  const productInCart = cartItems.some(c => c.productId === product.id || c.product?.id === product.id);
+  const currentImage = productImages[currentImageIndex] || product?.image || '';
+  const rating = product?.rating || 0;
+  const reviews = product?.reviews || 0;
+  const inStock = product?.inStock !== false;
+  const productInCart = cartItems.some(c => c.productId === product?.id || c.product?.id === product?.id);
 
-  const originalPrice = product.originalPrice || product.regularPrice || product.price || 0;
-  const discountedPrice = product.discountedPrice || product.salePrice || product.price || 0;
+  const originalPrice = product?.originalPrice || product?.regularPrice || product?.price || 0;
+  const discountedPrice = product?.discountedPrice || product?.salePrice || product?.price || 0;
+
+  if (!isOpen || !product) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ 
+              duration: modalConfig.backdrop.duration, 
+              ease: modalConfig.backdrop.ease 
+            }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+            style={{ willChange: 'opacity' }}
+          />
 
-      {/* Modal Container */}
-      <div className="relative bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-5xl mx-auto overflow-hidden flex flex-col">
+          {/* Modal Container */}
+          <motion.div
+            initial={{ scale: 0.96, opacity: 0, y: 15 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 15 }}
+            transition={modalConfig.content}
+            className="relative bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-5xl mx-auto overflow-hidden flex flex-col"
+            style={{ willChange: 'transform, opacity' }}
+          >
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">Quick View</h2>
@@ -166,7 +196,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               {productImages.length ? (
                 <OptimizedImage
                   src={currentImage}
-                  alt={product.title}
+                  alt={product?.title || product?.name || 'Product'}
                   width={600}
                   height={600}
                   className="w-full h-full object-contain"
@@ -198,7 +228,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
           {/* Right: Product Info */}
           <div className="space-y-4 sm:space-y-6">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{product.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{product?.title || product?.name || 'Product'}</h1>
 
               <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
                 {originalPrice > discountedPrice && (
@@ -242,7 +272,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                 <span className="text-base sm:text-lg font-medium w-10 text-center">{quantity}</span>
                 <button
                   onClick={() => handleQuantityChange(1)}
-                  disabled={quantity >= (product.maxQuantity || 10)}
+                  disabled={quantity >= (product?.maxQuantity || 10)}
                   className="p-2 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
                   <Plus size={18} className="sm:w-[18px] sm:h-[18px]" />
@@ -347,8 +377,10 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
           </div>
           </div>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 
