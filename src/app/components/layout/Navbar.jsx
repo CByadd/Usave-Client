@@ -590,7 +590,7 @@ const Navbar = () => {
     <header className=" shadow-sm sticky top-0 z-50 bg-white ">
       <div className="w-[100dvw] overflow-hidden h-max flex items-center justify-center relative ">
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 ">
-        <div className=" justify-between items-center h-16 hidden md:flex gap-4 w-[100dvw]">
+        <div className=" justify-between items-center h-16 hidden md:flex gap-4  ">
           {/* Left side - Logo */}
           <div className="flex-shrink-0 h-full overflow-hidden">
             {renderLogo()}
