@@ -28,6 +28,12 @@ html {
   scroll-behavior: smooth;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html,
   * {

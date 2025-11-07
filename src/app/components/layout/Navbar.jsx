@@ -22,6 +22,15 @@ const mainNavLinks = [
 ];
 
 const categoryLinks = [
+    {
+    name: "SHOP BY PLACES",
+    href: "/search",
+    subcategories: [
+      { name: "Living Room", href: "/search?place=living-room" },
+      { name: "Bedroom", href: "/search?place=bedroom" },
+      { name: "Office", href: "/search?place=office" },
+    ],
+  },
   {
     name: "LIVING",
     href: "/categories/living",
@@ -66,16 +75,8 @@ const categoryLinks = [
       { name: "Speakers", href: "/categories/electronics/speakers" },
       { name: "Laptops", href: "/categories/electronics/laptops" },
     ],
-  },
-  {
-    name: "SHOP BY PLACES",
-    href: "/search",
-    subcategories: [
-      { name: "Living Room", href: "/search?place=living-room" },
-      { name: "Bedroom", href: "/search?place=bedroom" },
-      { name: "Office", href: "/search?place=office" },
-    ],
-  },
+  }
+
 ];
 
 
@@ -586,10 +587,10 @@ const Navbar = () => {
   );
 
   return (
-    <header className=" shadow-sm sticky top-0 z-50 bg-white">
-      <div className="w-full max-w-[100dvw] overflow-visible h-max flex items-center justify-center relative ">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 ">
-        <div className=" justify-between items-center h-16 hidden md:flex gap-4 w-[90dvw]">
+    <header className=" shadow-sm sticky top-0 z-50 bg-white ">
+      <div className="w-[100dvw] overflow-hidden h-max flex items-center justify-center relative ">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 ">
+        <div className=" justify-between items-center h-16 hidden md:flex gap-4 w-[100dvw]">
           {/* Left side - Logo */}
           <div className="flex-shrink-0 h-full overflow-hidden">
             {renderLogo()}
@@ -626,10 +627,7 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {/* Account */}
-              <div className="relative">
-                {renderUserMenu()}
-              </div>
+            
               {/* Cart */}
               <Link 
                 href="/cart"
@@ -643,7 +641,10 @@ const Navbar = () => {
                   </span>
                 )}
               </Link>
-
+  {/* Account */}
+              <div className="relative">
+                {renderUserMenu()}
+              </div>
             
             
             </div>
@@ -652,79 +653,77 @@ const Navbar = () => {
       </div>
       
       {/* Mobile Navigation */}
-   <div className="md:hidden">
-  <div className="mx-auto flex h-16  items-center justify-center px-4 sm:px-6 lg:px-8  w-screen">
-    {/* Mobile Navbar Row */}
-    <div className="flex items-center justify-between w-full max-w-[380px]">
-      {/* Left: Mobile Menu Button */}
-      <button 
-        className="text-gray-600 hover:text-[#0B4866] flex-shrink-0"
+   {/* Mobile Navigation */}
+<div className="md:hidden w-full border-b border-gray-100 bg-white">
+  <div className="flex items-center justify-between h-16 px-3">
+    {/* Left Section: Menu + Logo */}
+    <div className="flex items-center gap-3">
+      {/* Hamburger Menu */}
+      <button
         onClick={toggleMobile}
         aria-label="Open menu"
+        className="text-gray-700 hover:text-[#0B4866] flex-shrink-0"
       >
         <Menu size={24} />
       </button>
 
-      {/* Center: Logo */}
-      <div className="flex-1 flex justify-center items-center absolute left-0 right-0 pointer-events-none h-full">
-        <div className="pointer-events-auto h-full overflow-hidden">
-          {renderLogo()}
-        </div>
+      {/* Logo */}
+      <div className="h-10 flex items-center">
+        {renderLogo()}
       </div>
+    </div>
 
-      {/* Right: Icons (Search + Cart) */}
-      <div className="flex items-center justify-end space-x-5">
-        <button 
-          className="text-gray-600 hover:text-[#0B4866]"
-          onClick={toggleSearch}
-          aria-label="Search"
-        >
-          <Search size={22} />
-        </button>
+    {/* Right Section: Search + Cart + Wishlist */}
+    <div className="flex items-center gap-4">
+      <button
+        className="text-gray-600 hover:text-[#0B4866]"
+        onClick={toggleSearch}
+        aria-label="Search"
+      >
+        <Search size={22} />
+      </button>
 
-        <Link
-          href="/cart"
-          className="relative text-gray-600 hover:text-[#0B4866] flex items-center"
-          aria-label="View cart"
-        >
-          <ShoppingCart size={22} />
-          {isMounted && getCartCount() > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-              {getCartCount()}
-            </span>
-          )}
-        </Link>
+      <Link
+        href="/cart"
+        className="relative text-gray-600 hover:text-[#0B4866]"
+        aria-label="View cart"
+      >
+        <ShoppingCart size={22} />
+        {isMounted && getCartCount() > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+            {getCartCount()}
+          </span>
+        )}
+      </Link>
 
-             <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
-    <Heart size={22} />
-    {isMounted && wishlistCount > 0 && (
-      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {wishlistCount}
-      </span>
-    )}
-  </Link>
-      </div>
+      <Link
+        href="/wishlist"
+        className="relative text-gray-600 hover:text-[#0B4866]"
+        aria-label="Wishlist"
+      >
+        <Heart size={22} />
+        {isMounted && wishlistCount > 0 && (
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+            {wishlistCount}
+          </span>
+        )}
+      </Link>
     </div>
   </div>
 
-        
-        {/* Mobile Search Bar */}
-        {isSearchExpanded && (
-          <div className="w-full flex justify-center items-center py-2 px-4 border-t border-gray-100">
-            <div className="w-full">
-              <SearchBar 
-                placeholder="Search products..." 
-                isMobile 
-                isExpanded={isSearchExpanded}
-                onToggle={toggleSearch}
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Mobile Categories */}
-        {/* {!isSearchExpanded && renderMobileCategories()} */}
-        </div>
+  {/* Mobile Search Bar */}
+  {isSearchExpanded && (
+    <div className="w-full flex justify-center items-center py-2 px-3 border-t border-gray-100">
+      <SearchBar
+        placeholder="Search products..."
+        isMobile
+        isExpanded={isSearchExpanded}
+        onToggle={toggleSearch}
+      />
+    </div>
+  )}
+</div>
+
 
 
 

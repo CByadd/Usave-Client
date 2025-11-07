@@ -52,7 +52,7 @@ export const ANIMATION_CONFIG = {
 export const useAnimationStore = create((set, get) => ({
   // Animation enabled state (for accessibility)
   animationsEnabled: typeof window !== 'undefined' 
-    ? !window.matchMedia('(prefers-reduced-motion: reduce)').matches 
+    ? !window.matchMedia('(prefers-reduced-motion: reduce)').matches && window.innerWidth > 768
     : true,
   
   // Current animation states
@@ -61,7 +61,10 @@ export const useAnimationStore = create((set, get) => ({
   isDrawerAnimating: false,
   
   // Animation preferences
-  reduceMotion: false,
+  reduceMotion: typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth <= 768
+    : false,
+  isMobile: typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
   
   // Actions
   setAnimationsEnabled: (enabled) => set({ animationsEnabled: enabled }),
@@ -74,8 +77,8 @@ export const useAnimationStore = create((set, get) => ({
   
   // Get animation config based on preferences
   getAnimationConfig: (type) => {
-    const { reduceMotion, animationsEnabled } = get();
-    if (!animationsEnabled || reduceMotion) {
+    const { reduceMotion, animationsEnabled, isMobile } = get();
+    if (!animationsEnabled || reduceMotion || isMobile) {
       return { duration: 0, ease: 'linear' };
     }
     return ANIMATION_CONFIG[type] || ANIMATION_CONFIG.page;
@@ -84,17 +87,37 @@ export const useAnimationStore = create((set, get) => ({
   // Initialize reduced motion preference
   initReducedMotion: () => {
     if (typeof window === 'undefined') return () => {};
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    set({ reduceMotion: prefersReducedMotion, animationsEnabled: !prefersReducedMotion });
-    
-    // Listen for changes
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleChange = (e) => {
-      set({ reduceMotion: e.matches, animationsEnabled: !e.matches });
+
+    const applyPreferences = () => {
+      const prefersReducedMotion = mediaQuery.matches;
+      const isMobile = window.innerWidth <= 768;
+      const disableAnimations = prefersReducedMotion || isMobile;
+
+      set({
+        reduceMotion: disableAnimations,
+        animationsEnabled: !disableAnimations,
+        isMobile,
+      });
     };
-    mediaQuery.addEventListener('change', handleChange);
-    
-    return () => mediaQuery.removeEventListener('change', handleChange);
+
+    applyPreferences();
+
+    const handleMotionChange = () => {
+      applyPreferences();
+    };
+
+    const handleResize = () => {
+      applyPreferences();
+    };
+
+    mediaQuery.addEventListener('change', handleMotionChange);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMotionChange);
+      window.removeEventListener('resize', handleResize);
+    };
   },
 }));
 

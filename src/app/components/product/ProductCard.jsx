@@ -127,7 +127,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
     ? "group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full"
 
-    : "group min-w-[calc(50%-0.5rem)] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[48vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]";
+    : "group min-w-[85vw] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[85vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]";
   
   
 
@@ -344,7 +344,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
      <div className={variant === 'grid' ? "flex flex-col flex-1" : "p-3 flex flex-col flex-1"}>
 
-           <h3 onClick={goToProduct} className={`${variant === 'grid' ? 'text-base mb-2' : 'mt-3'} font-medium text-gray-800 hover:text-[#0B4866] cursor-pointer line-clamp-2 min-h-[2.5rem]`}>{productItem.title}</h3>
+           <h3 onClick={goToProduct} className={`${variant === 'grid' ? 'text-base mb-2' : 'mt-3'} font-2xl text-gray-800 hover:text-[#0B4866] cursor-pointer line-clamp-2 min-h-[2.5rem]`}>{productItem.title}</h3>
 
         <div className={`${variant === 'grid' ? 'gap-2 mb-2' : 'mt-1'} flex items-center ${variant === 'grid' ? '' : 'text-sm text-gray-600'}`}>
 
@@ -478,7 +478,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
             <>
 
               {/* Wishlist button for mobile - visible only on mobile */}
-              <button
+              {/* <button
 
                 type="button"
 
@@ -500,7 +500,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                 {isInWishlist(productItem.id) ? 'In Wishlist' : 'Add to Wishlist'}
 
-              </button>
+              </button> */}
 
               <button
 
