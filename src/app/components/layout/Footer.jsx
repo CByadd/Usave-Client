@@ -1,5 +1,7 @@
 import React from "react";
 import { MapPin, Phone } from "lucide-react";
+import Image from "next/image";
+import { LOGO_NONE_BG } from './../../lib/constants.js';
 
 const Footer = () => {
   return (
@@ -7,9 +9,14 @@ const Footer = () => {
       <div className="max-w-full mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
         {/* Left Section */}
         <div className="md:col-span-2">
-          <h2 className="text-lg font-semibold text-[#00688B] mb-3">
-            USAVE <span className="text-gray-600">COMMERCIAL</span>
-          </h2>
+         <Image
+            src={LOGO_NONE_BG}
+            alt="USAVE Logo"
+            width={150}
+            height={50}
+            className="mb-4"
+         
+         />
           <p className="text-sm text-gray-700 mb-4 leading-relaxed">
             Welcome to USAVE Commercial, a family owned business in Far North
             Queensland — your go-to for electrical, bedding, and furniture brands

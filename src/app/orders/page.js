@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../stores/useAuthStore';
-import { RefreshCw, Edit, CreditCard, AlertCircle } from 'lucide-react';
+import { RefreshCw, Edit, CreditCard, AlertCircle, Eye } from 'lucide-react';
 import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
@@ -33,7 +33,7 @@ export default function OrdersPage() {
     if (!mounted) return;
     
     if (!isAuthenticated) {
-      router.push('/auth/login');
+      router.push('/');
       return;
     }
     fetchOrders();
@@ -232,7 +232,7 @@ export default function OrdersPage() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
+                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap rounded-3xl mb-2 flex-shrink-0 ${
                   activeFilter === filter
                     ? 'bg-[#0F4C81] text-white border-b-2 border-[#0F4C81]'
                     : 'text-gray-600 hover:text-[#0F4C81] hover:bg-gray-100'
@@ -372,6 +372,7 @@ export default function OrdersPage() {
 
 // Order Card Component
 function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
+  const router = useRouter();
 
   const getStatusBadge = (status, order) => {
     // Check owner approval states first
@@ -532,8 +533,17 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
+              {/* View Order - always visible */}
+              <button
+                onClick={() => router.push(`/orders/${order.id}`)}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#094058] transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Eye size={16} />
+                View Order
+              </button>
+
               {/* Proceed to Pay - for approved orders with pending payment */}
-              {status === 'APPROVED' && order.paymentStatus === 'PENDING' && (
+              {/* {status === 'APPROVED' && order.paymentStatus === 'PENDING' && (
                 <button
                   onClick={() => onProceedToPay(order.id)}
                   className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#0F4C81] text-white rounded-lg font-medium hover:bg-[#0D3F6A] transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
@@ -541,10 +551,10 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
                   <CreditCard size={16} />
                   Proceed to Pay
                 </button>
-              )}
+              )} */}
 
-              {/* Re-Send Approval - for pending and rejected orders */}
-              {(status === 'PENDING_APPROVAL' || status === 'REJECTED') && (
+              {/* Re-Send Approval - for rejected orders only */}
+              {status === 'REJECTED' && (
                 <button
                   onClick={() => onReSendApproval(order.id)}
                   className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
@@ -554,8 +564,8 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
                 </button>
               )}
 
-              {/* Edit Order - for pending, rejected, and approved orders */}
-              {(status === 'PENDING_APPROVAL' || status === 'REJECTED' || status === 'APPROVED') && (
+              {/* Edit Order - for rejected orders only */}
+              {status === 'REJECTED' && (
                 <button
                   onClick={() => onEditOrder(order.id)}
                   className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"

@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { apiService } from '../services/api/apiClient';
 import { isAuthenticated } from '../lib/auth';
+import { useCartStore } from './useCartStore';
 
 const WISHLIST_STORAGE_KEY = 'usave_wishlist';
 
@@ -20,14 +21,24 @@ const loadWishlistFromStorage = () => {
   return [];
 };
 
-// Save wishlist to localStorage
+// Debounced save to localStorage to avoid blocking
+let saveTimeout = null;
 const saveWishlistToStorage = (items) => {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
-  } catch (err) {
-    console.error('Error saving wishlist to localStorage:', err);
+  
+  // Clear any pending saves
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
   }
+  
+  // Debounce the save by 100ms
+  saveTimeout = setTimeout(() => {
+    try {
+      localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
+    } catch (err) {
+      console.error('Error saving wishlist to localStorage:', err);
+    }
+  }, 100);
 };
 
 export const useWishlistStore = create((set, get) => {
@@ -44,19 +55,19 @@ export const useWishlistStore = create((set, get) => {
 
   // Load wishlist from API (for authenticated users) or localStorage
   loadWishlist: async (forceReload = false) => {
-    const { isInitializing, hasLoadedWishlist } = get();
+    const { isInitializing, hasLoadedWishlist, wishlistItems } = get();
     
     // Prevent multiple simultaneous loads
     if (isInitializing && !forceReload) {
-      return { items: get().wishlistItems };
+      return { items: wishlistItems };
     }
 
     // If already loaded and not forcing reload, just return current state
     if (hasLoadedWishlist && !forceReload) {
-      return { items: get().wishlistItems };
+      return { items: wishlistItems };
     }
 
-    set({ isInitializing: true, isLoading: false, error: null });
+    set({ isInitializing: true, error: null });
 
     try {
       let loadedItems = [];
@@ -69,13 +80,21 @@ export const useWishlistStore = create((set, get) => {
         // If no items in state, load from localStorage
         loadedItems = loadWishlistFromStorage();
         // Update state immediately with localStorage data
-        set({ wishlistItems: loadedItems });
+        set({ wishlistItems: loadedItems, isLoading: false });
+      }
+
+      // If authenticated and we need to sync, show loading state
+      if (isAuthenticated() && forceReload) {
+        set({ isLoading: true });
       }
 
       // If authenticated, sync from API in the background (non-blocking)
       if (isAuthenticated()) {
         const syncWithAPI = async () => {
           try {
+            if (forceReload) {
+              set({ isLoading: true });
+            }
             const response = await apiService.wishlist.get();
             if (response.success && response.data?.items) {
               const apiItems = response.data.items;
@@ -94,14 +113,20 @@ export const useWishlistStore = create((set, get) => {
           } catch (err) {
             // API sync failed silently - localStorage is primary source
             console.debug('[Wishlist] API sync failed, using localStorage data:', err.message);
+          } finally {
+            set({ isLoading: false });
           }
         };
 
-        // Sync in background without blocking
-        if (typeof window !== 'undefined' && window.requestIdleCallback) {
-          window.requestIdleCallback(syncWithAPI, { timeout: 2000 });
+        // Sync in background without blocking (only if forceReload, otherwise delay more)
+        if (forceReload) {
+          await syncWithAPI();
         } else {
-          setTimeout(syncWithAPI, 100);
+          if (typeof window !== 'undefined' && window.requestIdleCallback) {
+            window.requestIdleCallback(syncWithAPI, { timeout: 2000 });
+          } else {
+            setTimeout(syncWithAPI, 100);
+          }
         }
       }
 
@@ -123,159 +148,138 @@ export const useWishlistStore = create((set, get) => {
     }
   },
 
-  // Add to wishlist
+  // Add to wishlist with optimistic updates
   addToWishlist: async (productOrId) => {
-    set({ isLoading: true, error: null });
+    // Determine product ID and product data
+    let productId;
+    let productData;
+    
+    if (typeof productOrId === 'object' && productOrId !== null) {
+      productId = productOrId.id || productOrId.productId;
+      productData = productOrId;
+    } else {
+      productId = productOrId;
+      productData = null;
+    }
 
-    try {
-      // Determine product ID and product data
-      let productId;
-      let productData;
-      
-      if (typeof productOrId === 'object' && productOrId !== null) {
-        productId = productOrId.id || productOrId.productId;
-        productData = productOrId;
-      } else {
-        productId = productOrId;
-        productData = null;
-      }
+    if (!productId) {
+      return { success: false, error: 'Product ID is required' };
+    }
 
-      if (!productId) {
-        throw new Error('Product ID is required');
-      }
+    const { wishlistItems } = get();
 
-      const { wishlistItems } = get();
+    // Normalize productId to string for consistent comparison
+    const pid = String(productId);
+    
+    // Check if already in wishlist
+    if (wishlistItems.some(item => 
+      String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
+    )) {
+      return { success: true, alreadyInWishlist: true };
+    }
 
-      // Normalize productId to string for consistent comparison
-      const pid = String(productId);
-      
-      // Check if already in wishlist
-      if (wishlistItems.some(item => 
-        String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
-      )) {
-        set({ isLoading: false });
-        return { success: true, alreadyInWishlist: true };
-      }
-
-      // Add to local state immediately with complete product data
-      // Generate unique ID using timestamp + random number to avoid duplicates
-      const uniqueId = `wishlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${productId}`;
-      const newItem = {
-        id: uniqueId,
-        productId: String(productId), // Ensure consistent string type
-        ...(productData && {
-          product: {
-            id: String(productData.id || productId),
-            productId: String(productData.productId || productId),
-            title: productData.title || productData.name || '',
-            name: productData.name || productData.title || '',
-            slug: productData.slug || '',
-            image: productData.image || productData.images?.[0] || '',
-            images: Array.isArray(productData.images) ? productData.images : (productData.image ? [productData.image] : []),
-            description: productData.description || '',
-            originalPrice: typeof productData.originalPrice === 'number' ? productData.originalPrice : (productData.originalPrice || productData.price || productData.regularPrice || 0),
-            discountedPrice: typeof productData.discountedPrice === 'number' ? productData.discountedPrice : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || 0),
-            price: typeof productData.price === 'number' ? productData.price : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || 0),
-            regularPrice: typeof productData.regularPrice === 'number' ? productData.regularPrice : (productData.regularPrice || productData.originalPrice || productData.price || 0),
-            salePrice: typeof productData.salePrice === 'number' ? productData.salePrice : (productData.salePrice || productData.discountedPrice || 0),
-            stockQuantity: typeof productData.stockQuantity === 'number' ? productData.stockQuantity : (productData.stockQuantity ?? productData.stock ?? 0),
-            stock: typeof productData.stock === 'number' ? productData.stock : (productData.stock ?? productData.stockQuantity ?? 0),
-            inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
-            category: productData.category || productData.categoryId || '',
-            categoryId: productData.categoryId || productData.category || '',
-            tags: Array.isArray(productData.tags) ? productData.tags : [],
-            rating: typeof productData.rating === 'number' ? productData.rating : (productData.rating || 0),
-            reviews: typeof productData.reviews === 'number' ? productData.reviews : (productData.reviews || productData.reviewCount || 0),
-            reviewCount: typeof productData.reviewCount === 'number' ? productData.reviewCount : (productData.reviewCount || productData.reviews || 0),
-            ...productData, // Preserve any other fields
-          },
-          // Also store commonly used fields at root level
+    // OPTIMISTIC UPDATE: Add to local state immediately (don't wait for API)
+    const uniqueId = `wishlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${productId}`;
+    const newItem = {
+      id: uniqueId,
+      productId: String(productId),
+      ...(productData && {
+        product: {
+          id: String(productData.id || productId),
+          productId: String(productData.productId || productId),
           title: productData.title || productData.name || '',
           name: productData.name || productData.title || '',
+          slug: productData.slug || '',
           image: productData.image || productData.images?.[0] || '',
-          discountedPrice: typeof productData.discountedPrice === 'number' ? productData.discountedPrice : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || 0),
+          images: Array.isArray(productData.images) ? productData.images : (productData.image ? [productData.image] : []),
+          description: productData.description || '',
           originalPrice: typeof productData.originalPrice === 'number' ? productData.originalPrice : (productData.originalPrice || productData.price || productData.regularPrice || 0),
+          discountedPrice: typeof productData.discountedPrice === 'number' ? productData.discountedPrice : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || 0),
           price: typeof productData.price === 'number' ? productData.price : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || 0),
-        }),
-      };
+          regularPrice: typeof productData.regularPrice === 'number' ? productData.regularPrice : (productData.regularPrice || productData.originalPrice || productData.price || 0),
+          salePrice: typeof productData.salePrice === 'number' ? productData.salePrice : (productData.salePrice || productData.discountedPrice || 0),
+          stockQuantity: typeof productData.stockQuantity === 'number' ? productData.stockQuantity : (productData.stockQuantity ?? productData.stock ?? 0),
+          stock: typeof productData.stock === 'number' ? productData.stock : (productData.stock ?? productData.stockQuantity ?? 0),
+          inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
+          category: productData.category || productData.categoryId || '',
+          categoryId: productData.categoryId || productData.category || '',
+          tags: Array.isArray(productData.tags) ? productData.tags : [],
+          rating: typeof productData.rating === 'number' ? productData.rating : (productData.rating || 0),
+          reviews: typeof productData.reviews === 'number' ? productData.reviews : (productData.reviews || productData.reviewCount || 0),
+          reviewCount: typeof productData.reviewCount === 'number' ? productData.reviewCount : (productData.reviewCount || productData.reviews || 0),
+          ...productData,
+        },
+        title: productData.title || productData.name || '',
+        name: productData.name || productData.title || '',
+        image: productData.image || productData.images?.[0] || '',
+        discountedPrice: typeof productData.discountedPrice === 'number' ? productData.discountedPrice : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || 0),
+        originalPrice: typeof productData.originalPrice === 'number' ? productData.originalPrice : (productData.originalPrice || productData.price || productData.regularPrice || 0),
+        price: typeof productData.price === 'number' ? productData.price : (productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || 0),
+      }),
+    };
 
-      const newItems = [...wishlistItems, newItem];
-      set({ wishlistItems: newItems, isLoading: false });
-      saveWishlistToStorage(newItems);
+    const newItems = [...wishlistItems, newItem];
+    
+    // Update state immediately (optimistic update)
+    set({ wishlistItems: newItems, isLoading: false });
+    saveWishlistToStorage(newItems);
 
-      // Try to sync with API if authenticated
-      if (isAuthenticated()) {
-        try {
-          const response = await apiService.wishlist.addItem(productId);
-          if (response.success) {
-            // Reload from API to get server-side updates
-            await get().loadWishlist();
-            return { success: true };
-          }
-        } catch (err) {
-          // API failed, but localStorage is updated
-          console.log('API add to wishlist unavailable, saved to localStorage');
-        }
+    // Remove from cart if it exists there (mutual exclusivity)
+    try {
+      const cartStore = useCartStore.getState();
+      const isInCart = cartStore.isInCart(pid);
+      if (isInCart) {
+        // Remove from cart (don't await - let it run in background)
+        cartStore.removeFromCart(pid).catch((err) => {
+          console.debug('[Wishlist] Failed to remove from cart:', err.message);
+        });
       }
-
-      return { success: true };
     } catch (err) {
-      const errorMessage = err.message || 'Failed to add item to wishlist';
-      set({ 
-        error: errorMessage,
-        isLoading: false 
-      });
-      return { success: false, error: errorMessage };
+      // Silently fail if cart store is not available
+      console.debug('[Wishlist] Could not check/remove from cart:', err.message);
     }
+
+    // Sync with API in background (non-blocking)
+    if (isAuthenticated()) {
+      // Don't await - let it run in background
+      apiService.wishlist.addItem(productId).catch((err) => {
+        // If API fails, keep the item in localStorage
+        console.debug('API add to wishlist failed, kept in localStorage:', err.message);
+      });
+    }
+
+    return { success: true };
   },
 
-  // Remove from wishlist
+  // Remove from wishlist with optimistic updates
   removeFromWishlist: async (productId) => {
-    set({ isLoading: true, error: null });
+    const { wishlistItems } = get();
+    
+    // Normalize productId to string for consistent comparison
+    const pid = String(productId);
+    
+    // OPTIMISTIC UPDATE: Remove from local state immediately
+    const newItems = wishlistItems.filter(
+      item => !(String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid)
+    );
+    
+    // Update state immediately (optimistic update)
+    set({ wishlistItems: newItems, isLoading: false });
+    saveWishlistToStorage(newItems);
 
-    try {
-      const { wishlistItems } = get();
-      
-      // Normalize productId to string for consistent comparison
-      const pid = String(productId);
-      
-      // Remove from local state immediately
-      const newItems = wishlistItems.filter(
-        item => !(String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid)
-      );
-      
-      set({ wishlistItems: newItems, isLoading: false });
-      saveWishlistToStorage(newItems);
-
-      // Try to sync with API if authenticated
-      if (isAuthenticated()) {
-        try {
-          const response = await apiService.wishlist.removeItem(productId);
-          if (response.success) {
-            // Reload from API
-            await get().loadWishlist();
-            return { success: true };
-          }
-        } catch (err) {
-          // Check if error is about item not found
-          const errorMessage = err.response?.data?.error || err.message || '';
-          if (errorMessage.includes('not found') || errorMessage.includes('Wishlist item not found')) {
-            // Item was only in localStorage, removal successful
-            return { success: true };
-          }
-          console.log('API remove from wishlist unavailable, removed from localStorage');
+    // Sync with API in background (non-blocking)
+    if (isAuthenticated()) {
+      // Don't await - let it run in background
+      apiService.wishlist.removeItem(productId).catch((err) => {
+        // If API fails, item is already removed from localStorage
+        const errorMessage = err.response?.data?.error || err.message || '';
+        if (!errorMessage.includes('not found') && !errorMessage.includes('Wishlist item not found')) {
+          console.debug('API remove from wishlist failed, already removed from localStorage:', err.message);
         }
-      }
-
-      return { success: true };
-    } catch (err) {
-      const errorMessage = err.message || 'Failed to remove item from wishlist';
-      set({ 
-        error: errorMessage,
-        isLoading: false 
       });
-      return { success: false, error: errorMessage };
     }
+
+    return { success: true };
   },
 
   // Toggle wishlist (add if not present, remove if present)
@@ -373,8 +377,9 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Export a hook that matches the old API for compatibility
+// Export a hook with optimized selectors to prevent unnecessary re-renders
 export const useWishlist = () => {
+  // Use individual selectors to prevent re-renders when unrelated state changes
   const wishlistItems = useWishlistStore((state) => state.wishlistItems);
   const isLoading = useWishlistStore((state) => state.isLoading);
   const isSyncing = useWishlistStore((state) => state.isSyncing);
@@ -400,5 +405,16 @@ export const useWishlist = () => {
     isInWishlist,
     getWishlistCount,
   };
+};
+
+// Optimized hook for just checking if item is in wishlist (prevents unnecessary re-renders)
+export const useIsInWishlist = (productId) => {
+  return useWishlistStore((state) => {
+    if (!productId) return false;
+    const pid = String(productId);
+    return state.wishlistItems.some(
+      item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
+    );
+  });
 };
 

@@ -536,28 +536,14 @@ function SearchPageContent() {
                   </button>
                   <button 
                     type="button"
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       if (e) {
                         e.preventDefault();
                         e.stopPropagation();
                       }
-                      if (product.inStock === false) {
-                        showToast('This product is out of stock', 'error');
-                        return;
-                      }
-                      try {
-                        const productId = product.id || product.productId;
-                        const result = await addToCart(productId, 1);
-                        if (result?.success) {
-                          await loadCart();
-                          openCartDrawer();
-                          showToast('Item added to cart', 'success');
-                        } else {
-                          showToast(result.error || 'Failed to add to cart', 'error');
-                        }
-                      } catch (err) {
-                        console.error('[SearchPage] Add to cart error:', err);
-                        showToast(err.message || 'Failed to add to cart', 'error');
+                      // Open Quick View Modal to configure options before adding to cart
+                      if (product.inStock !== false) {
+                        setQuickViewProduct(product);
                       }
                     }}
                     disabled={!product.inStock}

@@ -11,6 +11,7 @@ import LoggingToggle from "./components/debug/LoggingToggle";
 import ToastContainerWrapper from "./components/shared/ToastContainerWrapper";
 import AlertModalWrapper from "./components/shared/AlertModalWrapper";
 import LoadingOverlayWrapper from "./components/shared/LoadingOverlayWrapper";
+import ApprovalModalWrapper from "./components/shared/ApprovalModalWrapper";
 import AnimationInitializer from "./components/shared/AnimationInitializer";
 
 const geistSans = Geist({
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
           <ToastContainerWrapper />
           <AlertModalWrapper />
           <LoadingOverlayWrapper />
+          <ApprovalModalWrapper />
         </Providers>
       </body>
     </html>

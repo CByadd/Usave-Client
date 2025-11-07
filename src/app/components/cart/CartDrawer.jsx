@@ -18,7 +18,8 @@ const CartDrawer = () => {
     isLoading, 
     updateQuantity, 
     removeFromCart, 
-    loadCart 
+    loadCart,
+    getCartCount
   } = useCart();
   
   // Use UI store for drawer state
@@ -165,7 +166,7 @@ const CartDrawer = () => {
           <div className="flex items-center gap-3">
             <ShoppingBag className="text-[#0B4866]" size={24} />
             <h2 className="text-xl font-semibold text-gray-900">
-              Shopping Cart ({totals.itemCount || 0})
+              Shopping Cart ({getCartCount() || 0})
             </h2>
           </div>
           <button
@@ -265,9 +266,22 @@ const CartDrawer = () => {
                       {item.title}
                     </Link>
                     
-                    <div className="mt-1 text-sm text-gray-500">
-                      {item.color && <span>{item.color}</span>}
-                      {item.material && <span> • {item.material}</span>}
+                    <div className="mt-1 text-sm text-gray-500 space-y-1">
+                      {item.color && (
+                        <div>Color: <span className="font-medium">{item.color}</span></div>
+                      )}
+                      {item.size && (
+                        <div>Size: <span className="font-medium">{item.size}</span></div>
+                      )}
+                      {(item.includeInstallation || item.options?.includeInstallation) && (
+                        <div className="flex items-center gap-1 text-[#0B4866] bg-blue-50 px-2 py-0.5 rounded mt-1 inline-flex text-xs">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="font-medium">Installation</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-2 space-y-1">
@@ -399,13 +413,11 @@ const CartDrawer = () => {
                 Proceed to Checkout
               </button>
               
-              <Link
-                href="/cart"
+              <button
                 onClick={(e) => {
-                  if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Close drawer first
                   if (typeof closeCartDrawer === 'function') {
                     closeCartDrawer();
                   }
@@ -414,11 +426,13 @@ const CartDrawer = () => {
                       document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
                     } catch {}
                   }
+                  // Navigate to cart page
+                  router.push('/cart');
                 }}
                 className="block w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium text-center hover:bg-gray-50 transition-colors"
               >
                 View Cart
-              </Link>
+              </button>
             </div>
           </div>
           )}

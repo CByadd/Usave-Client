@@ -74,7 +74,7 @@ export default function LandingPage() {
   return (
     <div className='flex flex-col items-center justify-center mx-auto gap-16 md:gap-20'>
       {/* Hero section - visible immediately, no animation */}
-      <section className="md:w-[90dvw] w-full overflow-hidden">
+      <section className="md:w-[95dvw] w-full overflow-hidden">
         <HeroSection/>
       </section>
       
@@ -127,9 +127,9 @@ export default function LandingPage() {
         </ProductCarousel>
       </AnimatedSection>
 
-      <AnimatedSection className='w-full' delay={0.8}>
+      {/* <AnimatedSection className='w-full' delay={0.8}>
         <InspirationSection/>
-      </AnimatedSection>
+      </AnimatedSection> */}
 
       <AnimatedSection className="w-[99dvw] relative overflow-hidden" delay={0.9}>
         <div className="relative w-full">

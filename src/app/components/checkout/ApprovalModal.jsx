@@ -125,21 +125,29 @@ export default function ApprovalModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          key="backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        <div
+          className="fixed inset-0 z-[10000] overflow-y-auto"
+          onClick={handleClose}
         >
-          <motion.div
-            key="modal"
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', stiffness: 250, damping: 20 }}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative"
-          >
+          <div className="min-h-screen px-4 flex items-center justify-center">
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              aria-hidden="true"
+            />
+            
+            <motion.div
+              key="modal"
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 250, damping: 20 }}
+              className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
             <button
               onClick={handleClose}
               className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 cursor-pointer transition"
@@ -202,14 +210,14 @@ export default function ApprovalModal({
                   </div>
 
                   <div className="flex justify-between items-center mt-6">
-                    <button
+                    {/* <button
                       type="button"
                       onClick={onContinueWithoutApproval}
                       disabled={isSubmitting}
                       className="text-sm font-medium text-[#0B4866] hover:cursor-pointer hover:underline transition disabled:opacity-50"
                     >
                       Continue without approval
-                    </button>
+                    </button> */}
                     <div className="space-x-3">
                       <button
                         type="button"
@@ -231,8 +239,9 @@ export default function ApprovalModal({
                 </form>
               </>
             )}
-          </motion.div>
-        </motion.div>
+            </motion.div>
+          </div>
+        </div>
       )}
     </AnimatePresence>
   );

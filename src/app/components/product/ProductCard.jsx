@@ -103,7 +103,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     }
   };
 
-  const handleAddToCart = async (e) => {
+  const handleAddToCart = (e) => {
     console.log('[ProductCard] handleAddToCart clicked - item:', productItem?.id, productItem?.title);
 
     if (!e) return;
@@ -111,26 +111,14 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Check stock before adding to cart
+    // Check stock before opening quick view
     if (!hasStock) {
       console.warn('[ProductCard] Cannot add out of stock item to cart');
       return;
     }
     
-    try {
-      const result = await addToCart(productItem, 1);
-      console.log('[ProductCard] handleAddToCart - addToCart result:', result);
-
-      if (result?.success) {
-        // Open cart drawer
-        openCartDrawer();
-        console.log('[ProductCard] handleAddToCart - openCartDrawer called');
-      } else if (result?.error) {
-        console.error('[ProductCard] Add to cart error:', result.error);
-      }
-    } catch (error) {
-      console.error('[ProductCard] Add to cart error:', error);
-    }
+    // Open Quick View Modal to configure options before adding to cart
+    setShowQuickView(true);
   };
 
   // Determine classes based on variant

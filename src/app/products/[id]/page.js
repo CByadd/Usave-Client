@@ -128,7 +128,11 @@ export default function ProductDetailPage() {
       return;
     }
     
-    const result = await addToCart(product, quantity);
+    const result = await addToCart(product, quantity, {
+      color: selectedColor,
+      size: selectedSize,
+      includeInstallation,
+    });
     
     if (result?.success) {
       await loadCart();

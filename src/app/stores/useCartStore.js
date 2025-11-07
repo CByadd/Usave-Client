@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { apiService } from '../services/api/apiClient';
 import { isAuthenticated } from '../lib/auth';
+import { useWishlistStore } from './useWishlistStore';
 
 const CART_STORAGE_KEY = 'usave_cart';
 
@@ -97,48 +98,56 @@ const loadCartFromStorage = () => {
   return [];
 };
 
-// Save cart to localStorage with retry mechanism
+// Debounced save to localStorage to avoid blocking
+let saveCartTimeout = null;
 const saveCartToStorage = (items, retries = 3) => {
   if (typeof window === 'undefined') return;
   
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const serialized = JSON.stringify(items);
-      localStorage.setItem(CART_STORAGE_KEY, serialized);
-      
-      // Verify the save was successful
-      const verification = localStorage.getItem(CART_STORAGE_KEY);
-      if (verification === serialized) {
-        console.log('[Cart] Successfully saved to localStorage');
-        return true;
-      } else {
-        throw new Error('Save verification failed');
-      }
-  } catch (err) {
-      console.error(`[Cart] Error saving cart to localStorage (attempt ${attempt}/${retries}):`, err);
-      
-      // If quota exceeded, try to clear old data
-      if (err.name === 'QuotaExceededError' || err.code === 22) {
-        console.warn('[Cart] localStorage quota exceeded, attempting to clear old data');
-        try {
-          // Clear old cart data and try once more
-          localStorage.removeItem(CART_STORAGE_KEY);
-          if (attempt < retries) {
-            continue;
-          }
-        } catch (clearErr) {
-          console.error('[Cart] Failed to clear localStorage:', clearErr);
-        }
-      }
-      
-      if (attempt === retries) {
-        console.error('[Cart] Failed to save cart to localStorage after all retries');
-        return false;
-      }
-    }
+  // Clear any pending saves
+  if (saveCartTimeout) {
+    clearTimeout(saveCartTimeout);
   }
   
-  return false;
+  // Debounce the save by 150ms to batch rapid changes
+  saveCartTimeout = setTimeout(() => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const serialized = JSON.stringify(items);
+        localStorage.setItem(CART_STORAGE_KEY, serialized);
+        
+        // Verify the save was successful
+        const verification = localStorage.getItem(CART_STORAGE_KEY);
+        if (verification === serialized) {
+          return true;
+        } else {
+          throw new Error('Save verification failed');
+        }
+      } catch (err) {
+        console.error(`[Cart] Error saving cart to localStorage (attempt ${attempt}/${retries}):`, err);
+        
+        // If quota exceeded, try to clear old data
+        if (err.name === 'QuotaExceededError' || err.code === 22) {
+          console.warn('[Cart] localStorage quota exceeded, attempting to clear old data');
+          try {
+            localStorage.removeItem(CART_STORAGE_KEY);
+            if (attempt < retries) {
+              continue;
+            }
+          } catch (clearErr) {
+            console.error('[Cart] Failed to clear localStorage:', clearErr);
+          }
+        }
+        
+        if (attempt === retries) {
+          console.error('[Cart] Failed to save cart to localStorage after all retries');
+          return false;
+        }
+      }
+    }
+    return false;
+  }, 150);
+  
+  return true; // Return immediately, save happens in timeout
 };
 
 // Save cart to database as single object (for authenticated users)
@@ -334,7 +343,8 @@ const storeCreator = (set, get) => {
   },
 
   // Add to cart - works for both authenticated and unauthenticated users
-  addToCart: async (productOrId, quantity = 1) => {
+  // Supports options (color, size) for product variants
+  addToCart: async (productOrId, quantity = 1, options = {}) => {
     set({ isLoading: true, error: null });
 
     try {
@@ -356,27 +366,41 @@ const storeCreator = (set, get) => {
       
       // Normalize productId to string for consistent comparison
       const pid = String(productId);
+      
+      // Extract and normalize options (color, size, etc.)
+      const { color, size, ...otherOptions } = options;
+      const normalizedColor = color ? (typeof color === 'string' ? color : (color.value || color.name || JSON.stringify(color))) : null;
+      const normalizedSize = size ? (typeof size === 'string' ? size : (size.value || size.label || JSON.stringify(size))) : null;
 
       // Check stock availability if product data is available
       if (productData) {
         const stockQuantity = productData.stockQuantity ?? productData.stock ?? 0;
         const inStock = productData.inStock !== false && productData.inStock !== null;
-        const hasStock = inStock && stockQuantity > 0;
+        const hasStock = inStock && (stockQuantity > 0 || stockQuantity === 0); // Allow 0 stock if inStock is true
         
-        if (!hasStock) {
+        if (!inStock || (stockQuantity > 0 && inStock === false)) {
           set({ isLoading: false });
           return { success: false, error: 'This product is out of stock' };
         }
 
-        // Check if adding quantity would exceed available stock
+        // Check if adding quantity would exceed available stock (only if stock is tracked)
         const { cartItems } = get();
-        const existingItem = cartItems.find(
-          item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
-        );
+        const existingItem = cartItems.find(item => {
+          const sameProduct = String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid;
+          if (!sameProduct) return false;
+          // Check if options match
+          const itemColor = item.color || item.options?.color;
+          const itemSize = item.size || item.options?.size;
+          const normalizedItemColor = itemColor ? (typeof itemColor === 'string' ? itemColor : (itemColor.value || itemColor.name || itemColor)) : null;
+          const normalizedItemSize = itemSize ? (typeof itemSize === 'string' ? itemSize : (itemSize.value || itemSize.label || itemSize)) : null;
+          const sameColor = (!normalizedColor && !normalizedItemColor) || (normalizedColor === normalizedItemColor);
+          const sameSize = (!normalizedSize && !normalizedItemSize) || (normalizedSize === normalizedItemSize);
+          return sameColor && sameSize;
+        });
         const currentQuantity = existingItem ? existingItem.quantity : 0;
         const newQuantity = currentQuantity + quantity;
         
-        if (newQuantity > stockQuantity) {
+        if (stockQuantity > 0 && newQuantity > stockQuantity) {
           set({ isLoading: false });
           return { 
             success: false, 
@@ -385,161 +409,111 @@ const storeCreator = (set, get) => {
         }
       }
 
+      // OPTIMISTIC UPDATE: Update local state immediately
       const { cartItems } = get();
-      const existingItem = cartItems.find(
-        item => String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid
-      );
+      const existingItemIndex = cartItems.findIndex(item => {
+        const sameProduct = String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid;
+        if (!sameProduct) return false;
+        // Check if options match
+        const itemColor = item.color || item.options?.color;
+        const itemSize = item.size || item.options?.size;
+        const normalizedItemColor = itemColor ? (typeof itemColor === 'string' ? itemColor : (itemColor.value || itemColor.name || itemColor)) : null;
+        const normalizedItemSize = itemSize ? (typeof itemSize === 'string' ? itemSize : (itemSize.value || itemSize.label || itemSize)) : null;
+        const sameColor = (!normalizedColor && !normalizedItemColor) || (normalizedColor === normalizedItemColor);
+        const sameSize = (!normalizedSize && !normalizedItemSize) || (normalizedSize === normalizedItemSize);
+        return sameColor && sameSize;
+      });
 
       let newItems;
-      if (existingItem) {
-        // Update quantity of existing item - ensure quantity is a valid number
+      if (existingItemIndex >= 0) {
+        // Update quantity of existing item with same options
+        const existingItem = cartItems[existingItemIndex];
         const currentQuantity = safeParseNumber(existingItem.quantity, 1);
         const addQuantity = safeParseNumber(quantity, 1);
         const newQuantity = currentQuantity + addQuantity;
         
-        // If product data is provided, ensure we update all product details
-        let updatedItem = { ...existingItem, quantity: newQuantity };
+        const updatedItem = {
+          ...existingItem,
+          quantity: newQuantity,
+          // Update options if provided
+          ...(normalizedColor && { color: normalizedColor }),
+          ...(normalizedSize && { size: normalizedSize }),
+          options: {
+            ...(existingItem.options || {}),
+            ...(normalizedColor && { color: normalizedColor }),
+            ...(normalizedSize && { size: normalizedSize }),
+            ...otherOptions,
+          },
+        };
         
-        if (productData) {
-          // Update product details if provided
-          updatedItem = {
-            ...updatedItem,
-            product: {
-              ...existingItem.product,
-              id: productData.id || existingItem.product?.id || productId,
-              productId: productData.productId || existingItem.product?.productId || productId,
-              title: productData.title || productData.name || existingItem.product?.title || existingItem.title || '',
-              name: productData.name || productData.title || existingItem.product?.name || existingItem.title || '',
-              slug: productData.slug || existingItem.product?.slug || '',
-              image: productData.image || productData.images?.[0] || existingItem.product?.image || existingItem.image || '',
-              images: Array.isArray(productData.images) ? productData.images : (existingItem.product?.images || []),
-              description: productData.description || existingItem.product?.description || '',
-              originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice || existingItem.product?.originalPrice || existingItem.originalPrice),
-              discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || existingItem.product?.discountedPrice || existingItem.discountedPrice),
-              price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || existingItem.product?.price || existingItem.price),
-              regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price || existingItem.product?.regularPrice || existingItem.originalPrice),
-              salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice || existingItem.product?.salePrice || existingItem.discountedPrice),
-              stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? existingItem.product?.stockQuantity ?? existingItem.stockQuantity ?? 0),
-              stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? existingItem.product?.stock ?? existingItem.stockQuantity ?? 0),
-              inStock: productData.inStock !== undefined ? (productData.inStock !== false && productData.inStock !== null) : (existingItem.product?.inStock ?? existingItem.inStock ?? true),
-              category: productData.category || productData.categoryId || existingItem.product?.category || existingItem.category || '',
-              categoryId: productData.categoryId || productData.category || existingItem.product?.categoryId || existingItem.category || '',
-              tags: Array.isArray(productData.tags) ? productData.tags : (existingItem.product?.tags || []),
-              rating: safeParseNumber(productData.rating ?? existingItem.product?.rating),
-              reviews: safeParseNumber(productData.reviews ?? existingItem.product?.reviews),
-              ...productData,
-            },
-            // Update root level fields
-            title: productData.title || productData.name || existingItem.title || '',
-            name: productData.name || productData.title || existingItem.title || '',
-            image: productData.image || productData.images?.[0] || existingItem.image || '',
-            price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice || existingItem.price || existingItem.product?.price),
-            discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || existingItem.discountedPrice || existingItem.product?.discountedPrice),
-            originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice || existingItem.originalPrice || existingItem.product?.originalPrice),
-            regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price || existingItem.originalPrice || existingItem.product?.regularPrice),
-            salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice || existingItem.discountedPrice || existingItem.product?.salePrice),
-            stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? existingItem.stockQuantity ?? existingItem.product?.stockQuantity ?? 0),
-            stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? existingItem.stockQuantity ?? existingItem.product?.stock ?? 0),
-            inStock: productData.inStock !== undefined ? (productData.inStock !== false && productData.inStock !== null) : (existingItem.inStock ?? true),
-          };
-        } else {
-          // Just ensure price fields are valid numbers
-          updatedItem = {
-            ...updatedItem,
-            price: safeParseNumber(existingItem.price || existingItem.product?.price),
-            discountedPrice: safeParseNumber(existingItem.discountedPrice || existingItem.product?.discountedPrice),
-            originalPrice: safeParseNumber(existingItem.originalPrice || existingItem.product?.originalPrice),
-          };
-        }
-        
-        newItems = cartItems.map(item =>
-          (String(item.productId) === pid || String(item.id) === pid || String(item.product?.id) === pid)
-            ? updatedItem
-            : item
+        newItems = cartItems.map((item, index) =>
+          index === existingItemIndex ? updatedItem : item
         );
       } else {
-        // Add new item to cart with complete product details
-        const newItem = productData
-          ? {
-              id: pid,
-              productId: pid,
-              // Store complete product object with all details properly mapped
-              product: {
-                id: String(productData.id || pid),
-                productId: String(productData.productId || pid),
-                title: productData.title || productData.name || '',
-                name: productData.name || productData.title || '',
-                slug: productData.slug || '',
-                image: productData.image || productData.images?.[0] || '',
-                images: Array.isArray(productData.images) ? productData.images : (productData.image ? [productData.image] : []),
-                description: productData.description || '',
-                originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice),
-                discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price),
-                price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice),
-                regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price),
-                salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice),
-                stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? 0),
-                stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? 0),
-                inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
-                category: productData.category || productData.categoryId || '',
-                categoryId: productData.categoryId || productData.category || '',
-                tags: Array.isArray(productData.tags) ? productData.tags : [],
-                rating: safeParseNumber(productData.rating),
-                reviews: safeParseNumber(productData.reviews),
-                // Preserve any other product fields
-                ...productData
-              },
-              // Also store commonly used fields at root level for easy access
-              title: productData.title || productData.name || '',
-              name: productData.name || productData.title || '',
-              image: productData.image || productData.images?.[0] || '',
-              quantity: safeParseNumber(quantity, 1),
-              price: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price || productData.regularPrice),
-              discountedPrice: safeParseNumber(productData.discountedPrice || productData.salePrice || productData.originalPrice || productData.price),
-              originalPrice: safeParseNumber(productData.originalPrice || productData.price || productData.regularPrice),
-              regularPrice: safeParseNumber(productData.regularPrice || productData.originalPrice || productData.price),
-              salePrice: safeParseNumber(productData.salePrice || productData.discountedPrice),
-              stockQuantity: safeParseNumber(productData.stockQuantity ?? productData.stock ?? 0),
-              stock: safeParseNumber(productData.stock ?? productData.stockQuantity ?? 0),
-              inStock: productData.inStock !== false && productData.inStock !== null && productData.inStock !== undefined,
-            }
-          : {
-              id: pid,
-              productId: pid,
-              quantity: safeParseNumber(quantity, 1),
-              price: 0,
-              discountedPrice: 0,
-              originalPrice: 0,
-            };
+        // Add new item to cart with options
+        const uniqueId = `cart_${Date.now()}_${pid}_${Math.random().toString(36).substr(2, 9)}`;
+        const newItem = {
+          id: uniqueId,
+          productId: pid,
+          quantity: safeParseNumber(quantity, 1),
+          // Store options at root level for easy access
+          ...(normalizedColor && { color: normalizedColor }),
+          ...(normalizedSize && { size: normalizedSize }),
+          // Also store in options object for structured access
+          options: {
+            ...(normalizedColor && { color: normalizedColor }),
+            ...(normalizedSize && { size: normalizedSize }),
+            ...otherOptions,
+          },
+          ...(productData && {
+            product: productData,
+            title: productData.title || productData.name || '',
+            image: productData.image || productData.images?.[0] || '',
+            discountedPrice: safeParseNumber(productData.discountedPrice || productData.price),
+            originalPrice: safeParseNumber(productData.originalPrice || productData.price),
+            price: safeParseNumber(productData.discountedPrice || productData.originalPrice || productData.price),
+          }),
+        };
         newItems = [...cartItems, newItem];
       }
 
       const newTotals = calculateTotals(newItems);
       
-      // Save to localStorage FIRST (before state update for reliability)
-      // localStorage is the primary storage, API is just for syncing
-      const saved = saveCartToStorage(newItems);
-      if (!saved) {
-        console.warn('[Cart] Failed to save to localStorage, but continuing with state update');
-      }
-      
+      // OPTIMISTIC UPDATE: Update state immediately (don't wait for localStorage/API)
       set({ 
         cartItems: newItems, 
         totals: newTotals,
         isLoading: false 
       });
       
-      // If authenticated, try to sync to database (async, non-blocking, don't fail if it doesn't work)
+      // Save to localStorage in background (debounced)
+      saveCartToStorage(newItems);
+      
+      // Remove from wishlist if it exists there (mutual exclusivity)
+      try {
+        const wishlistStore = useWishlistStore.getState();
+        const isInWishlist = wishlistStore.isInWishlist(pid);
+        if (isInWishlist) {
+          // Remove from wishlist (don't await - let it run in background)
+          wishlistStore.removeFromWishlist(pid).catch((err) => {
+            console.debug('[Cart] Failed to remove from wishlist:', err.message);
+          });
+        }
+      } catch (err) {
+        // Silently fail if wishlist store is not available
+        console.debug('[Cart] Could not check/remove from wishlist:', err.message);
+      }
+      
+      // If authenticated, try to sync to database in background (non-blocking)
       if (isAuthenticated()) {
-        // Use requestIdleCallback if available, otherwise setTimeout
+        // Don't await - let it run in background
         const saveToDb = async () => {
           try {
-          await get().saveCart();
+            await get().saveCart();
           } catch (err) {
             // Silently fail - localStorage is the primary storage
-            // Only log if it's a meaningful error
             if (err.message && !err.message.includes('Network') && !err.message.includes('timeout')) {
-              console.warn('[Cart] Failed to sync to database (localStorage saved):', err.message);
+              console.debug('[Cart] Failed to sync to database (localStorage saved):', err.message);
             }
           }
         };
@@ -547,7 +521,7 @@ const storeCreator = (set, get) => {
         if (typeof window !== 'undefined' && window.requestIdleCallback) {
           window.requestIdleCallback(saveToDb, { timeout: 1000 });
         } else {
-          setTimeout(saveToDb, 300);
+          setTimeout(saveToDb, 200);
         }
       }
 
@@ -783,10 +757,16 @@ const storeCreator = (set, get) => {
     return item ? item.quantity : 0;
   },
 
-  // Get cart count
+  // Get cart count (number of unique products, not total quantity)
   getCartCount: () => {
+    const { cartItems } = get();
+    return cartItems.length;
+  },
+  
+  // Get total quantity (sum of all item quantities)
+  getTotalQuantity: () => {
     const { totals, cartItems } = get();
-    return totals.itemCount || cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    return totals.itemCount || cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   },
   
   // Force save to localStorage (manual trigger)
@@ -799,24 +779,7 @@ const storeCreator = (set, get) => {
 
 export const useCartStore = create(storeCreator);
 
-// Add subscription to auto-save to localStorage on cart changes
-if (typeof window !== 'undefined') {
-  useCartStore.subscribe(
-    (state) => state.cartItems,
-    (cartItems) => {
-      // Only save if cart has actually changed (not during initial load)
-      const currentState = useCartStore.getState();
-      if (currentState.hasLoadedCart && cartItems) {
-        try {
-          saveCartToStorage(cartItems);
-        } catch (err) {
-          console.error('[Cart] Auto-save to localStorage failed:', err);
-        }
-      }
-    },
-    { equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) }
-  );
-}
+// Removed auto-save subscription - we now save explicitly in actions to avoid double-saving
 
 // Client-side initialization - load from localStorage immediately, sync with API in background
 if (typeof window !== 'undefined') {
@@ -852,6 +815,7 @@ export const useCart = () => {
   const isInCart = useCartStore((state) => state.isInCart);
   const getItemQuantity = useCartStore((state) => state.getItemQuantity);
   const getCartCount = useCartStore((state) => state.getCartCount);
+  const getTotalQuantity = useCartStore((state) => state.getTotalQuantity);
 
   return {
     cartItems,
@@ -867,5 +831,6 @@ export const useCart = () => {
     isInCart,
     getItemQuantity,
     getCartCount,
+    getTotalQuantity,
   };
 };

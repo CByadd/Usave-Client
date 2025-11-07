@@ -5,7 +5,7 @@ import { HERO_IMG } from '../../lib/constants';
 
 const Hero = () => {
   return (
-    <section className="relative w-full h-[60dvh] md:h-[95dvh] flex items-center justify-center text-center  mt-0 md:mt-16">
+    <section className="relative w-full h-[60dvh] md:h-[95dvh] flex items-center justify-center text-center  mt-0 md:mt-10">
       {/* Background Image */}
       <div className="absolute inset-0 -z-10  rounded-none md:rounded-2xl overflow-hidden">
         <Image

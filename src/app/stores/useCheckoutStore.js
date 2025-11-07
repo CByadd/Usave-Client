@@ -40,6 +40,8 @@ const saveCheckoutToStorage = (state) => {
     localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify({
       shippingOption: state.shippingOption,
       warranty: state.warranty,
+      deliveryDate: state.deliveryDate,
+      deliveryTime: state.deliveryTime,
       cartExpanded: state.cartExpanded,
       formData: state.formData,
     }));
@@ -54,13 +56,28 @@ export const useCheckoutStore = create((set, get) => {
   
   return {
     // Checkout state
-    shippingOption: initialCheckout.shippingOption || 'delivery-only',
+    shippingOption: initialCheckout.shippingOption || 'delivery',
     warranty: initialCheckout.warranty || '',
+    deliveryDate: initialCheckout.deliveryDate || '',
+    deliveryTime: initialCheckout.deliveryTime || '',
     cartExpanded: initialCheckout.cartExpanded !== undefined ? initialCheckout.cartExpanded : true,
-    formData: initialCheckout.formData || {},
+    formData: initialCheckout.formData || {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      company: '',
+      address1: '',
+      address2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'Australia',
+    },
     errors: {},
     isSubmitting: false,
     showApprovalModal: false,
+    approvalModalData: null,
     showErrorModal: false,
     showSuccessModal: false,
     errorMessage: '',
@@ -76,6 +93,18 @@ export const useCheckoutStore = create((set, get) => {
     setWarranty: (warranty) => {
       set({ warranty });
       saveCheckoutToStorage({ ...get(), warranty });
+    },
+
+    // Set delivery date
+    setDeliveryDate: (date) => {
+      set({ deliveryDate: date });
+      saveCheckoutToStorage({ ...get(), deliveryDate: date });
+    },
+
+    // Set delivery time
+    setDeliveryTime: (time) => {
+      set({ deliveryTime: time });
+      saveCheckoutToStorage({ ...get(), deliveryTime: time });
     },
 
     // Toggle cart expanded
@@ -127,13 +156,13 @@ export const useCheckoutStore = create((set, get) => {
     },
 
     // Show approval modal
-    showApproval: () => {
-      set({ showApprovalModal: true });
+    showApproval: (data = null) => {
+      set({ showApprovalModal: true, approvalModalData: data });
     },
 
     // Hide approval modal
     hideApproval: () => {
-      set({ showApprovalModal: false });
+      set({ showApprovalModal: false, approvalModalData: null });
     },
 
     // Show error modal
@@ -181,11 +210,14 @@ export const useCheckoutStore = create((set, get) => {
 export const useCheckout = () => {
   const shippingOption = useCheckoutStore((state) => state.shippingOption);
   const warranty = useCheckoutStore((state) => state.warranty);
+  const deliveryDate = useCheckoutStore((state) => state.deliveryDate);
+  const deliveryTime = useCheckoutStore((state) => state.deliveryTime);
   const cartExpanded = useCheckoutStore((state) => state.cartExpanded);
   const formData = useCheckoutStore((state) => state.formData);
   const errors = useCheckoutStore((state) => state.errors);
   const isSubmitting = useCheckoutStore((state) => state.isSubmitting);
   const showApprovalModal = useCheckoutStore((state) => state.showApprovalModal);
+  const approvalModalData = useCheckoutStore((state) => state.approvalModalData);
   const showErrorModal = useCheckoutStore((state) => state.showErrorModal);
   const showSuccessModal = useCheckoutStore((state) => state.showSuccessModal);
   const errorMessage = useCheckoutStore((state) => state.errorMessage);
@@ -193,6 +225,8 @@ export const useCheckout = () => {
 
   const setShippingOption = useCheckoutStore((state) => state.setShippingOption);
   const setWarranty = useCheckoutStore((state) => state.setWarranty);
+  const setDeliveryDate = useCheckoutStore((state) => state.setDeliveryDate);
+  const setDeliveryTime = useCheckoutStore((state) => state.setDeliveryTime);
   const toggleCartExpanded = useCheckoutStore((state) => state.toggleCartExpanded);
   const setCartExpanded = useCheckoutStore((state) => state.setCartExpanded);
   const setFormData = useCheckoutStore((state) => state.setFormData);
@@ -212,17 +246,22 @@ export const useCheckout = () => {
   return {
     shippingOption,
     warranty,
+    deliveryDate,
+    deliveryTime,
     cartExpanded,
     formData,
     errors,
     isSubmitting,
     showApprovalModal,
+    approvalModalData,
     showErrorModal,
     showSuccessModal,
     errorMessage,
     orderId,
     setShippingOption,
     setWarranty,
+    setDeliveryDate,
+    setDeliveryTime,
     toggleCartExpanded,
     setCartExpanded,
     setFormData,

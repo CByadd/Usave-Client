@@ -19,6 +19,11 @@ export const apiEndpoints = {
     me: '/auth/me',
     profile: '/auth/profile',
     refresh: '/auth/refresh',
+    sendRegistrationOTP: '/auth/send-registration-otp',
+    verifyAndRegister: '/auth/verify-and-register',
+    sendPasswordResetOTP: '/auth/send-password-reset-otp',
+    verifyPasswordResetOTP: '/auth/verify-password-reset-otp',
+    resetPassword: '/auth/reset-password',
   },
   products: {
     getAll: '/products',
@@ -103,6 +108,96 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('API: Register error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async sendRegistrationOTP(email) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.sendRegistrationOTP}`,
+          { email },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Send registration OTP error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async verifyAndRegister(userData) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.verifyAndRegister}`,
+          userData,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Verify and register error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async sendPasswordResetOTP(email) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.sendPasswordResetOTP}`,
+          { email },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Send password reset OTP error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async verifyPasswordResetOTP(email, otp) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.verifyPasswordResetOTP}`,
+          { email, otp },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Verify password reset OTP error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async resetPassword(resetToken, newPassword) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.auth.resetPassword}`,
+          { resetToken, newPassword },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Reset password error:', error.response?.data || error.message);
         throw error;
       }
     },

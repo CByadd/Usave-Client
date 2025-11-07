@@ -88,6 +88,12 @@ export const useSearchStore = create((set, get) => {
   // Initialize from localStorage
   const initialSearch = loadSearchFromStorage();
   
+  // Suggestion cache: { query: { data: [...], timestamp: number } }
+  let suggestionCache = {};
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  let debounceTimer = null;
+  let abortController = null;
+  
   return {
     // Search state
     query: initialSearch.query || '',
@@ -96,6 +102,7 @@ export const useSearchStore = create((set, get) => {
     history: initialSearch.history || [],
     suggestions: [],
     isSearching: false,
+    isFetchingSuggestions: false,
     searchResults: [],
     totalResults: 0,
     currentPage: 1,
@@ -165,6 +172,65 @@ export const useSearchStore = create((set, get) => {
       });
     },
 
+    // Fetch suggestions with caching and debouncing
+    fetchSuggestions: async (query) => {
+      const trimmedQuery = query?.trim() || '';
+      
+      if (!trimmedQuery) {
+        set({ suggestions: [], isFetchingSuggestions: false });
+        return;
+      }
+
+      // Check cache first
+      const cached = suggestionCache[trimmedQuery];
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        set({ suggestions: cached.data, isFetchingSuggestions: false });
+        return;
+      }
+
+      // Cancel previous request
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
+
+      // Clear debounce timer
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
+      // Set fetching state
+      set({ isFetchingSuggestions: true });
+
+      // Debounce the API call
+      debounceTimer = setTimeout(async () => {
+        try {
+          const productService = await import('../../services/api/productService');
+          const response = await productService.default.getSearchSuggestions(
+            trimmedQuery,
+            10 // limit
+          );
+          
+          if (response.success && response.data?.suggestions) {
+            const suggestions = response.data.suggestions;
+            // Cache the result
+            suggestionCache[trimmedQuery] = {
+              data: suggestions,
+              timestamp: Date.now(),
+            };
+            set({ suggestions, isFetchingSuggestions: false });
+          } else {
+            set({ suggestions: [], isFetchingSuggestions: false });
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.error('Fetch suggestions error:', err);
+          }
+          set({ suggestions: [], isFetchingSuggestions: false });
+        }
+      }, 200); // 200ms debounce
+    },
+
     // Set search suggestions
     setSuggestions: (suggestions) => {
       set({ suggestions });
@@ -173,6 +239,20 @@ export const useSearchStore = create((set, get) => {
     // Clear suggestions
     clearSuggestions: () => {
       set({ suggestions: [] });
+      // Cancel any pending requests
+      if (abortController) {
+        abortController.abort();
+        abortController = null;
+      }
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+    },
+
+    // Clear suggestion cache
+    clearSuggestionCache: () => {
+      suggestionCache = {};
     },
 
     // Set search results
@@ -368,6 +448,7 @@ export const useSearch = () => {
   const history = useSearchStore((state) => state.history);
   const suggestions = useSearchStore((state) => state.suggestions);
   const isSearching = useSearchStore((state) => state.isSearching);
+  const isFetchingSuggestions = useSearchStore((state) => state.isFetchingSuggestions || false);
   const searchResults = useSearchStore((state) => state.searchResults);
   const totalResults = useSearchStore((state) => state.totalResults);
   const currentPage = useSearchStore((state) => state.currentPage);
@@ -376,6 +457,7 @@ export const useSearch = () => {
   
   const setQuery = useSearchStore((state) => state.setQuery);
   const clearQuery = useSearchStore((state) => state.clearQuery);
+  const fetchSuggestions = useSearchStore((state) => state.fetchSuggestions);
   const setFilters = useSearchStore((state) => state.setFilters);
   const resetFilters = useSearchStore((state) => state.resetFilters);
   const updateFilter = useSearchStore((state) => state.updateFilter);
@@ -384,6 +466,7 @@ export const useSearch = () => {
   const toggleActiveFilter = useSearchStore((state) => state.toggleActiveFilter);
   const setSuggestions = useSearchStore((state) => state.setSuggestions);
   const clearSuggestions = useSearchStore((state) => state.clearSuggestions);
+  const clearSuggestionCache = useSearchStore((state) => state.clearSuggestionCache);
   const setSearchResults = useSearchStore((state) => state.setSearchResults);
   const setSearchResultsWithTotal = useSearchStore((state) => state.setSearchResultsWithTotal);
   const setIsSearching = useSearchStore((state) => state.setIsSearching);
@@ -414,6 +497,7 @@ export const useSearch = () => {
     history,
     suggestions,
     isSearching,
+    isFetchingSuggestions,
     searchResults,
     totalResults,
     currentPage,
@@ -421,6 +505,7 @@ export const useSearch = () => {
     activeFilters,
     setQuery,
     clearQuery,
+    fetchSuggestions,
     setFilters,
     resetFilters,
     updateFilter,
@@ -429,6 +514,7 @@ export const useSearch = () => {
     toggleActiveFilter,
     setSuggestions,
     clearSuggestions,
+    clearSuggestionCache,
     setSearchResults,
     setSearchResultsWithTotal,
     setIsSearching,

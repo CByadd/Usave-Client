@@ -79,8 +79,8 @@ export const fetchCart = async () => {
   return { items: cartItems, totals };
 };
 
-// Add to cart - accepts product object or productId
-export const addToCart = async (productOrId, quantity = 1) => {
+// Add to cart - accepts product object or productId, quantity, and options (color, size)
+export const addToCart = async (productOrId, quantity = 1, options = {}) => {
   // Load current cart
   await fetchCart();
   
@@ -102,21 +102,77 @@ export const addToCart = async (productOrId, quantity = 1) => {
     return { success: false, error: 'Product ID is required' };
   }
 
-  // Check if item already exists in cart
-  const existingItemIndex = cartItems.findIndex(
-    item => item.productId === productId || item.id === productId || 
-            item.product?.id === productId
-  );
+  // Extract and normalize options (color, size, installation, etc.)
+  const { color, size, includeInstallation, ...otherOptions } = options;
+  
+  // Normalize color and size to string values for consistent comparison
+  const normalizedColor = color ? (typeof color === 'string' ? color : (color.value || color.name || JSON.stringify(color))) : null;
+  const normalizedSize = size ? (typeof size === 'string' ? size : (size.value || size.label || JSON.stringify(size))) : null;
+  const installation = includeInstallation || false;
+  
+  // For authenticated users, try API first to validate stock
+  // For non-authenticated users, save directly to localStorage
+  if (isAuthenticated()) {
+    try {
+      const response = await apiService.cart.addItem(productId, quantity);
+      if (response.success) {
+        // API success - sync cart from API (it handles adding/updating)
+        await fetchCart();
+        return { success: true };
+      } else if (response.error) {
+        // API returned an error (e.g., out of stock) - don't add to cart
+        console.log('API cart error:', response.error);
+        return { success: false, error: response.error };
+      }
+    } catch (err) {
+      // API failed (network error, etc.) - save to localStorage as fallback
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to sync with server';
+      console.log('API cart unavailable, saving to localStorage. Error:', errorMessage);
+      // Continue to localStorage save below
+    }
+  }
+
+  // Save to localStorage (for non-authenticated users or API failures)
+  // Check if item already exists in cart with same product ID AND same options
+  const existingItemIndex = cartItems.findIndex(item => {
+    const sameProduct = item.productId === productId || item.id === productId || 
+                        item.product?.id === productId;
+    if (!sameProduct) return false;
+    
+    // Check if options match (normalize stored values too)
+    const itemColor = item.color || item.options?.color;
+    const itemSize = item.size || item.options?.size;
+    const itemInstallation = item.includeInstallation || item.options?.includeInstallation || false;
+    const normalizedItemColor = itemColor ? (typeof itemColor === 'string' ? itemColor : (itemColor.value || itemColor.name || JSON.stringify(itemColor))) : null;
+    const normalizedItemSize = itemSize ? (typeof itemSize === 'string' ? itemSize : (itemSize.value || itemSize.label || JSON.stringify(itemSize))) : null;
+    
+    const sameColor = (!normalizedColor && !normalizedItemColor) || (normalizedColor === normalizedItemColor);
+    const sameSize = (!normalizedSize && !normalizedItemSize) || (normalizedSize === normalizedItemSize);
+    const sameInstallation = installation === itemInstallation;
+    
+    return sameColor && sameSize && sameInstallation;
+  });
 
   if (existingItemIndex >= 0) {
-    // Update quantity
+    // Update quantity of existing item with same options
     cartItems[existingItemIndex].quantity += quantity;
   } else {
-    // Add new item
+    // Add new item with options
     const newItem = {
-      id: `cart_${Date.now()}_${productId}`,
+      id: `cart_${Date.now()}_${productId}_${Math.random().toString(36).substr(2, 9)}`,
       productId: productId,
       quantity: quantity,
+      // Store normalized options at root level for easy access
+      ...(normalizedColor && { color: normalizedColor }),
+      ...(normalizedSize && { size: normalizedSize }),
+      includeInstallation: installation,
+      // Also store original options in options object for structured access
+      options: {
+        ...(normalizedColor && { color: normalizedColor }),
+        ...(normalizedSize && { size: normalizedSize }),
+        includeInstallation: installation,
+        ...otherOptions,
+      },
       ...(productData && {
         product: productData,
         // Also store direct properties for easier access
@@ -134,19 +190,9 @@ export const addToCart = async (productOrId, quantity = 1) => {
   saveCartToStorage(cartItems);
   totals = calculateTotals(cartItems);
 
-  // If authenticated, try to sync with API
+  // If authenticated but API failed, return success with localOnly flag
   if (isAuthenticated()) {
-    try {
-      const response = await apiService.cart.addItem(productId, quantity);
-      if (response.success) {
-        // Sync with API response if available
-        await fetchCart();
-        return { success: true };
-      }
-    } catch (err) {
-      // API failed, but localStorage is updated
-      console.log('API cart unavailable, saved to localStorage');
-    }
+    return { success: true, localOnly: true };
   }
 
   return { success: true };

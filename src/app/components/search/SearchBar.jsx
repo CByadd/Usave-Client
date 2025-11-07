@@ -4,13 +4,11 @@ import { createPortal } from 'react-dom';
 import { Search, Loader2, X } from 'lucide-react';
 import { useSearch } from '../../stores/useSearchStore';
 import { useRouter } from 'next/navigation';
-import productService from '../../services/api/productService';
 
 const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, isExpanded = false, onToggle = null }) => {
-  const { query, suggestions, isSearching, setQuery, setSuggestions, setIsSearching, addToHistory } = useSearch();
+  const { query, suggestions, isSearching, isFetchingSuggestions, setQuery, clearQuery, fetchSuggestions, setIsSearching, addToHistory, clearSuggestions } = useSearch();
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const debounceTimerRef = useRef(null);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -22,28 +20,22 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
     const value = e.target.value;
     setQuery(value);
 
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = setTimeout(async () => {
-      if (value.trim().length > 0) {
-        try {
-          const response = await productService.getSearchSuggestions(value.trim());
-          if (response.success && response.data?.suggestions) {
-            setSuggestions(response.data.suggestions);
-            setShowSuggestions(true);
-          } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-          }
-        } catch (err) {
-          console.error('Suggestions error:', err);
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 200);
+    if (value.trim().length > 0) {
+      // Use Zustand's optimized fetchSuggestions with debouncing and caching
+      fetchSuggestions(value);
+      setShowSuggestions(true);
+    } else {
+      clearSuggestions();
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleClear = () => {
+    clearQuery();
+    clearSuggestions();
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+    inputRef.current?.focus();
   };
 
   const submitQuery = async (searchQuery) => {
@@ -53,6 +45,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
     try {
       addToHistory(searchQuery);
       setShowSuggestions(false);
+      clearSuggestions();
       router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     } catch (err) {
       console.error('Search error:', err);
@@ -88,8 +81,22 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
 
   const handleBlur = () => {
     // Delay to allow click on suggestion
-    setTimeout(() => setShowSuggestions(false), 120);
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 150);
   };
+
+  // Update suggestions visibility when suggestions change
+  useEffect(() => {
+    if (suggestions.length > 0 && query.trim()) {
+      // Only show suggestions if the input is focused
+      if (document.activeElement === inputRef.current) {
+        setShowSuggestions(true);
+      }
+    } else if (!query.trim()) {
+      setShowSuggestions(false);
+    }
+  }, [suggestions, query]);
 
   // Update suggestions position when input position changes
   useEffect(() => {
@@ -154,18 +161,6 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
             {isSearching ? <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5" /> : <Search className="w-4 h-4 sm:w-5 sm:h-5" />}
           </button>
 
-          {/* Close button for mobile */}
-          {isMobile && onToggle && (
-            <button
-              type="button"
-              onClick={onToggle}
-              className="px-2 py-2 bg-transparent text-dark rounded-full hover:opacity-90 transition duration-200 flex-shrink-0"
-              aria-label="Close search"
-            >
-              <X size={16} />
-            </button>
-          )}
-
           <input
             ref={inputRef}
             type="text"
@@ -185,11 +180,35 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
             aria-expanded={showSuggestions}
             aria-controls="search-suggestions"
           />
+
+          {/* Clear button (X) - Show when there's text */}
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="px-2 py-2 bg-transparent text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition duration-200 flex-shrink-0"
+              aria-label="Clear search"
+            >
+              <X size={isMobile ? 16 : 18} />
+            </button>
+          )}
+
+          {/* Close button for mobile */}
+          {isMobile && onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              className="px-2 py-2 bg-transparent text-dark rounded-full hover:opacity-90 transition duration-200 flex-shrink-0"
+              aria-label="Close search"
+            >
+              <X size={16} />
+            </button>
+          )}
         </form>
       </div>
 
       {/* Render suggestions outside navbar using portal */}
-      {typeof window !== 'undefined' && showSuggestions && suggestions.length > 0 && createPortal(
+      {typeof window !== 'undefined' && showSuggestions && (suggestions.length > 0 || isFetchingSuggestions) && createPortal(
         <ul
           ref={suggestionsRef}
           id="search-suggestions"
@@ -201,27 +220,34 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
           }}
           role="listbox"
         >
-          {suggestions.map((s, idx) => {
-            const label = s?.name || s?.title || s;
-            return (
-              <li
-                key={`${label}-${idx}`}
-                role="option"
-                aria-selected={idx === highlightedIndex}
-                className={`px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors break-words ${
-                  idx === highlightedIndex ? 'bg-gray-100' : ''
-                }`}
-                onMouseEnter={() => setHighlightedIndex(idx)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  submitQuery(String(label));
-                }}
-                onClick={() => submitQuery(String(label))}
-              >
-                {String(label)}
-              </li>
-            );
-          })}
+          {isFetchingSuggestions && suggestions.length === 0 ? (
+            <li className="px-3 sm:px-4 py-3 text-center text-gray-500">
+              <Loader2 className="animate-spin h-5 w-5 mx-auto mb-1" />
+              <span className="text-xs">Searching...</span>
+            </li>
+          ) : (
+            suggestions.map((s, idx) => {
+              const label = s?.name || s?.title || s;
+              return (
+                <li
+                  key={`${label}-${idx}`}
+                  role="option"
+                  aria-selected={idx === highlightedIndex}
+                  className={`px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors break-words ${
+                    idx === highlightedIndex ? 'bg-gray-100' : ''
+                  }`}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    submitQuery(String(label));
+                  }}
+                  onClick={() => submitQuery(String(label))}
+                >
+                  {String(label)}
+                </li>
+              );
+            })
+          )}
         </ul>,
         document.body
       )}

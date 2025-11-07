@@ -3,41 +3,23 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Heart, ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
-import { fetchWishlist, getWishlistItems, removeFromWishlist } from '../lib/wishlist';
-import { addToCart, fetchCart, getCartItems, isInCart } from '../lib/cart';
+import { Heart, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
+import { useWishlist } from '../stores/useWishlistStore';
+import { useCart } from '../stores/useCartStore';
 import { openCartDrawer, showToast } from '../lib/ui';
 
 const WishlistPage = () => {
-  const [wishlistItems, setWishlistItems] = useState([]);
-  const [cartItems, setCartItems] = useState([]);
-  const [error, setError] = useState(null);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const { wishlistItems, isLoading, removeFromWishlist, loadWishlist } = useWishlist();
+  const { cartItems, addToCart } = useCart();
   const [movingToCart, setMovingToCart] = useState({});
   const router = useRouter();
 
   useEffect(() => {
-    loadWishlist();
-    loadCart();
+    // Load wishlist on mount - show loading state only if no items in localStorage
+    if (wishlistItems.length === 0) {
+      loadWishlist(true);
+    }
   }, []);
-
-  const loadWishlist = async () => {
-    try {
-      await fetchWishlist();
-      setWishlistItems(getWishlistItems());
-    } catch (err) {
-      setError(err.message || 'Failed to load wishlist');
-    }
-  };
-
-  const loadCart = async () => {
-    try {
-      await fetchCart();
-      setCartItems(getCartItems());
-    } catch (err) {
-      console.error('Error loading cart:', err);
-    }
-  };
 
   const handleMoveToCart = async (item) => {
     const itemId = item.id || `wishlist_${item.productId || item.id}`;
@@ -50,12 +32,13 @@ const WishlistPage = () => {
         showToast('Invalid product ID', 'error');
         return;
       }
-      const result = await addToCart(productId, 1);
+      
+      // Use product data from wishlist item
+      const productData = item.product || item;
+      const result = await addToCart(productData, 1);
       
       if (result?.success) {
-        await removeFromWishlist(productId);
-        await loadWishlist();
-        await loadCart();
+        // Item will be automatically removed from wishlist due to mutual exclusivity
         openCartDrawer();
         showToast('Item moved to cart', 'success');
       } else {
@@ -72,8 +55,8 @@ const WishlistPage = () => {
     try {
       const result = await removeFromWishlist(productId);
       if (result.success) {
-        await loadWishlist();
         showToast('Item removed from wishlist', 'success');
+        // State will update automatically via Zustand
       } else {
         showToast(result.error || 'Failed to remove item', 'error');
       }
@@ -93,13 +76,14 @@ const WishlistPage = () => {
           <h1 className="text-3xl font-semibold text-[#0B4866]">Wishlist</h1>
         </div>
 
-        {error && (
-          <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
+        {/* Loading State */}
+        {isLoading && wishlistItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Loader2 className="animate-spin text-[#0B4866] mb-4" size={48} />
+            <h3 className="text-xl font-medium text-gray-900 mb-2">Loading your wishlist...</h3>
+            <p className="text-gray-600">Please wait while we fetch your favorite items.</p>
           </div>
-        )}
-
-        {wishlistItems.length === 0 ? (
+        ) : wishlistItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Heart size={64} className="text-gray-300 mb-4" />
             <h3 className="text-xl font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
@@ -117,7 +101,10 @@ const WishlistPage = () => {
               const product = item.product || item;
               const productId = item.productId || product.id || item.id;
               const itemId = item.id || `wishlist_${productId}`;
-              const inCart = cartItems.some(c => c.productId === productId || c.product?.id === productId);
+              const inCart = cartItems.some(c => {
+                const cartProductId = c.productId || c.id || c.product?.id;
+                return String(cartProductId) === String(productId);
+              });
               return (
                 <div key={itemId} className="bg-gray-50 rounded-lg p-4 sm:p-6 w-full overflow-hidden">
                   <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full">

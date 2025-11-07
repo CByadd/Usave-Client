@@ -287,32 +287,14 @@ const ProductListingPage = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={async (e) => {
-                          console.log('[ProductList] Add to Cart clicked - product:', product?.id, product?.title);
+                        onClick={(e) => {
                           if (e) {
                             e.preventDefault();
                             e.stopPropagation();
                           }
-                          console.log('[ProductList] Add to Cart - addToCart type:', typeof addToCart);
-                          console.log('[ProductList] Add to Cart - openCartDrawer type:', typeof openCartDrawer);
-                          try {
-                            const result = await addToCart(product);
-                            console.log('[ProductList] Add to Cart - addToCart result:', result);
-                            console.log('[ProductList] Add to Cart - calling openCartDrawer');
-                            if (typeof openCartDrawer === 'function') {
-                              openCartDrawer();
-                              console.log('[ProductList] Add to Cart - openCartDrawer called');
-                            }
-                            if (typeof document !== 'undefined') {
-                              try {
-                                document.body.dispatchEvent(new CustomEvent('usave:openCart'));
-                                console.log('[ProductList] Dispatched usave:openCart event');
-                              } catch (err) {
-                                console.error('[ProductList] Error dispatching open event:', err);
-                              }
-                            }
-                          } catch (err) {
-                            console.error('[ProductList] Add to Cart error:', err);
+                          // Open Quick View Modal to configure options before adding to cart
+                          if (product.inStock) {
+                            setQuickViewProduct(product);
                           }
                         }}
                         disabled={!product.inStock}
@@ -426,32 +408,14 @@ const ProductListingPage = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={async (e) => {
-                          console.log('[ProductList-Desktop] Add to Cart clicked - product:', product?.id, product?.title);
+                        onClick={(e) => {
                           if (e) {
                             e.preventDefault();
                             e.stopPropagation();
                           }
-                          console.log('[ProductList-Desktop] Add to Cart - addToCart type:', typeof addToCart);
-                          console.log('[ProductList-Desktop] Add to Cart - openCartDrawer type:', typeof openCartDrawer);
-                          try {
-                            const result = await addToCart(product);
-                            console.log('[ProductList-Desktop] Add to Cart - addToCart result:', result);
-                            console.log('[ProductList-Desktop] Add to Cart - calling openCartDrawer');
-                            if (typeof openCartDrawer === 'function') {
-                              openCartDrawer();
-                              console.log('[ProductList-Desktop] Add to Cart - openCartDrawer called');
-                            }
-                            if (typeof document !== 'undefined') {
-                              try {
-                                document.body.dispatchEvent(new CustomEvent('usave:openCart'));
-                                console.log('[ProductList-Desktop] Dispatched usave:openCart event');
-                              } catch (err) {
-                                console.error('[ProductList-Desktop] Error dispatching open event:', err);
-                              }
-                            }
-                          } catch (err) {
-                            console.error('[ProductList-Desktop] Add to cart error:', err);
+                          // Open Quick View Modal to configure options before adding to cart
+                          if (product.inStock) {
+                            setQuickViewProduct(product);
                           }
                         }}
                         disabled={!product.inStock}

@@ -20,7 +20,7 @@ export default function AccountPage() {
     const authenticated = isAuthenticated();
     
     if (!authenticated || !currentUser) {
-      router.push('/auth/login');
+      router.push('/');
       return;
     }
 

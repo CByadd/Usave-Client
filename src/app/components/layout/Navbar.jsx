@@ -2,22 +2,23 @@
 import React, { useState, useCallback,useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { UserRound, Search, LogOut, ChevronDown, X, ShoppingCart, Heart, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_WHITE_BG } from '../../lib/constants';
 import { getCurrentUser, isAuthenticated, logout as logoutUser } from '../../lib/auth';
 import { useCart } from '../../stores/useCartStore';
-import { useWishlist } from '../../stores/useWishlistStore';
+import { useWishlist, useWishlistStore } from '../../stores/useWishlistStore';
 import { openAuthDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from '../icons';
 
 // Navigation links
 const mainNavLinks = [
-  { name: "PRODUCTS", href: "/" },
-  // { name: "BLOGS", href: "/" },
-  { name: "ABOUT US", href: "/" },
-  { name: "CONTACT US", href: "/contact" }
+  // { name: "PRODUCTS", href: "/" },
+  // // { name: "BLOGS", href: "/" },
+  // { name: "ABOUT US", href: "/" },
+  // { name: "CONTACT US", href: "/contact" }
 ];
 
 const categoryLinks = [
@@ -82,19 +83,25 @@ const categoryLinks = [
 
 
 const Navbar = () => {
+  // Router
+  const router = useRouter();
+  
   // State
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isCategoryBarCollapsed, setIsCategoryBarCollapsed] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrollDirection, setScrollDirection] = useState(null); // 'up' | 'down' | null
 
   // Auth state
   const [user, setUser] = useState(null);
   const [isAuth, setIsAuth] = useState(false);
 
-  // Cart and wishlist contexts
+  // Cart and wishlist contexts - use selectors for reactivity
   const { getCartCount } = useCart();
-  const { getWishlistCount } = useWishlist();
+  const wishlistCount = useWishlistStore((state) => state.wishlistItems.length);
 
   useEffect(() => {
     // Mark as mounted after hydration
@@ -105,11 +112,109 @@ const Navbar = () => {
     setIsAuth(authStatus);
   }, []);
 
+  // Scroll detection for category bar collapse/expand (desktop only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Use refs to track values without causing re-renders
+    let lastScrollYRef = window.scrollY;
+    let scrollDirectionRef = null;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        
+        // Only apply on desktop (window width >= 768px)
+        if (window.innerWidth < 768) {
+          if (isCategoryBarCollapsed) {
+            setIsCategoryBarCollapsed(false);
+          }
+          lastScrollYRef = currentScrollY;
+          scrollDirectionRef = null;
+          ticking = false;
+          return;
+        }
+
+        // Hysteresis: Different thresholds for expanding vs collapsing to prevent glitching
+        const collapseThreshold = 200; // Scroll down past this to collapse
+        const expandThreshold = 80;    // Scroll up past this to expand
+        const minScrollDelta = 10;     // Minimum scroll delta to trigger state change
+        const deadZone = 20;           // Dead zone around threshold to prevent rapid toggling
+        
+        const scrollDelta = currentScrollY - lastScrollYRef;
+        const absScrollDelta = Math.abs(scrollDelta);
+
+        // Ignore tiny scroll movements to prevent glitching
+        if (absScrollDelta < minScrollDelta) {
+          ticking = false;
+          return;
+        }
+
+        // If at very top of page, always show category bar
+        if (currentScrollY <= 30) {
+          if (isCategoryBarCollapsed) {
+            setIsCategoryBarCollapsed(false);
+            scrollDirectionRef = null;
+          }
+          lastScrollYRef = currentScrollY;
+          ticking = false;
+          return;
+        }
+
+        // Hysteresis logic: use different thresholds based on current state to prevent glitching
+        if (isCategoryBarCollapsed) {
+          // Currently collapsed - need to scroll up past expand threshold to expand
+          if (currentScrollY <= expandThreshold) {
+            setIsCategoryBarCollapsed(false);
+            scrollDirectionRef = 'up';
+          } else if (scrollDelta < -deadZone) {
+            // Scrolling up significantly
+            setIsCategoryBarCollapsed(false);
+            scrollDirectionRef = 'up';
+          }
+        } else {
+          // Currently expanded - need to scroll down past collapse threshold to collapse
+          if (currentScrollY >= collapseThreshold && scrollDelta > deadZone) {
+            // Scrolling down significantly past threshold
+            setIsCategoryBarCollapsed(true);
+            scrollDirectionRef = 'down';
+          }
+        }
+
+        lastScrollYRef = currentScrollY;
+        ticking = false;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Handle window resize to reset on mobile/desktop switch
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        if (isCategoryBarCollapsed) {
+          setIsCategoryBarCollapsed(false);
+        }
+        scrollDirectionRef = null;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isCategoryBarCollapsed]);
+
   const handleLogout = async () => {
     await logoutUser();
     setUser(null);
     setIsAuth(false);
-    window.location.reload();
+    router.push('/');
   };
 
   // Handlers
@@ -189,32 +294,48 @@ const Navbar = () => {
   // );
 
   const renderSearchBar = () => (
-    <div className="hidden md:flex flex-1 w-[600px] mx-4">
+    <div className="w-full max-w-[600px]">
       <SearchBar />
     </div>
   );
 
  const renderUserMenu = () => {
+  // Get first two letters of name for profile circle
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    } else if (user?.firstName) {
+      return user.firstName.slice(0, 2).toUpperCase();
+    } else if (user?.name) {
+      const nameParts = user.name.split(' ');
+      if (nameParts.length >= 2) {
+        return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+      }
+      return user.name.slice(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
   return (
     <div className="hidden md:block relative">
       {isAuth ? (
         <>
-          {/* Account Icon Button - Only show when authenticated */}
+          {/* Profile Circle - Show when authenticated */}
           <button
             type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#0B4866] text-white font-medium text-sm hover:bg-[#094058] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:ring-offset-2"
             aria-label="User account"
             onClick={(e) => {
               e.stopPropagation();
               setIsAccountMenuOpen(prev => !prev);
             }}
           >
-            <UserRound size={20} className="text-gray-700" />
+            {getInitials()}
           </button>
 
           {/* Dropdown Menu */}
           <div
-            className={`fixed right-4 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[1000] transition-all duration-200 ${
+            className={`fixed right-4 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9000] transition-all duration-200 ${
               isAccountMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
             }`}
           >
@@ -254,36 +375,20 @@ const Navbar = () => {
         </>
       ) : (
         <>
-          {/* Login/Sign Up Button - Show when not authenticated */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Desktop auth login clicked');
-                openAuthDrawer('login');
-              }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-[#0B4866] transition-colors"
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Desktop auth register clicked');
-                openAuthDrawer('register');
-                if (typeof document !== 'undefined') {
-                  try { document.body.dispatchEvent(new CustomEvent('usave:openAuth', { detail: { tab: 'register' } })); } catch {}
-                }
-              }}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#0B4866] hover:bg-[#094058] rounded-md transition-colors"
-            >
-              Sign Up
-            </button>
-          </div>
+          {/* Account Icon - Show when not authenticated */}
+          <button
+            type="button"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+            aria-label="Sign in"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Desktop auth icon clicked');
+              openAuthDrawer('login');
+            }}
+          >
+            <UserRound size={22} className="text-gray-700" />
+          </button>
         </>
       )}
     </div>
@@ -481,116 +586,67 @@ const Navbar = () => {
   );
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
-      <div className="w-full max-w-[95dvw] overflow-visible h-max flex items-center justify-center relative ">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className=" justify-between items-center h-16 hidden md:flex">
-          {/* Left side - Logo and Navigation Links */}
-          <div className="flex items-center space-x-8">
-            <div className="flex-shrink-0 h-full">
-              {renderLogo()}
-            </div>
-            
-            {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center justify-between gap-6 ml-8">
-              {/* Center - Search Bar */}
-          {renderSearchBar()}
-              <nav className="ml-8 flex space-x-6">
-                {mainNavLinks.map((item) => (
-                  <Link 
-                    key={item.name}
-                    href={item.href} 
-                    className="text-gray-700 hover:text-[#0B4866] text-sm font-medium transition-colors"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </nav>
-
-               {/* Cart */}
-  <Link 
-    href="/cart"
-    className="relative text-gray-700 hover:text-[#0B4866] cursor-pointer"
-    aria-label="View cart"
-  >
-    <ShoppingCart size={22} />
-    {isMounted && getCartCount() > 0 && (
-      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {getCartCount()}
-      </span>
-    )}
-  </Link>
-
-                {/* Cart */}
-          <span className='flex items-center justify-center gap-2'>
-             <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
-    <Heart size={22} />
-    {isMounted && getWishlistCount() > 0 && (
-      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {getWishlistCount()}
-      </span>
-    )}
-  </Link>
-
- 
-
-  {/* Account */}
-  <div className="relative">
-    {renderUserMenu()}
-  </div>
-          </span>
-            </div>
+    <header className=" shadow-sm sticky top-0 z-50 bg-white">
+      <div className="w-full max-w-[100dvw] overflow-visible h-max flex items-center justify-center relative ">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 ">
+        <div className=" justify-between items-center h-16 hidden md:flex gap-4 w-[90dvw]">
+          {/* Left side - Logo */}
+          <div className="flex-shrink-0 h-full overflow-hidden">
+            {renderLogo()}
           </div>
           
+          {/* Center - Search Bar */}
+          <div className="flex-1 flex justify-center max-w-3xl mx-8">
+            {renderSearchBar()}
+          </div>
           
-          
-          {/* Right side - Icons */}
-          <div className="flex items-center space-x-4">
-            {/* Search Icon (Mobile) */}
-            <div className="md:hidden">
-              <button 
-                className="text-gray-500 hover:text-gray-700"
-                onClick={toggleSearch}
-                aria-label="Search"
+          {/* Right side - Navigation Links and Icons */}
+          <div className="flex items-center gap-6 flex-shrink-0">
+            {/* Navigation Links */}
+            <nav className="flex space-x-6">
+              {mainNavLinks.map((item) => (
+                <Link 
+                  key={item.name}
+                  href={item.href} 
+                  className="text-gray-700 hover:text-[#0B4866] text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Icons */}
+            <div className="flex items-center gap-4 border-l border-gray-200 pl-4">
+                <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
+                <Heart size={22} />
+                {isMounted && wishlistCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Account */}
+              <div className="relative">
+                {renderUserMenu()}
+              </div>
+              {/* Cart */}
+              <Link 
+                href="/cart"
+                className="relative text-gray-700 hover:text-[#0B4866] cursor-pointer"
+                aria-label="View cart"
               >
-                <Search size={20} />
-              </button>
-              
-              {/* Mobile Search Bar (Expanded) */}
-              {isSearchExpanded && (
-                <div className="fixed inset-0 bg-white z-50 p-4">
-                  <div className="flex items-center">
-                    <button 
-                      onClick={toggleSearch}
-                      className="mr-2 text-gray-500"
-                      aria-label="Close search"
-                    >
-                      <X size={20} />
-                    </button>
-                    <div className="flex-1">
-                      <SearchBar 
-                        isMobile
-                        autoFocus
-                        onSearch={() => {
-                          toggleSearch();
-                          closeMobile();
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                <ShoppingCart size={22} />
+                {isMounted && getCartCount() > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {getCartCount()}
+                  </span>
+                )}
+              </Link>
+
+            
+            
             </div>
-            
-          
-            
-            {/* Mobile Menu Button */}
-            <button 
-              className="md:hidden text-gray-500 hover:text-gray-700"
-              onClick={toggleMobile}
-            >
-              <Menu size={24} />
-            </button>
           </div>
         </div>
       </div>
@@ -641,9 +697,9 @@ const Navbar = () => {
 
              <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
     <Heart size={22} />
-    {isMounted && getWishlistCount() > 0 && (
+    {isMounted && wishlistCount > 0 && (
       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-        {getWishlistCount()}
+        {wishlistCount}
       </span>
     )}
   </Link>
@@ -676,14 +732,20 @@ const Navbar = () => {
       </div>
       
       {/* Desktop Categories */}
-     <div className="hidden md:flex border-t border-gray-100 w-full relative z-40">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <nav className="flex space-x-8 py-2 relative">
+     <div 
+        className={`hidden md:flex border-t border-gray-100 w-full relative z-50 transition-all duration-300 ease-in-out ${
+          isCategoryBarCollapsed ? 'max-h-0 opacity-0 border-t-0 overflow-hidden' : 'max-h-16 opacity-100 overflow-visible'
+        }`}
+      >
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <nav className={`flex space-x-8 py-2 relative transition-transform duration-300 ease-in-out ${
+      isCategoryBarCollapsed ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'
+    }`}>
       {categoryLinks.map((item) => (
-        <div key={item.name} className="group relative">
+        <div key={item.name} className="group relative z-[9000]">
           <Link
             href={item.href}
-            className="flex items-center text-sm font-medium text-gray-700 hover:text-[#003B8E] py-2"
+            className="flex items-center text-sm font-medium text-gray-700 hover:text-[#003B8E] py-2 relative z-[9000]"
           >
             {item.name}
             {item.subcategories && item.subcategories.length > 0 && (
@@ -696,7 +758,7 @@ const Navbar = () => {
 
           {/* Dropdown */}
           {item.subcategories && item.subcategories.length > 0 && (
-            <div className="absolute left-0 top-full mt-0 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-[1000]">
+            <div className="absolute left-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-xl opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-[9000]">
               <ul className="py-2">
                 {item.subcategories.map((sub) => (
                   <li key={sub.name}>
