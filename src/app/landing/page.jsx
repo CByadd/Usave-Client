@@ -86,7 +86,7 @@ export default function LandingPage() {
       </AnimatedSection>
 
 
-      {/* <AnimatedSection className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden' delay={0.3}>
+      <AnimatedSection className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden' delay={0.3}>
         <div className="w-[90%]">
           <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
         </div>
@@ -94,7 +94,7 @@ export default function LandingPage() {
           <FullWidthCategory/>
           <InfoSection/>
         </div>
-      </AnimatedSection> */}
+      </AnimatedSection>
 
       <AnimatedSection className='md:w-[90dvw] w-[100dvw]' delay={0.4}>
         <CategoryShowcase/>
