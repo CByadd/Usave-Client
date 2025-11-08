@@ -17,107 +17,180 @@ const ProductListingPage = () => {
     {
       id: 1,
       title: "City Lounge 2 Seater",
+      slug: "city-lounge-2-seater",
+      description: "Comfortable 2-seater lounge with premium upholstery and supportive cushions.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: true,
       stockQuantity: 25,
+      colors: ["Midnight Blue", "Ash Grey"],
+      sizes: ["Standard"],
+      category: "living",
       badge: "Top seller",
       badgeColor: "bg-pink-600"
     },
     {
       id: 2,
       title: "City Lounge RHF Chase 2 Seater",
+      slug: "city-lounge-rhf-chase-2-seater",
+      description: "Right-hand chase lounge perfect for compact spaces with high-density foam.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      originalPrice: 800,
-      discountedPrice: 1649,
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
+      ],
+      originalPrice: 1649,
+      discountedPrice: 1450,
       rating: 4.5,
       reviews: 13,
       inStock: true,
       stockQuantity: 12,
+      colors: ["Charcoal", "Pearl"],
+      sizes: ["Standard"],
+      category: "living",
       badge: "Top seller",
       badgeColor: "bg-pink-600"
     },
     {
       id: 3,
       title: "Hasting 3 Seater Lounge with chaise",
+      slug: "hasting-3-seater-lounge-with-chaise",
+      description: "Spacious 3 seater lounge featuring chaise and durable fabric.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
+      ],
       originalPrice: 2699,
       discountedPrice: 2599,
       rating: 4.5,
       reviews: 3,
       inStock: true,
       stockQuantity: 8,
+      colors: ["River Blue", "Slate"],
+      sizes: ["Standard"],
+      category: "living",
       badge: "2% New",
       badgeColor: "bg-yellow-500"
     },
     {
       id: 4,
       title: "Rose Accent Chair",
+      slug: "rose-accent-chair",
+      description: "Elegant accent chair with sturdy wooden frame and velvet finish.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: true,
-      stockQuantity: 18
+      stockQuantity: 18,
+      colors: ["Blush", "Ivory"],
+      sizes: ["Standard"],
+      category: "living"
     },
     {
       id: 5,
       title: "Melrose Chair",
+      slug: "melrose-chair",
+      description: "Classic armchair with plush cushioning and removable covers.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: false,
-      stockQuantity: 0
+      stockQuantity: 0,
+      colors: ["Forest Green"],
+      sizes: ["Standard"],
+      category: "living"
     },
     {
       id: 6,
       title: "Beth Head Board",
+      slug: "beth-head-board",
+      description: "Upholstered headboard with tufted detailing and supportive padding.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: true,
-      stockQuantity: 3
+      stockQuantity: 3,
+      colors: ["Cream"],
+      sizes: ["Queen", "King"],
+      category: "bedroom"
     },
     {
       id: 7,
       title: "Rose Accent Chair",
+      slug: "rose-accent-chair-2",
+      description: "Compact accent chair ideal for corners and reading nooks.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: true,
-      stockQuantity: 22
+      stockQuantity: 22,
+      colors: ["Navy", "Sand"],
+      sizes: ["Standard"],
+      category: "living"
     },
     {
       id: 8,
       title: "Rose Accent Chair",
+      slug: "rose-accent-chair-3",
+      description: "Modern accent chair with ergonomic support and easy-clean fabric.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: true,
-      stockQuantity: 16
+      stockQuantity: 16,
+      colors: ["Charcoal"],
+      sizes: ["Standard"],
+      category: "living"
     },
     {
       id: 9,
       title: "Rose Accent Chair",
+      slug: "rose-accent-chair-4",
+      description: "Statement chair with sleek metal legs and plush upholstery.",
       image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
+      images: [
+        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
+      ],
       originalPrice: 800,
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
       inStock: true,
-      stockQuantity: 11
+      stockQuantity: 11,
+      colors: ["Olive"],
+      sizes: ["Standard"],
+      category: "living"
     }
   ];
 
@@ -211,8 +284,8 @@ const ProductListingPage = () => {
           {displayedProducts.map((product) => (
             <div key={product.id} className="min-w-[80%] snap-center">
               <ItemCard item={product} variant="carousel" />
-            </div>
-          ))}
+              </div>
+            ))}
         </div>
 
         {/* Desktop and tablet grid */}
