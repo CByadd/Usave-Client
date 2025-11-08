@@ -72,86 +72,79 @@ const AnimatedSection = ({ children, delay = 0, className = '' }) => {
 
 export default function LandingPage() {
   return (
-    <div className="flex w-full flex-col gap-16 overflow-hidden md:gap-20">
+    <div className='flex flex-col items-center justify-center mx-auto gap-16 md:gap-20'>
       {/* Hero section - visible immediately, no animation */}
-      <section className="w-full overflow-hidden">
+      <section className="md:w-[95dvw] w-full overflow-hidden">
         <HeroSection />
       </section>
 
-      <AnimatedSection className="w-full overflow-hidden px-0 md:px-10" delay={0.1}>
-        <div className="mx-auto w-full max-w-6xl overflow-hidden">
+  <AnimatedSection className="md:w-[90dvw] w-full overflow-hidden" delay={0.1}>
+        <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
           <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room" />
           <CategoryCarousel />
         </div>
       </AnimatedSection>
 
-      <AnimatedSection
-        className="flex w-full flex-col items-center justify-center overflow-hidden px-0 md:px-10"
-        delay={0.3}
-      >
-        <div className="w-full max-w-6xl">
+     <AnimatedSection className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden' delay={0.3}>
+        
+         <div className="w-[90%]">
           <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room" />
         </div>
-        <div className="w-full overflow-hidden">
+        <div className="w-[99dvw] overflow-hidden">
           <FullWidthCategory />
           <InfoSection />
         </div>
       </AnimatedSection>
 
-      <AnimatedSection className="w-full overflow-hidden px-0 md:px-10" delay={0.4}>
-        <div className="mx-auto w-full max-w-6xl">
-          <CategoryShowcase />
-        </div>
+       <AnimatedSection className='md:w-[90dvw] w-[100dvw]' delay={0.4}>
+        <CategoryShowcase/>
+         
       </AnimatedSection>
 
-      <AnimatedSection className="w-full overflow-hidden px-0 md:px-10" delay={0.5}>
-        <div className="mx-auto w-full max-w-6xl">
-          <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/living-room" />
-          <ProductCarousel>
-            {items.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </ProductCarousel>
-        </div>
+      <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.5}>
+        <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/living-room"/>
+        <ProductCarousel>
+          {items.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </ProductCarousel>
+        
       </AnimatedSection>
 
-      <AnimatedSection className="w-full overflow-hidden px-0 md:px-10" delay={0.6}>
-        <div className="mx-auto w-full max-w-6xl">
-          <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/living-room" />
-          <ProductCarousel>
-            {Bitems.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </ProductCarousel>
-        </div>
+          <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.6}>
+        <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/living-room"/>
+        <ProductCarousel>
+          {Bitems.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </ProductCarousel>
+        
       </AnimatedSection>
 
-      <AnimatedSection className="w-full overflow-hidden px-0 md:px-10" delay={0.7}>
-        <div className="mx-auto w-full max-w-6xl">
-          <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/living-room" />
-          <ProductCarousel>
-            {Aitems.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </ProductCarousel>
-        </div>
+        <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.7}>
+        <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/living-room"/>
+        <ProductCarousel>
+          {Aitems.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </ProductCarousel>
       </AnimatedSection>
 
       {/* <AnimatedSection className='w-full' delay={0.8}>
         <InspirationSection/>
       </AnimatedSection> */}
 
-      <AnimatedSection className="relative w-full overflow-hidden px-0 md:px-10" delay={0.9}>
-        <div className="relative mx-auto w-full max-w-6xl overflow-hidden">
+<AnimatedSection className="w-[99dvw] relative overflow-hidden" delay={0.9}>
+        <div className="relative w-full">
           <Image
             src="https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264173/Usave/unsplash_c0JoR_-2x3E_v543gf.jpg"
             alt="Newsletter"
             width={1920}
             height={400}
-            className="h-[20dvh] w-full object-cover md:h-[400px]"
+            className="w-full h-[20dvh] md:h-[400px] object-cover"
           />
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 px-6 text-white">
-            <h2 className="mb-3 text-center font-serifx text-[2rem] font-normal md:text-[4rem]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white px-6">
+            <h2 className="md:text-[4rem]  text-[2rem] font-normal mb-3 text-center font-serifx">
               Loved by 1000+ Business
             </h2>
           </div>
