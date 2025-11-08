@@ -1,25 +1,17 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import OptimizedImage from './OptimizedImage';
-import { Heart, ShoppingCart, Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
-import Link from 'next/link';
-import { useCart } from '../../stores/useCartStore';
+import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useSearch } from '../../stores/useSearchStore';
-import { openCartDrawer, showToast } from '../../lib/ui';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 import productService from '../../services/api/productService';
-import QuickViewModal from './QuickViewModal';
-import { useRouter } from 'next/navigation';
+import ItemCard from './ProductCard';
 
 const ProductListingPage = () => {
-  const { cartItems, addToCart, isInCart } = useCart();
-  const { activeFilters, isSearching, toggleActiveFilter, setIsSearching } = useSearch();
-  const router = useRouter();
+  const { isSearching, toggleActiveFilter } = useSearch();
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   const fallbackProducts = [
     {
@@ -31,6 +23,7 @@ const ProductListingPage = () => {
       rating: 4.5,
       reviews: 13,
       inStock: true,
+      stockQuantity: 25,
       badge: "Top seller",
       badgeColor: "bg-pink-600"
     },
@@ -43,6 +36,7 @@ const ProductListingPage = () => {
       rating: 4.5,
       reviews: 13,
       inStock: true,
+      stockQuantity: 12,
       badge: "Top seller",
       badgeColor: "bg-pink-600"
     },
@@ -55,6 +49,7 @@ const ProductListingPage = () => {
       rating: 4.5,
       reviews: 3,
       inStock: true,
+      stockQuantity: 8,
       badge: "2% New",
       badgeColor: "bg-yellow-500"
     },
@@ -66,7 +61,8 @@ const ProductListingPage = () => {
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
-      inStock: true
+      inStock: true,
+      stockQuantity: 18
     },
     {
       id: 5,
@@ -76,7 +72,8 @@ const ProductListingPage = () => {
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
-      outOfStock: true
+      inStock: false,
+      stockQuantity: 0
     },
     {
       id: 6,
@@ -86,7 +83,8 @@ const ProductListingPage = () => {
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
-      lowStock: true
+      inStock: true,
+      stockQuantity: 3
     },
     {
       id: 7,
@@ -96,7 +94,8 @@ const ProductListingPage = () => {
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
-      inStock: true
+      inStock: true,
+      stockQuantity: 22
     },
     {
       id: 8,
@@ -106,7 +105,8 @@ const ProductListingPage = () => {
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
-      inStock: true
+      inStock: true,
+      stockQuantity: 16
     },
     {
       id: 9,
@@ -116,9 +116,12 @@ const ProductListingPage = () => {
       discountedPrice: 699,
       rating: 4.5,
       reviews: 13,
-      inStock: true
+      inStock: true,
+      stockQuantity: 11
     }
   ];
+
+  const displayedProducts = products.length > 0 ? products : fallbackProducts;
 
   useEffect(() => {
     // initialize with fallback products
@@ -157,7 +160,7 @@ const ProductListingPage = () => {
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal text-gray-800 mb-2">
             Search results for <span className="font-medium">"All Products"</span>
           </h1>
-          <p className="text-sm md:text-base text-gray-600">{products.length} results</p>
+          <p className="text-sm md:text-base text-gray-600">{displayedProducts.length} results</p>
         </div>
 
         <div className="flex flex-wrap gap-2 md:gap-3 mb-6 md:mb-8 items-center overflow-x-auto pb-2 scrollbar-hide">
@@ -203,236 +206,19 @@ const ProductListingPage = () => {
           </button>
         </div>
 
-        {/* Mobile: horizontal carousel showing 2 cards at a time */}
-        <div className="md:hidden -mx-4 px-4">
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-2 scrollbar-hide">
-            {products.map((product) => (
-              <div key={product.id} className="min-w-[calc(50%-0.5rem)] snap-center">
-                <div className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                  <div className="relative bg-transparent p-6 aspect-square flex items-center justify-center">
-                    {product.badge && (
-                      <div className={`${product.badgeColor} absolute top-3 left-3 text-white text-xs font-semibold px-3 py-1 rounded`}>
-                        {product.badge}
-                      </div>
-                    )}
-                    <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition">
-                      <Heart size={20} />
-                    </button>
-                    <OptimizedImage
-                      src={product.image}
-                      alt={product.title}
-                      width={300}
-                      height={300}
-                      className="object-contain max-h-[250px] w-auto"
-                    />
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      setQuickViewProduct(product);
-                    }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
-                      <Search size={16} />
-                      Quick View
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <Link href={`/products/${product.id}`}>
-                      <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
-                        {product.title}
-                      </h3>
-                    </Link>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-gray-500 line-through text-sm">${product.originalPrice}.00</span>
-                      <span className="text-xl font-semibold text-gray-900">${product.discountedPrice}.00</span>
-                      {product.originalPrice > product.discountedPrice && (
-                        <span className="text-green-600 text-xs font-medium">
-                          Save {Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)}%
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 mb-3">
-                      <div className="flex text-yellow-400">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i}>{i < Math.floor(product.rating) ? '★' : '☆'}</span>
-                        ))}
-                      </div>
-                      <span className="text-gray-500 text-xs ml-1">({product.reviews})</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className={`h-2 w-2 rounded-full ${product.inStock ? 'bg-green-500' : product.outOfStock ? 'bg-red-500' : 'bg-orange-500'}`}></div>
-                      <span className="text-sm text-gray-600">
-                        {product.inStock ? 'In Stock' : product.outOfStock ? 'Out Of Stock' : 'Low Stock'}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        type="button"
-                        onClick={async (e) => {
-                          console.log('[ProductList] Quick Shop clicked - product:', product?.id, product?.title);
-                          if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }
-                          console.log('[ProductList] Quick Shop - addToCart type:', typeof addToCart);
-                          try {
-                            await addToCart(product);
-                            console.log('[ProductList] Quick Shop - addToCart completed, navigating to cart');
-                            router.push('/cart');
-                          } catch (err) {
-                            console.error('[ProductList] Quick Shop error:', err);
-                          }
-                        }} 
-                        className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
-                      >
-                        <Search size={16} />
-                        Quick Shop
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }
-                          // Open Quick View Modal to configure options before adding to cart
-                          if (product.inStock) {
-                            setQuickViewProduct(product);
-                          }
-                        }}
-                        disabled={!product.inStock}
-                        className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
-                          !product.inStock 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : isInCart(product.id) 
-                              ? 'bg-green-600 hover:bg-green-700' 
-                              : 'bg-[#0B4866] hover:bg-[#094058]'
-                        }`}
-                      >
-                        <ShoppingCart size={16} />
-                        {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Mobile: horizontal carousel */}
+        <div className="md:hidden -mx-4 mb-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide">
+          {displayedProducts.map((product) => (
+            <div key={product.id} className="min-w-[80%] snap-center">
+              <ItemCard item={product} variant="carousel" />
+            </div>
+          ))}
         </div>
 
         {/* Desktop and tablet grid */}
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-            >
-              <div className="relative bg-transparent p-6 aspect-square flex items-center justify-center">
-                {product.badge && (
-                  <div className={`absolute top-3 left-3 ${product.badgeColor} text-white text-xs font-semibold px-3 py-1 rounded`}>
-                    {product.badge}
-                  </div>
-                )}
-                <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition">
-                  <Heart size={20} />
-                </button>
-                <OptimizedImage
-                  src={product.image}
-                  alt={product.title}
-                  width={300}
-                  height={300}
-                  className="object-contain max-h-[250px] w-auto"
-                />
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  setQuickViewProduct(product);
-                }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
-                  <Search size={16} />
-                  Quick View
-                </button>
-              </div>
-
-              <div className="p-4">
-                <Link href={`/products/${product.id}`}>
-                  <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
-                    {product.title}
-                  </h3>
-                </Link>
-
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-gray-500 line-through text-sm">${product.originalPrice}.00</span>
-                  <span className="text-xl font-semibold text-gray-900">${product.discountedPrice}.00</span>
-                  {product.originalPrice > product.discountedPrice && (
-                    <span className="text-green-600 text-xs font-medium">
-                      Save {Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)}%
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1 mb-3">
-                  <div className="flex text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i}>{i < Math.floor(product.rating) ? '★' : '☆'}</span>
-                    ))}
-                  </div>
-                  <span className="text-gray-500 text-xs ml-1">({product.reviews})</span>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <div className={`h-2 w-2 rounded-full ${product.inStock ? 'bg-green-500' : product.outOfStock ? 'bg-red-500' : 'bg-orange-500'}`}></div>
-                  <span className="text-sm text-gray-600">
-                    {product.inStock ? 'In Stock' : product.outOfStock ? 'Out Of Stock' : 'Low Stock'}
-                  </span>
-                </div>
-
-                    <div className="flex gap-2">
-                      <button 
-                        type="button"
-                        onClick={async (e) => {
-                          console.log('[ProductList-Desktop] Quick Shop clicked - product:', product?.id, product?.title);
-                          if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }
-                          console.log('[ProductList-Desktop] Quick Shop - addToCart type:', typeof addToCart);
-                          try {
-                            const result = await addToCart(product);
-                            console.log('[ProductList-Desktop] Quick Shop - addToCart result:', result);
-                            console.log('[ProductList-Desktop] Quick Shop - navigating to cart');
-                            router.push('/cart');
-                          } catch (err) {
-                            console.error('[ProductList-Desktop] Quick shop error:', err);
-                          }
-                        }} 
-                        className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <Search size={16} />
-                        Quick Shop
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }
-                          // Open Quick View Modal to configure options before adding to cart
-                          if (product.inStock) {
-                            setQuickViewProduct(product);
-                          }
-                        }}
-                        disabled={!product.inStock}
-                        className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
-                          !product.inStock
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : isInCart(product.id)
-                              ? 'bg-green-600 hover:bg-green-700'
-                              : 'bg-[#0B4866] hover:bg-[#094058]'
-                        }`}
-                      >
-                        <ShoppingCart size={16} />
-                        {!product.inStock ? 'Out of Stock' : isInCart(product.id) ? 'In Cart' : 'Add to cart'}
-                      </button>
-                    </div>
-              </div>
-            </div>
+        <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {displayedProducts.map((product) => (
+            <ItemCard key={product.id} item={product} variant="grid" />
           ))}
         </div>
 
@@ -485,13 +271,6 @@ const ProductListingPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Quick View Modal */}
-      <QuickViewModal 
-        product={quickViewProduct}
-        isOpen={!!quickViewProduct}
-        onClose={() => setQuickViewProduct(null)}
-      />
     </div>
   );
 };

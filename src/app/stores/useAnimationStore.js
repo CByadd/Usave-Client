@@ -79,7 +79,19 @@ export const useAnimationStore = create((set, get) => ({
   getAnimationConfig: (type) => {
     const { reduceMotion, animationsEnabled, isMobile } = get();
     if (!animationsEnabled || reduceMotion || isMobile) {
-      return { duration: 0, ease: 'linear' };
+      if (type === 'modal') {
+        return {
+          backdrop: { duration: 0.001, ease: 'linear' },
+          content: { duration: 0.001, ease: 'linear' },
+        };
+      }
+      if (type === 'drawer') {
+        return {
+          backdrop: { duration: 0.001, ease: 'linear' },
+          content: { duration: 0.001, ease: 'linear' },
+        };
+      }
+      return { duration: 0.001, ease: 'linear' };
     }
     return ANIMATION_CONFIG[type] || ANIMATION_CONFIG.page;
   },

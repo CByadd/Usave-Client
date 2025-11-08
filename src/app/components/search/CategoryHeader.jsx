@@ -1,9 +1,9 @@
 import React from "react";
 import Link from "next/link";
 
-const CatHeader = ({ title, buttonText, buttonLink = "#", disableButton = false ,width}) => {
+const CatHeader = ({ title, buttonText, buttonLink = "#", disableButton = false, width = "" }) => {
   return (
-    <div className={`flex items-center justify-between  pb-3 mb-6 ` + width}>
+    <div className={`flex w-full items-center justify-between pb-3 mb-6 ${width}`}>
       {/* Title */}
       <h2 className="text-xl md:text-5xl font-light text-gray-800 font-serifx">
         {title}
