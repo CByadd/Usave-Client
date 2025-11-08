@@ -238,7 +238,7 @@ const Navbar = () => {
   // );
 
   const renderLogo = () => (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 h-10 overflow-hidden">
       <Link href="/" className="flex items-center gap-2" onClick={closeMobile}>
         <Image
           src={LOGO_WHITE_BG}
@@ -587,29 +587,28 @@ const Navbar = () => {
   );
 
   return (
-    <header className=" shadow-sm sticky top-0 z-50 bg-white ">
-      <div className="w-[100dvw] overflow-hidden h-max flex items-center justify-center relative ">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 ">
-        <div className=" justify-between items-center h-16 hidden md:flex gap-4  ">
-          {/* Left side - Logo */}
-          <div className="flex-shrink-0 h-full overflow-hidden">
-            {renderLogo()}
-          </div>
-          
-          {/* Center - Search Bar */}
-          <div className="flex-1 flex justify-center max-w-3xl mx-8">
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
+      <div className="border-b border-gray-100 bg-white">
+        <div className="mx-auto hidden w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-6 px-4 py-4 md:grid lg:px-8">
+          {/* Left side - Search */}
+          <div className="flex items-center justify-start">
             {renderSearchBar()}
           </div>
-          
+
+          {/* Center - Logo */}
+          <div className="flex items-center justify-center">
+            {renderLogo()}
+          </div>
+
           {/* Right side - Navigation Links and Icons */}
-          <div className="flex items-center gap-6 flex-shrink-0">
+          <div className="flex items-center justify-end gap-6">
             {/* Navigation Links */}
-            <nav className="flex space-x-6">
+            <nav className="flex items-center space-x-6">
               {mainNavLinks.map((item) => (
-                <Link 
+                <Link
                   key={item.name}
-                  href={item.href} 
-                  className="text-gray-700 hover:text-[#0B4866] text-sm font-medium transition-colors whitespace-nowrap"
+                  href={item.href}
+                  className="whitespace-nowrap text-sm font-medium text-gray-700 transition-colors hover:text-[#0B4866]"
                 >
                   {item.name}
                 </Link>
@@ -618,65 +617,61 @@ const Navbar = () => {
 
             {/* Icons */}
             <div className="flex items-center gap-4 border-l border-gray-200 pl-4">
-                <Link href="/wishlist" className="relative text-gray-700 hover:text-[#0B4866]">
+              <Link href="/wishlist" className="relative text-gray-700 transition-colors hover:text-[#0B4866]">
                 <Heart size={22} />
                 {isMounted && wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                     {wishlistCount}
                   </span>
                 )}
               </Link>
 
-            
               {/* Cart */}
-              <Link 
+              <Link
                 href="/cart"
-                className="relative text-gray-700 hover:text-[#0B4866] cursor-pointer"
+                className="relative cursor-pointer text-gray-700 transition-colors hover:text-[#0B4866]"
                 aria-label="View cart"
               >
                 <ShoppingCart size={22} />
                 {isMounted && getCartCount() > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                     {getCartCount()}
                   </span>
                 )}
               </Link>
-  {/* Account */}
+
+              {/* Account */}
               <div className="relative">
                 {renderUserMenu()}
               </div>
-            
-            
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Mobile Navigation */}
-   {/* Mobile Navigation */}
-<div className="md:hidden w-full border-b border-gray-100 bg-white">
-  <div className="flex items-center justify-between h-16 px-3">
-    {/* Left Section: Menu + Logo */}
-    <div className="flex items-center gap-3">
-      {/* Hamburger Menu */}
-      <button
-        onClick={toggleMobile}
-        aria-label="Open menu"
-        className="text-gray-700 hover:text-[#0B4866] flex-shrink-0"
-      >
-        <Menu size={24} />
-      </button>
 
-      {/* Logo */}
-      <div className="h-10 flex items-center">
+{/* Mobile Navigation */}
+<div className="border-b border-gray-100 md:hidden">
+  <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center px-3 sm:px-4">
+    {/* Hamburger Menu */}
+    <button
+      onClick={toggleMobile}
+      aria-label="Open menu"
+      className="relative z-10 flex-shrink-0 text-gray-700 transition-colors hover:text-[#0B4866]"
+    >
+      <Menu size={24} />
+    </button>
+
+    {/* Centered Logo */}
+    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="pointer-events-auto flex items-center ">
         {renderLogo()}
       </div>
     </div>
 
     {/* Right Section: Search + Cart + Wishlist */}
-    <div className="flex items-center gap-4">
+    <div className="ml-auto flex items-center gap-4">
       <button
-        className="text-gray-600 hover:text-[#0B4866]"
+        className="text-gray-600 transition-colors hover:text-[#0B4866]"
         onClick={toggleSearch}
         aria-label="Search"
       >
@@ -685,12 +680,12 @@ const Navbar = () => {
 
       <Link
         href="/cart"
-        className="relative text-gray-600 hover:text-[#0B4866]"
+        className="relative text-gray-600 transition-colors hover:text-[#0B4866]"
         aria-label="View cart"
       >
         <ShoppingCart size={22} />
         {isMounted && getCartCount() > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
             {getCartCount()}
           </span>
         )}
@@ -698,12 +693,12 @@ const Navbar = () => {
 
       <Link
         href="/wishlist"
-        className="relative text-gray-600 hover:text-[#0B4866]"
+        className="relative text-gray-600 transition-colors hover:text-[#0B4866]"
         aria-label="Wishlist"
       >
         <Heart size={22} />
         {isMounted && wishlistCount > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
             {wishlistCount}
           </span>
         )}
@@ -713,7 +708,7 @@ const Navbar = () => {
 
   {/* Mobile Search Bar */}
   {isSearchExpanded && (
-    <div className="w-full flex justify-center items-center py-2 px-3 border-t border-gray-100">
+    <div className="mx-auto flex w-full max-w-7xl items-center justify-center border-t border-gray-100 py-2 px-3 sm:px-4">
       <SearchBar
         placeholder="Search products..."
         isMobile
@@ -723,13 +718,6 @@ const Navbar = () => {
     </div>
   )}
 </div>
-
-
-
-
-        
-      </div>
-      
       {/* Desktop Categories */}
      <div 
         className={`hidden md:flex border-t border-gray-100 w-full relative z-50 transition-all duration-300 ease-in-out ${
