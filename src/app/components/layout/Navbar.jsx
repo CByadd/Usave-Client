@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import { UserRound, Search, LogOut, ChevronDown, X, ShoppingCart, Heart, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_WHITE_BG } from '../../lib/constants';
-import { getCurrentUser, isAuthenticated, logout as logoutUser } from '../../lib/auth';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { logout as logoutUser } from '../../lib/auth';
 import { useCart } from '../../stores/useCartStore';
-import { useWishlist, useWishlistStore } from '../../stores/useWishlistStore';
+import { useWishlistStore } from '../../stores/useWishlistStore';
 import { openAuthDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import { FiRrHeartIcon, FiRrShoppingCartAddIcon } from '../icons';
@@ -97,21 +98,30 @@ const Navbar = () => {
   const [scrollDirection, setScrollDirection] = useState(null); // 'up' | 'down' | null
 
   // Auth state
-  const [user, setUser] = useState(null);
-  const [isAuth, setIsAuth] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const isAuth = useAuthStore((state) => state.isAuthenticated);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   // Cart and wishlist contexts - use selectors for reactivity
   const { getCartCount } = useCart();
   const wishlistCount = useWishlistStore((state) => state.wishlistItems.length);
 
   useEffect(() => {
-    // Mark as mounted after hydration
     setIsMounted(true);
-    const currentUser = getCurrentUser();
-    const authStatus = isAuthenticated();
-    setUser(currentUser);
-    setIsAuth(authStatus);
-  }, []);
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isAuth) {
+      setIsAccountMenuOpen(false);
+    }
+  }, [isAuth]);
+
+  useEffect(() => {
+    if (!isAuth && isAccountMenuOpen) {
+      setIsAccountMenuOpen(false);
+    }
+  }, [isAuth, isAccountMenuOpen]);
 
   // Scroll detection for category bar collapse/expand (desktop only)
   useEffect(() => {
@@ -213,8 +223,6 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logoutUser();
-    setUser(null);
-    setIsAuth(false);
     router.push('/');
   };
 

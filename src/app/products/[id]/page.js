@@ -9,7 +9,6 @@ import { showToast } from '../../lib/ui';
 import useProductStore from '../../stores/useProductStore';
 import { useCartStore } from '../../stores/useCartStore';
 import { useWishlistStore } from '../../stores/useWishlistStore';
-import { useAuthStore } from '../../stores/useAuthStore';
 import { useUIStore } from '../../stores/useUIStore';
 import ProductCard from '../../components/product/ProductCard';
 
@@ -60,10 +59,8 @@ export default function ProductDetailPage() {
   } = useWishlistStore();
 
   // Auth Store
-  const { isAuthenticated } = useAuthStore();
-
   // UI Store
-  const { openCartDrawer, openAuthDrawer } = useUIStore();
+  const { openCartDrawer } = useUIStore();
 
   // Load cart and wishlist on mount
   useEffect(() => {
@@ -90,11 +87,6 @@ export default function ProductDetailPage() {
   const sizes = ['XS', 'S', 'M', 'L', 'XL'];
 
   const handleQuickShop = async () => {
-    if (!isAuthenticated) {
-      openAuthDrawer();
-      return;
-    }
-    
     if (!product) return;
     
     // Check if product is in stock before attempting to add
@@ -115,11 +107,6 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      openAuthDrawer();
-      return;
-    }
-    
     if (!product) return;
     
     // Check if product is in stock before attempting to add
@@ -145,13 +132,15 @@ export default function ProductDetailPage() {
 
   const handleWishlistToggle = async () => {
     if (!product) return;
-    
+
+    const wasInWishlist = isInWishlist(product.id);
+
     const result = await toggleWishlist(product);
     if (result?.success) {
       await loadWishlist();
       showToast(
-        isInWishlist(product.id) 
-          ? 'Removed from wishlist' 
+        wasInWishlist
+          ? 'Removed from wishlist'
           : 'Added to wishlist',
         'success'
       );

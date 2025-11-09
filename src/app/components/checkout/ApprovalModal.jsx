@@ -14,6 +14,10 @@ export default function ApprovalModal({
   totalAmount = 0,
   flowType = 'owner',
   shippingAddress = null,
+  customerInfo = null,
+  customerName = '',
+  customerEmail = '',
+  customerPhone = '',
   subtotal = 0,
   tax = 0,
   shipping = 0,
@@ -61,6 +65,18 @@ export default function ApprovalModal({
       const calculatedWarranty = warranty || 0;
       const calculatedTotal = totalAmount || (calculatedSubtotal + calculatedTax + calculatedShipping + calculatedWarranty);
 
+      const resolvedCustomerInfo = customerInfo || {
+        firstName: shippingAddress?.firstName || '',
+        lastName: shippingAddress?.lastName || '',
+        email: customerEmail || shippingAddress?.email || user?.email || '',
+        phone: customerPhone || shippingAddress?.phone || '',
+      };
+
+      const resolvedCustomerName = customerName
+        || `${resolvedCustomerInfo.firstName || ''} ${resolvedCustomerInfo.lastName || ''}`.trim();
+      const resolvedCustomerEmail = customerEmail || resolvedCustomerInfo.email || user?.email || '';
+      const resolvedCustomerPhone = customerPhone || resolvedCustomerInfo.phone || '';
+
       const orderDetails = {
         items: cartItems.map((item) => ({
           id: item.productId || item.id || item.product?.id || item._id,
@@ -80,6 +96,11 @@ export default function ApprovalModal({
         warranty: calculatedWarranty,
         total: calculatedTotal,
         shippingAddress: shippingAddress || {},
+        billingAddress: shippingAddress || {},
+        customer: resolvedCustomerInfo,
+        customerName: resolvedCustomerName,
+        customerEmail: resolvedCustomerEmail,
+        customerPhone: resolvedCustomerPhone,
       };
 
       // For owner approval flow, only send owner email - admin email comes from backend

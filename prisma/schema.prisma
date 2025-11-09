@@ -25,23 +25,28 @@ model User {
 }
 
 model Order {
-  id              String     @id @default(uuid())
-  orderNumber     String     @unique
-  status          OrderStatus @default(PENDING)
-  subtotal        Float
-  total           Float
-  tax             Float      @default(0)
-  shipping        Float      @default(0)
-  notes           String?
-  shippingAddress Json
-  billingAddress  Json
-  paymentMethod   String
-  paymentStatus   String     @default("PENDING")
-  userId          String
-  user            User       @relation(fields: [userId], references: [id])
-  items           OrderItem[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id                    String        @id @default(cuid())
+  userId                String
+  orderNumber           String        @unique
+  status                OrderStatus   @default(PENDING)
+  paymentStatus         PaymentStatus @default(PENDING)
+  customerName          String?
+  customerEmail         String?
+  customerPhone         String?
+  subtotal              Float
+  tax                   Float         @default(0)
+  shipping              Float         @default(0)
+  total                 Float
+  notes                 String?
+  shippingAddress       Json
+  billingAddress        Json
+  paymentMethod         String
+  paymentStatus         String     @default("PENDING")
+  userId                String
+  user                    User       @relation(fields: [userId], references: [id])
+  items                   OrderItem[]
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
 }
 
 model OrderItem {

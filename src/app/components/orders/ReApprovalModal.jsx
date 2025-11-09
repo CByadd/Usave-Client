@@ -19,6 +19,56 @@ export default function ReApprovalModal({
 
   if (!isOpen || !order) return null;
 
+  const normalizeAddress = (address) => {
+    if (!address) return {};
+    if (typeof address === 'string') {
+      try {
+        return JSON.parse(address);
+      } catch (error) {
+        console.error('[ReApprovalModal] Failed to parse address JSON:', error);
+        return {};
+      }
+    }
+    if (typeof address === 'object') {
+      return address;
+    }
+    return {};
+  };
+
+  const buildCustomerPayload = () => {
+    const shippingAddressData = normalizeAddress(order.shippingAddress);
+    const customerData = (order.customer && typeof order.customer === 'object') ? order.customer : {};
+
+    const nameFromOrder = order.customerName || customerData.name || `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim();
+    const nameFromShipping = `${shippingAddressData.firstName || ''} ${shippingAddressData.lastName || ''}`.trim();
+    const finalName = nameFromOrder || nameFromShipping || '';
+
+    const finalEmail = order.customerEmail
+      || customerData.email
+      || shippingAddressData.email
+      || shippingAddressData.contactEmail
+      || '';
+
+    const finalPhone = order.customerPhone
+      || customerData.phone
+      || shippingAddressData.phone
+      || shippingAddressData.contactPhone
+      || '';
+
+    return {
+      customer: {
+        firstName: customerData.firstName || shippingAddressData.firstName || '',
+        lastName: customerData.lastName || shippingAddressData.lastName || '',
+        email: finalEmail,
+        phone: finalPhone,
+      },
+      customerName: finalName,
+      customerEmail: finalEmail,
+      customerPhone: finalPhone,
+      shippingAddress: shippingAddressData,
+    };
+  };
+
   const handleOwnerSubmit = async (e) => {
     e.preventDefault();
     if (!ownerEmail) {
@@ -30,6 +80,8 @@ export default function ReApprovalModal({
     setError('');
 
     try {
+      const { customer, customerName, customerEmail, customerPhone, shippingAddress: shippingAddressData } = buildCustomerPayload();
+
       // Prepare order details from existing order
       const orderDetails = {
         items: order.items?.map((item) => ({
@@ -49,7 +101,12 @@ export default function ReApprovalModal({
         shipping: order.shipping || 0,
         warranty: 0, // Warranty is included in total
         total: order.total || 0,
-        shippingAddress: order.shippingAddress || {},
+        shippingAddress: shippingAddressData,
+        billingAddress: shippingAddressData,
+        customer,
+        customerName,
+        customerEmail,
+        customerPhone,
       };
 
       const response = await fetch('/api/orders/request-approval', {
@@ -92,6 +149,8 @@ export default function ReApprovalModal({
     setError('');
 
     try {
+      const { customer, customerName, customerEmail, customerPhone, shippingAddress: shippingAddressData } = buildCustomerPayload();
+
       // Prepare order details from existing order
       const orderDetails = {
         items: order.items?.map((item) => ({
@@ -111,7 +170,12 @@ export default function ReApprovalModal({
         shipping: order.shipping || 0,
         warranty: 0, // Warranty is included in total
         total: order.total || 0,
-        shippingAddress: order.shippingAddress || {},
+        shippingAddress: shippingAddressData,
+        billingAddress: shippingAddressData,
+        customer,
+        customerName,
+        customerEmail,
+        customerPhone,
       };
 
       const response = await fetch('/api/orders/request-approval', {

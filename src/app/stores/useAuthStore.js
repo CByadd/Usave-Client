@@ -100,6 +100,45 @@ export const useAuthStore = create((set, get) => {
             error: null,
           });
 
+          // Sync local cart and wishlist with the authenticated account
+          try {
+            const [{ useCartStore }, { useWishlistStore }] = await Promise.all([
+              import('./useCartStore'),
+              import('./useWishlistStore'),
+            ]);
+
+            const cartStore = useCartStore.getState();
+            const wishlistStore = useWishlistStore.getState();
+
+            Promise.allSettled([
+              (async () => {
+                try {
+                  if (cartStore.cartItems?.length > 0) {
+                    await cartStore.saveCart();
+                  }
+                  await cartStore.loadCart(true);
+                } catch (err) {
+                  console.debug('[Auth] Cart sync after login failed:', err?.message || err);
+                }
+              })(),
+              (async () => {
+                try {
+                  if (wishlistStore.wishlistItems?.length > 0) {
+                    await wishlistStore.syncLocalToServer?.();
+                  } else {
+                    await wishlistStore.loadWishlist(true);
+                  }
+                } catch (err) {
+                  console.debug('[Auth] Wishlist sync after login failed:', err?.message || err);
+                }
+              })(),
+            ]).catch((err) => {
+              console.debug('[Auth] Post-login sync encountered errors:', err?.message || err);
+            });
+          } catch (syncErr) {
+            console.debug('[Auth] Failed to trigger post-login sync:', syncErr?.message || syncErr);
+          }
+
           return { success: true, user: userData };
         } else {
           const errorMsg = response.error || response.message || 'Login failed';
@@ -143,6 +182,45 @@ export const useAuthStore = create((set, get) => {
               isLoading: false,
               error: null,
             });
+
+            // Sync local cart and wishlist with the authenticated account
+            try {
+              const [{ useCartStore }, { useWishlistStore }] = await Promise.all([
+                import('./useCartStore'),
+                import('./useWishlistStore'),
+              ]);
+
+              const cartStore = useCartStore.getState();
+              const wishlistStore = useWishlistStore.getState();
+
+              Promise.allSettled([
+                (async () => {
+                  try {
+                    if (cartStore.cartItems?.length > 0) {
+                      await cartStore.saveCart();
+                    }
+                    await cartStore.loadCart(true);
+                  } catch (err) {
+                    console.debug('[Auth] Cart sync after registration failed:', err?.message || err);
+                  }
+                })(),
+                (async () => {
+                  try {
+                    if (wishlistStore.wishlistItems?.length > 0) {
+                      await wishlistStore.syncLocalToServer?.();
+                    } else {
+                      await wishlistStore.loadWishlist(true);
+                    }
+                  } catch (err) {
+                    console.debug('[Auth] Wishlist sync after registration failed:', err?.message || err);
+                  }
+                })(),
+              ]).catch((err) => {
+                console.debug('[Auth] Post-registration sync encountered errors:', err?.message || err);
+              });
+            } catch (syncErr) {
+              console.debug('[Auth] Failed to trigger post-registration sync:', syncErr?.message || syncErr);
+            }
 
             return { success: true, user: newUser };
           }

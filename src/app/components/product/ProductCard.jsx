@@ -123,10 +123,8 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
   // Determine classes based on variant
 
-  const containerClasses = variant === 'grid' 
-
-    ? "group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full"
-
+  const containerClasses = variant === 'grid'
+    ? "group relative bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full w-full"
     : "group min-w-[85vw] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[85vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]";
   
   

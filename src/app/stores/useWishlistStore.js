@@ -309,6 +309,75 @@ export const useWishlistStore = create((set, get) => {
     }
   },
 
+  // Sync local wishlist items to the authenticated user's account
+  syncLocalToServer: async () => {
+    if (!isAuthenticated()) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const { wishlistItems } = get();
+    if (!wishlistItems || wishlistItems.length === 0) {
+      // Nothing to sync, but ensure we pull the server state
+      await get().loadWishlist(true);
+      return { success: true };
+    }
+
+    set({ isSyncing: true });
+
+    try {
+      // Fetch existing wishlist from API to avoid duplicate adds
+      let existingIds = new Set();
+      try {
+        const response = await apiService.wishlist.get();
+        if (response?.success && Array.isArray(response.data?.items)) {
+          existingIds = new Set(
+            response.data.items
+              .map((item) => {
+                const id = item?.productId || item?.id || item?.product?.id;
+                return id ? String(id) : null;
+              })
+              .filter(Boolean)
+          );
+        }
+      } catch (err) {
+        console.debug('[Wishlist] Failed to load existing wishlist before sync:', err.message);
+      }
+
+      const itemsToSync = wishlistItems.filter((item) => {
+        const productId = item?.productId || item?.id || item?.product?.id;
+        if (!productId) {
+          return false;
+        }
+        const key = String(productId);
+        return !existingIds.has(key);
+      });
+
+      if (itemsToSync.length > 0) {
+        await Promise.allSettled(
+          itemsToSync.map(async (item) => {
+            const productId = item?.productId || item?.id || item?.product?.id;
+            if (!productId) return;
+            try {
+              await apiService.wishlist.addItem(productId);
+            } catch (err) {
+              console.debug('[Wishlist] Failed to sync wishlist item, keeping locally:', err.message);
+            }
+          })
+        );
+      }
+
+      // Reload wishlist to ensure local state matches server data
+      await get().loadWishlist(true);
+
+      set({ isSyncing: false });
+      return { success: true };
+    } catch (err) {
+      console.error('[Wishlist] Failed to sync local wishlist:', err);
+      set({ isSyncing: false, error: err.message || 'Failed to sync wishlist' });
+      return { success: false, error: err.message || 'Failed to sync wishlist' };
+    }
+  },
+
   // Clear wishlist
   clearWishlist: async () => {
     set({ isLoading: true, error: null });
@@ -389,6 +458,7 @@ export const useWishlist = () => {
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
   const clearWishlist = useWishlistStore((state) => state.clearWishlist);
   const loadWishlist = useWishlistStore((state) => state.loadWishlist);
+  const syncLocalToServer = useWishlistStore((state) => state.syncLocalToServer);
   const isInWishlist = useWishlistStore((state) => state.isInWishlist);
   const getWishlistCount = useWishlistStore((state) => state.getWishlistCount);
 
@@ -402,6 +472,7 @@ export const useWishlist = () => {
     toggleWishlist,
     clearWishlist,
     loadWishlist,
+    syncLocalToServer,
     isInWishlist,
     getWishlistCount,
   };

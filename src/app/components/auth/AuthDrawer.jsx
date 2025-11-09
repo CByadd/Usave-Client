@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Eye, EyeOff, Mail, Lock, User, LogOut, ArrowLeft } from 'lucide-react';
-import { login as loginUser, getCurrentUser, logout as logoutUser, isAuthenticated as checkAuth } from '../../lib/auth';
+import { login as loginUser } from '../../lib/auth';
 import { apiService } from '../../services/api/apiClient';
 import { useUIStore } from '../../stores/useUIStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1173,18 +1173,11 @@ const AuthDrawer = () => {
   const setAuthRedirectPath = useUIStore((state) => state.setAuthRedirectPath);
   const { getAnimationConfig } = useAnimationStore();
   const drawerConfig = getAnimationConfig('drawer');
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
   const [activeTab, setActiveTab] = useState('login');
   const [forceOpen, setForceOpen] = useState(false);
-
-  useEffect(() => {
-    // Check auth state
-    const currentUser = getCurrentUser();
-    const authStatus = checkAuth();
-    setUser(currentUser);
-    setIsAuthenticated(authStatus);
-  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -1216,9 +1209,7 @@ const AuthDrawer = () => {
   };
   
   const handleLogout = async () => {
-    await logoutUser();
-    setUser(null);
-    setIsAuthenticated(false);
+    await logout();
     closeAuthDrawer();
     setForceOpen(false);
     setAuthRedirectPath(null);

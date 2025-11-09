@@ -308,8 +308,18 @@ export default function CheckoutPage() {
       state: formData.state,
       postalCode: formData.postalCode,
       country: formData.country,
-      phone: formData.phone
+      phone: formData.phone,
+      email: formData.email,
     };
+
+    const customerInfo = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+    };
+
+    const customerName = `${formData.firstName || ''} ${formData.lastName || ''}`.trim();
 
     // Show owner email input modal for owner approval flow
     showApproval({
@@ -317,6 +327,10 @@ export default function CheckoutPage() {
       totalAmount: finalTotal,
       flowType: 'owner',
       shippingAddress: shippingAddress,
+      customerInfo,
+      customerName,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
       subtotal: totals.subtotal,
       tax: totals.tax,
       shipping: shippingCost,
@@ -385,8 +399,18 @@ export default function CheckoutPage() {
         state: formData.state,
         postalCode: formData.postalCode,
         country: formData.country,
-        phone: formData.phone
+        phone: formData.phone,
+        email: formData.email,
       };
+
+      const customerInfo = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+      };
+
+      const customerName = `${formData.firstName || ''} ${formData.lastName || ''}`.trim();
 
       // Save address if requested
       if (saveAddress && selectedAddressId === 'new') {
@@ -415,8 +439,13 @@ export default function CheckoutPage() {
             warranty: warrantyFee,
             total,
             shippingAddress,
+            billingAddress: shippingAddress,
             deliveryDate: shippingOption === 'delivery' ? deliveryDate : null,
             deliveryTime: shippingOption === 'delivery' ? deliveryTime : null,
+            customer: customerInfo,
+            customerName,
+            customerEmail: formData.email,
+            customerPhone: formData.phone,
           },
           userId: user?.id || 'guest',
           requiresOwnerApproval: false, // Direct to admin

@@ -17,6 +17,10 @@ export default function ApprovalModalWrapper() {
       totalAmount={approvalModalData?.totalAmount || 0}
       flowType={approvalModalData?.flowType || 'owner'}
       shippingAddress={approvalModalData?.shippingAddress || null}
+      customerInfo={approvalModalData?.customerInfo || null}
+      customerName={approvalModalData?.customerName || ''}
+      customerEmail={approvalModalData?.customerEmail || ''}
+      customerPhone={approvalModalData?.customerPhone || ''}
       subtotal={approvalModalData?.subtotal || 0}
       tax={approvalModalData?.tax || 0}
       shipping={approvalModalData?.shipping || 0}
