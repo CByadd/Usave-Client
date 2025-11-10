@@ -7,6 +7,8 @@ const useProductStore = create((set, get) => ({
   // Product detail state
   product: null,
   relatedProducts: [],
+  productReviews: [],
+  reviewStats: { averageRating: 0, totalReviews: 0 },
   isLoading: false,
   error: null,
   
@@ -58,6 +60,8 @@ const useProductStore = create((set, get) => ({
         if (product?.category) {
           get().fetchRelatedProducts(productId);
         }
+
+        get().loadProductReviews(product.id);
       } else {
         console.error('Product not found, response:', response);
         set({
@@ -77,6 +81,26 @@ const useProductStore = create((set, get) => ({
   },
   
   fetchRelatedProducts: async (productId, limit = 4) => {
+  loadProductReviews: async (productId) => {
+    try {
+      const response = await apiService.reviews.getProductReviews(productId);
+      const reviewsData = response?.data || {};
+      set({
+        productReviews: reviewsData.reviews || [],
+        reviewStats: {
+          averageRating: Number(reviewsData.averageRating) || 0,
+          totalReviews: reviewsData.totalReviews || (reviewsData.reviews?.length || 0),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching product reviews:', error);
+      set({
+        productReviews: [],
+        reviewStats: { averageRating: 0, totalReviews: 0 },
+      });
+    }
+  },
+
     const { product } = get();
     if (!product?.category || !productId) return;
     
@@ -115,6 +139,8 @@ const useProductStore = create((set, get) => ({
   resetProduct: () => set({
     product: null,
     relatedProducts: [],
+    productReviews: [],
+    reviewStats: { averageRating: 0, totalReviews: 0 },
     selectedImage: 0,
     quantity: 1,
     selectedColor: null,

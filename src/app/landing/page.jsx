@@ -78,9 +78,13 @@ export default function LandingPage() {
         <HeroSection />
       </section>
 
-  <AnimatedSection className="md:w-[90dvw] w-full overflow-hidden" delay={0.1}>
-        <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
-          <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room" />
+  <AnimatedSection className="flex flex-col items-center justify-center w-full overflow-hidden" delay={0.1}>
+        
+            <div className="w-[90%]">
+          <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room" />
+        </div>
+          {/* <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room" /> */}
+          <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
           <CategoryCarousel />
         </div>
       </AnimatedSection>

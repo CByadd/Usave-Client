@@ -21,6 +21,8 @@ export default function ProductDetailPage() {
   const {
     product,
     relatedProducts,
+    productReviews,
+    reviewStats,
     isLoading,
     error,
     selectedImage,
@@ -172,8 +174,8 @@ export default function ProductDetailPage() {
   }
 
   const productImages = product.images || [product.image || ''];
-  const rating = Number(product.rating) || 0;
-  const reviews = Number(product.reviewCount || product.reviews) || 0;
+  const rating = Number(reviewStats?.averageRating || product.rating || 0);
+  const reviews = Number(reviewStats?.totalReviews || product.reviewCount || product.reviews || 0);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -465,9 +467,50 @@ export default function ProductDetailPage() {
             )}
 
             {activeTab === 'reviews' && (
-              <div className="text-center py-12">
-                <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
-              </div>
+              productReviews && productReviews.length > 0 ? (
+                <div className="space-y-6">
+                  {productReviews.map((review) => {
+                    const reviewerName = [review.user?.firstName, review.user?.lastName]
+                      .filter(Boolean)
+                      .join(" ")
+                      .trim();
+                    const displayName = reviewerName || "Verified Customer";
+                    return (
+                      <div key={review.id} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="flex items-center gap-3">
+                              <div className="flex text-yellow-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <span key={i} className="text-lg">
+                                    {i < Math.floor(review.rating) ? "★" : "☆"}
+                                  </span>
+                                ))}
+                              </div>
+                              <span className="text-sm font-medium text-gray-900">{displayName}</span>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {review.title && (
+                            <p className="text-base font-semibold text-gray-900">{review.title}</p>
+                          )}
+                          {review.comment && (
+                            <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+                              {review.comment}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                  <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
+                </div>
+              )
             )}
 
             {activeTab === 'dimensions' && product.dimensions && typeof product.dimensions === 'object' && (

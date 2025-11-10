@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../stores/useAuthStore';
-import { RefreshCw, Edit, CreditCard, AlertCircle, Eye } from 'lucide-react';
+import { RefreshCw, Edit, CreditCard, AlertCircle, Eye, Star } from 'lucide-react';
 import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
 import ReApprovalModal from '../components/orders/ReApprovalModal';
+import ReviewOrderModal from '../components/orders/ReviewOrderModal';
 import { showAlert, setLoading as setGlobalLoading } from '../lib/ui';
 
 export default function OrdersPage() {
@@ -20,6 +21,8 @@ export default function OrdersPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showReApprovalModal, setShowReApprovalModal] = useState(false);
   const [selectedOrderForReapproval, setSelectedOrderForReapproval] = useState(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [orderForReview, setOrderForReview] = useState(null);
   const [mounted, setMounted] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
@@ -114,6 +117,20 @@ export default function OrdersPage() {
     fetchOrders();
     setShowReApprovalModal(false);
     setSelectedOrderForReapproval(null);
+  };
+
+  const handleOpenReviewModal = (order) => {
+    setOrderForReview(order);
+    setReviewModalOpen(true);
+  };
+
+  const handleReviewModalClose = () => {
+    setReviewModalOpen(false);
+    setOrderForReview(null);
+  };
+
+  const handleReviewSubmitted = () => {
+    fetchOrders();
   };
 
   const handleProceedToPay = (orderId) => {
@@ -262,7 +279,14 @@ export default function OrdersPage() {
               </div>
             ) : (
               getFilteredOrders().map((order) => (
-                <OrderCard key={order.id} order={order} onProceedToPay={handleProceedToPay} onEditOrder={handleEditOrder} onReSendApproval={handleRequestReapproval} />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onProceedToPay={handleProceedToPay}
+                  onEditOrder={handleEditOrder}
+                  onReSendApproval={handleRequestReapproval}
+                  onReviewOrder={handleOpenReviewModal}
+                />
               ))
             )}
           </div>
@@ -277,12 +301,13 @@ export default function OrdersPage() {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Pending Orders</h2>
                 <div className="space-y-4">
                   {groupedOrders.pending.map((order) => (
-                    <OrderCard 
-                      key={order.id} 
-                      order={order} 
+                    <OrderCard
+                      key={order.id}
+                      order={order}
                       onProceedToPay={handleProceedToPay}
                       onEditOrder={handleEditOrder}
                       onReSendApproval={handleRequestReapproval}
+                      onReviewOrder={handleOpenReviewModal}
                     />
                   ))}
                 </div>
@@ -295,12 +320,13 @@ export default function OrdersPage() {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Approved Orders</h2>
                 <div className="space-y-4">
                   {groupedOrders.approved.map((order) => (
-                    <OrderCard 
-                      key={order.id} 
-                      order={order} 
+                    <OrderCard
+                      key={order.id}
+                      order={order}
                       onProceedToPay={handleProceedToPay}
                       onEditOrder={handleEditOrder}
                       onReSendApproval={handleRequestReapproval}
+                      onReviewOrder={handleOpenReviewModal}
                     />
                   ))}
                 </div>
@@ -313,12 +339,13 @@ export default function OrdersPage() {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Rejected Orders</h2>
                 <div className="space-y-4">
                   {groupedOrders.rejected.map((order) => (
-                    <OrderCard 
-                      key={order.id} 
-                      order={order} 
+                    <OrderCard
+                      key={order.id}
+                      order={order}
                       onProceedToPay={handleProceedToPay}
                       onEditOrder={handleEditOrder}
                       onReSendApproval={handleRequestReapproval}
+                      onReviewOrder={handleOpenReviewModal}
                     />
                   ))}
                 </div>
@@ -343,13 +370,14 @@ export default function OrdersPage() {
               </div>
             ) : (
               groupedOrders[activeFilter].map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  onProceedToPay={handleProceedToPay}
-                  onEditOrder={handleEditOrder}
-                  onReSendApproval={handleRequestReapproval}
-                />
+              <OrderCard
+                key={order.id}
+                order={order}
+                onProceedToPay={handleProceedToPay}
+                onEditOrder={handleEditOrder}
+                onReSendApproval={handleRequestReapproval}
+                onReviewOrder={handleOpenReviewModal}
+              />
               ))
             )}
           </div>
@@ -366,12 +394,18 @@ export default function OrdersPage() {
         order={selectedOrderForReapproval}
         onDirectSubmit={handleReApprovalSuccess}
       />
+      <ReviewOrderModal
+        isOpen={reviewModalOpen}
+        onClose={handleReviewModalClose}
+        order={orderForReview}
+        onSubmitted={handleReviewSubmitted}
+      />
     </div>
   );
 }
 
 // Order Card Component
-function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
+function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onReviewOrder }) {
   const router = useRouter();
 
   const getStatusBadge = (status, order) => {
@@ -456,6 +490,11 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
   const originalTotal = getOriginalTotal(order);
   const items = order.items || [];
   const status = order.status;
+  const hasReviewableItems = items.some(
+    (item) => !item.review || (item.review && item.review.status !== 'APPROVED')
+  );
+  const canReview =
+    hasReviewableItems && (order.paymentStatus === 'COMPLETED' || order.status === 'DELIVERED');
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow w-full overflow-hidden">
@@ -541,6 +580,16 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval }) {
                 <Eye size={16} />
                 View Order
               </button>
+
+            {canReview && (
+              <button
+                onClick={() => onReviewOrder?.(order)}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-[#0B4866]/20 text-[#0B4866] rounded-lg font-medium hover:bg-[#0B4866]/10 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Star size={16} />
+                Review Items
+              </button>
+            )}
 
               {/* Proceed to Pay - for approved orders with pending payment */}
               {/* {status === 'APPROVED' && order.paymentStatus === 'PENDING' && (
