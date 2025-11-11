@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import productService from '../services/api/productService';
+import { apiService } from '../services/api/apiClient';
 
 const useProductStore = create((set, get) => ({
   // Product detail state
@@ -81,7 +82,22 @@ const useProductStore = create((set, get) => ({
   },
   
   fetchRelatedProducts: async (productId, limit = 4) => {
+    const { product } = get();
+    if (!product?.category || !productId) return;
+
+    try {
+      const response = await productService.getRelatedProducts(productId, limit);
+      if (response.success) {
+        set({ relatedProducts: response.data || [] });
+      }
+    } catch (error) {
+      console.error('Error fetching related products:', error);
+    }
+  },
+
   loadProductReviews: async (productId) => {
+    if (!productId) return;
+
     try {
       const response = await apiService.reviews.getProductReviews(productId);
       const reviewsData = response?.data || {};
@@ -98,19 +114,6 @@ const useProductStore = create((set, get) => ({
         productReviews: [],
         reviewStats: { averageRating: 0, totalReviews: 0 },
       });
-    }
-  },
-
-    const { product } = get();
-    if (!product?.category || !productId) return;
-    
-    try {
-      const response = await productService.getRelatedProducts(productId, limit);
-      if (response.success) {
-        set({ relatedProducts: response.data || [] });
-      }
-    } catch (error) {
-      console.error('Error fetching related products:', error);
     }
   },
   
