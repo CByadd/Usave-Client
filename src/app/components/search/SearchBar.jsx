@@ -182,7 +182,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
           />
 
           {/* Clear button (X) - Show when there's text */}
-          {query && (
+          {query && !isMobile && (
             <button
               type="button"
               onClick={handleClear}

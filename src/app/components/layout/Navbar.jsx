@@ -303,7 +303,7 @@ const Navbar = () => {
   // );
 
   const renderSearchBar = useCallback(() => (
-    <div className="w-full max-w-[600px]">
+    <div className="w-full max-w-[780px] lg:max-w-[840px]">
       <SearchBar />
     </div>
   ), []);

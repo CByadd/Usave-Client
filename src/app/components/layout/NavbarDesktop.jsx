@@ -39,7 +39,7 @@ const NavbarDesktop = ({
           </div>
 
           {/* Center: Search */}
-          <div className="flex justify-center w-full max-w-2xl mx-auto">
+          <div className="flex justify-center w-[60dvw]  mx-auto">
             {renderSearchBar()}
           </div>
 
