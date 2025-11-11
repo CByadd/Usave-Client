@@ -205,7 +205,7 @@ export const useSearchStore = create((set, get) => {
       // Debounce the API call
       debounceTimer = setTimeout(async () => {
         try {
-          const productService = await import('../../services/api/productService');
+          const productService = await import('../services/api/productService');
           const response = await productService.default.getSearchSuggestions(
             trimmedQuery,
             10 // limit
