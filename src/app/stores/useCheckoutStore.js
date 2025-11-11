@@ -2,78 +2,40 @@
 
 import { create } from 'zustand';
 
-const CHECKOUT_STORAGE_KEY = 'usave_checkout';
+const createDefaultFormData = () => ({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  company: '',
+  address1: '',
+  address2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: 'Australia',
+});
 
-// Load checkout state from localStorage
-const loadCheckoutFromStorage = () => {
-  if (typeof window === 'undefined') {
-    return {
-      shippingOption: 'delivery-only',
-      warranty: '',
-      cartExpanded: true,
-      formData: {},
-    };
-  }
-  
-  try {
-    const stored = localStorage.getItem(CHECKOUT_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (err) {
-    console.error('Error loading checkout from localStorage:', err);
-  }
-  
-  return {
-    shippingOption: 'delivery-only',
-    warranty: '',
-    cartExpanded: true,
-    formData: {},
-  };
-};
-
-// Save checkout state to localStorage
-const saveCheckoutToStorage = (state) => {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify({
-      shippingOption: state.shippingOption,
-      warranty: state.warranty,
-      deliveryDate: state.deliveryDate,
-      deliveryTime: state.deliveryTime,
-      cartExpanded: state.cartExpanded,
-      formData: state.formData,
-    }));
-  } catch (err) {
-    console.error('Error saving checkout to localStorage:', err);
-  }
-};
+const createDefaultCheckoutState = () => ({
+  shippingOption: 'delivery',
+  warranty: '',
+  deliveryDate: '',
+  deliveryTime: '',
+  cartExpanded: true,
+  formData: createDefaultFormData(),
+});
 
 export const useCheckoutStore = create((set, get) => {
-  // Initialize from localStorage
-  const initialCheckout = loadCheckoutFromStorage();
-  
+  const initialCheckout = createDefaultCheckoutState();
+
   return {
     // Checkout state
-    shippingOption: initialCheckout.shippingOption || 'delivery',
-    warranty: initialCheckout.warranty || '',
-    deliveryDate: initialCheckout.deliveryDate || '',
-    deliveryTime: initialCheckout.deliveryTime || '',
-    cartExpanded: initialCheckout.cartExpanded !== undefined ? initialCheckout.cartExpanded : true,
-    formData: initialCheckout.formData || {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      company: '',
-      address1: '',
-      address2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: 'Australia',
-    },
+    shippingOption: initialCheckout.shippingOption,
+    warranty: initialCheckout.warranty,
+    deliveryDate: initialCheckout.deliveryDate,
+    deliveryTime: initialCheckout.deliveryTime,
+    cartExpanded: initialCheckout.cartExpanded,
+    formData: initialCheckout.formData,
     errors: {},
     isSubmitting: false,
     showApprovalModal: false,
@@ -86,44 +48,37 @@ export const useCheckoutStore = create((set, get) => {
     // Set shipping option
     setShippingOption: (option) => {
       set({ shippingOption: option });
-      saveCheckoutToStorage({ ...get(), shippingOption: option });
     },
 
     // Set warranty
     setWarranty: (warranty) => {
       set({ warranty });
-      saveCheckoutToStorage({ ...get(), warranty });
     },
 
     // Set delivery date
     setDeliveryDate: (date) => {
       set({ deliveryDate: date });
-      saveCheckoutToStorage({ ...get(), deliveryDate: date });
     },
 
     // Set delivery time
     setDeliveryTime: (time) => {
       set({ deliveryTime: time });
-      saveCheckoutToStorage({ ...get(), deliveryTime: time });
     },
 
     // Toggle cart expanded
     toggleCartExpanded: () => {
       const { cartExpanded } = get();
       set({ cartExpanded: !cartExpanded });
-      saveCheckoutToStorage({ ...get(), cartExpanded: !cartExpanded });
     },
 
     // Set cart expanded
     setCartExpanded: (expanded) => {
       set({ cartExpanded: expanded });
-      saveCheckoutToStorage({ ...get(), cartExpanded: expanded });
     },
 
     // Set form data
     setFormData: (formData) => {
       set({ formData });
-      saveCheckoutToStorage({ ...get(), formData });
     },
 
     // Update form field
@@ -131,7 +86,6 @@ export const useCheckoutStore = create((set, get) => {
       const { formData } = get();
       const newFormData = { ...formData, [field]: value };
       set({ formData: newFormData });
-      saveCheckoutToStorage({ ...get(), formData: newFormData });
     },
 
     // Set errors
@@ -188,20 +142,17 @@ export const useCheckoutStore = create((set, get) => {
     // Reset checkout state
     reset: () => {
       const defaultState = {
-        shippingOption: 'delivery-only',
-        warranty: '',
-        cartExpanded: true,
-        formData: {},
+        ...createDefaultCheckoutState(),
         errors: {},
         isSubmitting: false,
         showApprovalModal: false,
+        approvalModalData: null,
         showErrorModal: false,
         showSuccessModal: false,
         errorMessage: '',
         orderId: null,
       };
       set(defaultState);
-      saveCheckoutToStorage(defaultState);
     },
   };
 });

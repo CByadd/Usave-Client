@@ -39,6 +39,7 @@ export default function CheckoutPage() {
     setDeliveryTime,
     toggleCartExpanded,
     setCartExpanded,
+    setFormData,
     updateFormField,
     setErrors,
     setFieldError,
@@ -74,13 +75,17 @@ export default function CheckoutPage() {
       setLoadingAddresses(true);
       const response = await apiService.user.getAddresses();
       if (response.success && response.data?.addresses) {
-        setSavedAddresses(response.data.addresses);
+        const addresses = response.data.addresses;
+        setSavedAddresses(addresses);
         
         // Auto-select default address if exists
-        const defaultAddress = response.data.addresses.find(addr => addr.isDefault);
+        const defaultAddress = addresses.find(addr => addr.isDefault);
         if (defaultAddress) {
           setSelectedAddressId(defaultAddress.id);
           fillAddressForm(defaultAddress);
+        } else {
+          setSelectedAddressId('new');
+          resetAddressForm();
         }
       }
     } catch (error) {
@@ -91,40 +96,50 @@ export default function CheckoutPage() {
   };
 
   const fillAddressForm = (address) => {
-    updateFormField('firstName', address.firstName || '');
-    updateFormField('lastName', address.lastName || '');
-    updateFormField('company', address.company || '');
-    updateFormField('address1', address.address1 || '');
-    updateFormField('address2', address.address2 || '');
-    updateFormField('city', address.city || '');
-    updateFormField('state', address.state || '');
-    updateFormField('postalCode', address.postalCode || '');
-    updateFormField('country', address.country || 'Australia');
-    updateFormField('phone', address.phone || user?.phone || '');
+    const updatedForm = {
+      ...formData,
+      firstName: address.firstName || '',
+      lastName: address.lastName || '',
+      company: address.company || '',
+      address1: address.address1 || '',
+      address2: address.address2 || '',
+      city: address.city || '',
+      state: address.state || '',
+      postalCode: address.postalCode || '',
+      country: address.country || 'Australia',
+      phone: address.phone || user?.phone || '',
+    };
+    setFormData(updatedForm);
   };
 
-  const handleAddressSelect = (e) => {
-    const addressId = e.target.value;
+  const resetAddressForm = () => {
+    const updatedForm = {
+      ...formData,
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      company: '',
+      address1: '',
+      address2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'Australia',
+      phone: user?.phone || '',
+    };
+    setFormData(updatedForm);
+  };
+
+  const handleSavedAddressSelect = (addressId) => {
     setSelectedAddressId(addressId);
-    
+
     if (addressId === 'new') {
-      // Clear form for new address
-      updateFormField('firstName', user?.firstName || '');
-      updateFormField('lastName', user?.lastName || '');
-      updateFormField('company', '');
-      updateFormField('address1', '');
-      updateFormField('address2', '');
-      updateFormField('city', '');
-      updateFormField('state', '');
-      updateFormField('postalCode', '');
-      updateFormField('country', 'Australia');
-      updateFormField('phone', user?.phone || '');
-    } else {
-      // Fill form with selected address
-      const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
-      if (selectedAddress) {
-        fillAddressForm(selectedAddress);
-      }
+      resetAddressForm();
+      return;
+    }
+
+    const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
+    if (selectedAddress) {
+      fillAddressForm(selectedAddress);
     }
   };
 
@@ -550,21 +565,74 @@ export default function CheckoutPage() {
               {/* Saved Addresses Selector */}
               {savedAddresses.length > 0 && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select a saved address or add new
-                  </label>
-                  <select
-                    value={selectedAddressId}
-                    onChange={handleAddressSelect}
-                    className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:border-[#0B4866]"
-                  >
-                    <option value="new">+ Add New Address</option>
-                    {savedAddresses.map((addr) => (
-                      <option key={addr.id} value={addr.id}>
-                        {addr.firstName} {addr.lastName} - {addr.address1}, {addr.city}, {addr.state} {addr.postalCode}
-                      </option>
-                    ))}
-                  </select>
+                  <p className="text-sm font-medium text-gray-700 mb-3">
+                    Saved addresses
+                  </p>
+                  {loadingAddresses ? (
+                    <p className="text-sm text-gray-500">Loading saved addresses...</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => handleSavedAddressSelect('new')}
+                        className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${
+                          selectedAddressId === 'new'
+                            ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
+                            : 'border-gray-200 hover:border-[#0F4C81]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-[#0F4C81] mb-3">
+                          <Plus size={18} />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900">Use a new address</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Enter a different shipping address.
+                        </p>
+                      </button>
+
+                      {savedAddresses.map((addr) => {
+                        const isSelected = selectedAddressId === addr.id;
+                        return (
+                          <button
+                            key={addr.id}
+                            type="button"
+                            onClick={() => handleSavedAddressSelect(addr.id)}
+                            className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${
+                              isSelected
+                                ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
+                                : 'border-gray-200 hover:border-[#0F4C81]'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {addr.firstName} {addr.lastName}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                                  {addr.address1}
+                                  {addr.address2 ? `, ${addr.address2}` : ''}
+                                  <br />
+                                  {addr.city}, {addr.state} {addr.postalCode}
+                                  <br />
+                                  {addr.country}
+                                </p>
+                                {addr.phone && (
+                                  <p className="text-xs text-gray-600 mt-2">
+                                    Phone: {addr.phone}
+                                  </p>
+                                )}
+                              </div>
+                              {addr.isDefault && (
+                                <span className="inline-flex items-center rounded-full bg-[#0F4C81]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0F4C81]">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
