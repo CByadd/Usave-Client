@@ -1,0 +1,36 @@
+{
+    "left": [
+      {
+        "title": "Modern Kitchens",
+        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264158/Usave/unsplash_wF9NH87U-2E_z1iumw.jpg",
+        "link": "/designs/kitchen",
+        "class": "md:rounded-tl-[20rem] rounded-tl-[7rem]"
+      },
+      {
+        "title": "Luxury Bathrooms",
+        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264120/Usave/unsplash_23TiGQ7PgWU_f6n03q.jpg",
+        "link": "/designs/bathroom",
+        "class": "md:rounded-tr-[20rem] rounded-tr-[7rem]"
+      }
+    ],
+    "right": [
+      {
+        "title": "Outdoor Spaces",
+        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264148/Usave/unsplash_iAftdIcgpFc_cags1a.jpg",
+        "link": "/designs/outdoor",
+        "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
+      },
+      {
+        "title": "Living Rooms",
+        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264165/Usave/unsplash_ogLcoE6oRpY_upts9o.jpg",
+        "link": "/designs/livingroom",
+        "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
+      },
+      {
+        "title": "Office Interiors",
+        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_UDDULE_eIBY_r9wgwp.jpg",
+        "link": "/designs/office",
+        "class": "md:rounded-bl-[10rem] rounded-bl-[5rem]"
+      }
+    ]
+  }
