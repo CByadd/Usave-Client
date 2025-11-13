@@ -1,363 +1,186 @@
-import { apiService } from './apiClient';
-import productsData from '../../data/products.json';
+import { apiService } from "./apiClient";
 
-// Mock API service for development (replace with real API calls)
+const titleCase = (value = "") =>
+  value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+    .trim();
+
 class ProductService {
-  constructor() {
-    this.products = productsData;
-    this.useMockAPI = process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_API_URL;
-  }
-
-  // Simulate API delay
-  async delay(ms = 500) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  // Get all products with optional filtering
   async getAllProducts(filters = {}) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      let filteredProducts = [...this.products];
-      
-      // Apply filters
-      if (filters.category) {
-        filteredProducts = filteredProducts.filter(
-          product => product.category === filters.category
-        );
-      }
-      
-      if (filters.subcategory) {
-        filteredProducts = filteredProducts.filter(
-          product => product.subcategory === filters.subcategory
-        );
-      }
-      
-      if (filters.inStock !== undefined) {
-        filteredProducts = filteredProducts.filter(
-          product => product.inStock === filters.inStock
-        );
-      }
-      
-      if (filters.minPrice) {
-        filteredProducts = filteredProducts.filter(
-          product => product.discountedPrice >= filters.minPrice
-        );
-      }
-      
-      if (filters.maxPrice) {
-        filteredProducts = filteredProducts.filter(
-          product => product.discountedPrice <= filters.maxPrice
-        );
-      }
-      
-      if (filters.featured) {
-        filteredProducts = filteredProducts.filter(
-          product => product.isFeatured === true
-        );
-      }
-      
-      // Apply sorting
-      if (filters.sortBy) {
-        switch (filters.sortBy) {
-          case 'price-low':
-            filteredProducts.sort((a, b) => a.discountedPrice - b.discountedPrice);
-            break;
-          case 'price-high':
-            filteredProducts.sort((a, b) => b.discountedPrice - a.discountedPrice);
-            break;
-          case 'rating':
-            filteredProducts.sort((a, b) => b.rating - a.rating);
-            break;
-          case 'newest':
-            filteredProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            break;
-          case 'popular':
-            filteredProducts.sort((a, b) => b.reviews - a.reviews);
-            break;
-          default:
-            // Keep original order
-            break;
-        }
-      }
-      
-      // Apply pagination
-      const page = filters.page || 1;
-      const limit = filters.limit || 12;
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      
-      const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-      
+    try {
+      return await apiService.products.getAll(filters);
+    } catch (error) {
+      console.error("Failed to fetch products", error);
       return {
-        success: true,
+        success: false,
         data: {
-          products: paginatedProducts,
-          total: filteredProducts.length,
-          page,
-          limit,
-          totalPages: Math.ceil(filteredProducts.length / limit)
-        }
+          products: [],
+          total: 0,
+          page: filters.page || 1,
+          limit: filters.limit || 12,
+          totalPages: 0,
+        },
+        error: error?.message || "Failed to fetch products",
       };
     }
-    
-    // Real API call
-    return await apiService.products.getAll(filters);
   }
 
-  // Get product by ID
   async getProductById(id) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      const product = this.products.find(p => p.id === parseInt(id));
-      
-      if (!product) {
-        throw new Error('Product not found');
-      }
-      
-      return {
-        success: true,
-        data: product
-      };
+    try {
+      return await apiService.products.getById(id);
+    } catch (error) {
+      console.error("Failed to fetch product", error);
+      throw error;
     }
-    
-    // Real API call
-    return await apiService.products.getById(id);
   }
 
-  // Search products
   async searchProducts(query, filters = {}) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      if (!query) {
-        return await this.getAllProducts(filters);
-      }
-      
-      const searchQuery = query.toLowerCase();
-      let filteredProducts = this.products.filter(product => 
-        product.title.toLowerCase().includes(searchQuery) ||
-        product.description.toLowerCase().includes(searchQuery) ||
-        product.category.toLowerCase().includes(searchQuery) ||
-        product.subcategory.toLowerCase().includes(searchQuery) ||
-        product.brand.toLowerCase().includes(searchQuery) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchQuery))
-      );
-      
-      // Apply additional filters
-      if (filters.category) {
-        filteredProducts = filteredProducts.filter(
-          product => product.category === filters.category
-        );
-      }
-      
-      if (filters.minPrice) {
-        filteredProducts = filteredProducts.filter(
-          product => product.discountedPrice >= filters.minPrice
-        );
-      }
-      
-      if (filters.maxPrice) {
-        filteredProducts = filteredProducts.filter(
-          product => product.discountedPrice <= filters.maxPrice
-        );
-      }
-      
-      if (filters.inStock !== undefined) {
-        filteredProducts = filteredProducts.filter(
-          product => product.inStock === filters.inStock
-        );
-      }
-      
-      // Apply sorting
-      if (filters.sortBy) {
-        switch (filters.sortBy) {
-          case 'price-low':
-            filteredProducts.sort((a, b) => a.discountedPrice - b.discountedPrice);
-            break;
-          case 'price-high':
-            filteredProducts.sort((a, b) => b.discountedPrice - a.discountedPrice);
-            break;
-          case 'rating':
-            filteredProducts.sort((a, b) => b.rating - a.rating);
-            break;
-          case 'newest':
-            filteredProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            break;
-          default:
-            // Keep original order
-            break;
-        }
-      }
-      
+    try {
+      return await apiService.products.search(query, filters);
+    } catch (error) {
+      console.error("Failed to search products", error);
       return {
-        success: true,
+        success: false,
         data: {
-          products: filteredProducts,
-          total: filteredProducts.length,
-          query
-        }
+          products: [],
+          total: 0,
+          query,
+        },
+        error: error?.message || "Failed to search products",
       };
     }
-    
-    // Real API call
-    return await apiService.products.search(query, filters);
   }
 
-  // Get featured products
   async getFeaturedProducts(limit = 8) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      const featuredProducts = this.products
-        .filter(product => product.isFeatured)
-        .slice(0, limit);
-      
-      return {
-        success: true,
-        data: featuredProducts
-      };
-    }
-    
-    // Real API call
-    return await apiService.products.getFeatured();
-  }
+    try {
+      const response = await apiService.products.getAll({ limit, isFeatured: true });
+      if (response?.success && Array.isArray(response.data?.products) && response.data.products.length > 0) {
+        return response;
+      }
 
-  // Get products by category
-  async getProductsByCategory(category, filters = {}) {
-    return await this.getAllProducts({ ...filters, category });
-  }
-
-  // Get categories
-  async getCategories() {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      const categories = [
-        { id: 'living', name: 'Living Room', count: this.products.filter(p => p.category === 'living').length },
-        { id: 'dining', name: 'Dining Room', count: this.products.filter(p => p.category === 'dining').length },
-        { id: 'bedroom', name: 'Bedroom', count: this.products.filter(p => p.category === 'bedroom').length },
-        { id: 'kitchen', name: 'Kitchen', count: this.products.filter(p => p.category === 'kitchen').length },
-        { id: 'electronics', name: 'Electronics', count: this.products.filter(p => p.category === 'electronics').length }
-      ];
-      
-      return {
-        success: true,
-        data: categories
-      };
-    }
-    
-    // Real API call
-    return await apiService.products.getCategories();
-  }
-
-  // Get search suggestions
-  async getSearchSuggestions(query, limit = 10) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      if (!query || query.length < 1) {
+      // Fallback: fetch and filter client-side if API does not support isFeatured
+      const fallbackResponse = await apiService.products.getAll({ limit: limit * 2 });
+      if (fallbackResponse?.success) {
+        const featured = (fallbackResponse.data?.products || []).filter((product) => product.isFeatured);
         return {
           success: true,
           data: {
-            suggestions: [],
-            query: query || ''
-          }
+            products: featured.slice(0, limit),
+          },
         };
       }
-      
-      const searchQuery = query.toLowerCase();
-      const suggestions = new Set();
-      
-      // Extract suggestions from products
-      this.products.forEach(product => {
-        // Title suggestions
-        if (product.title.toLowerCase().includes(searchQuery)) {
-          suggestions.add(product.title);
-        }
-        
-        // Category suggestions
-        if (product.category.toLowerCase().includes(searchQuery)) {
-          suggestions.add(product.category);
-        }
-        
-        // Brand suggestions
-        if (product.brand.toLowerCase().includes(searchQuery)) {
-          suggestions.add(product.brand);
-        }
-        
-        // Material suggestions
-        if (product.material.toLowerCase().includes(searchQuery)) {
-          suggestions.add(product.material);
-        }
-        
-        // Tag suggestions
-        product.tags.forEach(tag => {
-          if (tag.toLowerCase().includes(searchQuery)) {
-            suggestions.add(tag);
-          }
-        });
-      });
-      
-      const suggestionsArray = Array.from(suggestions).slice(0, limit);
-      
+
+      return fallbackResponse;
+    } catch (error) {
+      console.error("Failed to fetch featured products", error);
       return {
-        success: true,
-        data: {
-          suggestions: suggestionsArray,
-          query
-        }
+        success: false,
+        data: { products: [] },
+        error: error?.message || "Failed to fetch featured products",
       };
     }
-    
-    // Real API call
-    return await apiService.products.getSuggestions(query, limit);
   }
 
-  // Get related products
+  async getProductsByCategory(category, filters = {}) {
+    return this.getAllProducts({ ...filters, category });
+  }
+
+  async getCategories(limit = 200) {
+    try {
+      const response = await apiService.products.getAll({ limit });
+      if (!response?.success) {
+        return response;
+      }
+
+      const products = response.data?.products || [];
+      const map = new Map();
+
+      products.forEach((product) => {
+        const slug = (product.category || "uncategorized").toLowerCase();
+        const entry = map.get(slug) || {
+          id: slug,
+          name: titleCase(slug),
+          count: 0,
+          image: product.image || product.images?.[0] || "",
+        };
+
+        entry.count += 1;
+        if (!entry.image && (product.image || product.images?.length)) {
+          entry.image = product.image || product.images[0];
+        }
+
+        map.set(slug, entry);
+      });
+
+      return {
+        success: true,
+        data: Array.from(map.values()),
+      };
+    } catch (error) {
+      console.error("Failed to fetch categories", error);
+      return {
+        success: false,
+        data: [],
+        error: error?.message || "Failed to fetch categories",
+      };
+    }
+  }
+
+  async getSearchSuggestions(query, limit = 10) {
+    try {
+      return await apiService.products.getSuggestions(query, limit);
+    } catch (error) {
+      console.error("Failed to fetch suggestions", error);
+      return {
+        success: false,
+        data: {
+          suggestions: [],
+          query,
+        },
+        error: error?.message || "Failed to fetch suggestions",
+      };
+    }
+  }
+
   async getRelatedProducts(productId, limit = 4) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      const product = this.products.find(p => p.id === parseInt(productId));
-      if (!product) {
+    try {
+      const productResponse = await this.getProductById(productId);
+      const category = productResponse?.data?.product?.category;
+      if (!category) {
         return { success: true, data: [] };
       }
-      
-      const relatedProducts = this.products
-        .filter(p => p.id !== parseInt(productId) && p.category === product.category)
-        .slice(0, limit);
-      
+
+      const relatedResponse = await apiService.products.getAll({ category, limit: limit + 1 });
+      if (!relatedResponse?.success) {
+        return relatedResponse;
+      }
+
+      const related = (relatedResponse.data?.products || []).filter(
+        (product) => `${product.id}` !== `${productId}`
+      );
+
       return {
         success: true,
-        data: relatedProducts
+        data: related.slice(0, limit),
       };
+    } catch (error) {
+      console.error("Failed to fetch related products", error);
+      return { success: false, data: [], error: error?.message || "Failed to fetch related products" };
     }
-    
-    // Real API call would go here
-    return { success: true, data: [] };
   }
 
-  // Update product stock (for cart operations)
   async updateProductStock(productId, quantity) {
-    if (this.useMockAPI) {
-      await this.delay();
-      
-      const product = this.products.find(p => p.id === parseInt(productId));
-      if (product) {
-        product.stockQuantity = Math.max(0, product.stockQuantity - quantity);
-        product.inStock = product.stockQuantity > 0;
-      }
-      
-      return {
-        success: true,
-        data: product
-      };
+    try {
+      // Placeholder – depends on backend support
+      console.warn("updateProductStock is not implemented on the API");
+      return { success: true, data: null };
+    } catch (error) {
+      console.error("Failed to update product stock", error);
+      return { success: false, data: null, error: error?.message || "Failed to update stock" };
     }
-    
-    // Real API call would go here
-    return { success: true, data: null };
   }
 }
 

@@ -40,6 +40,17 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     return null;
   }
 
+  const rawOriginalPrice = Number(
+    productItem.originalPrice ?? productItem.price ?? productItem.discountedPrice ?? 0
+  );
+  const rawDiscountedPrice = Number(
+    productItem.discountedPrice ?? productItem.price ?? productItem.originalPrice ?? 0
+  );
+  const originalPrice = Number.isFinite(rawOriginalPrice) ? rawOriginalPrice : 0;
+  const discountedPrice = Number.isFinite(rawDiscountedPrice) ? rawDiscountedPrice : 0;
+  const hasDiscount = discountedPrice < originalPrice - 0.01;
+  const displayPrice = hasDiscount ? discountedPrice : originalPrice;
+
   // Calculate stock status
   const stockQuantity = productItem.stockQuantity ?? productItem.stock ?? 0;
   const inStock = productItem.inStock !== false && productItem.inStock !== null;
@@ -345,15 +356,14 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
            <h3 onClick={goToProduct} className={`${variant === 'grid' ? 'text-base mb-2' : 'mt-3'} font-2xl text-gray-800 hover:text-[#0B4866] cursor-pointer line-clamp-2 min-h-[2.5rem]`}>{productItem.title}</h3>
 
         <div className={`${variant === 'grid' ? 'gap-2 mb-2' : 'mt-1'} flex items-center ${variant === 'grid' ? '' : 'text-sm text-gray-600'}`}>
-
-          <span className="text-gray-500 line-through mr-2 text-sm">${(productItem.originalPrice || productItem.price || 0).toFixed(2)}</span>
-
+          {hasDiscount && (
+            <span className="text-gray-500 line-through mr-2 text-sm">
+              ${originalPrice.toFixed(2)}
+            </span>
+          )}
           <span className={`${variant === 'grid' ? 'text-xl' : 'text-xl'} font-semibold text-gray-900`}>
-
-            ${(productItem.discountedPrice || productItem.price || 0).toFixed(2)}
-
-                </span>
-
+            ${displayPrice.toFixed(2)}
+          </span>
         </div>
 
         {/* Ratings */}

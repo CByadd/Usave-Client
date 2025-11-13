@@ -1,13 +1,17 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import categories from "./../../data/categories.json";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import productService from "../../services/api/productService";
+
+const FALLBACK_IMAGE =
+  "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264135/Usave/unsplash_p3UWyaujtQo_gor2oz.jpg";
 
 const CategoryCarousel = () => {
   const scrollRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   const checkScrollPosition = () => {
     const el = scrollRef.current;
@@ -30,6 +34,24 @@ const CategoryCarousel = () => {
   };
 
   useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await productService.getCategories();
+        if (response?.success) {
+          setCategories(response.data || []);
+        } else {
+          setCategories([]);
+        }
+      } catch (error) {
+        console.error("Failed to load categories", error);
+        setCategories([]);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
@@ -41,11 +63,14 @@ const CategoryCarousel = () => {
       el.removeEventListener("scroll", checkScrollPosition);
       window.removeEventListener("resize", checkScrollPosition);
     };
-  }, []);
+  }, [categories.length]);
+
+  if (categories.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="relative w-full  ">
-      {/* Left Arrow */}
+    <div className="relative w-full">
       {showLeftArrow && (
         <button
           onClick={() => scroll("left")}
@@ -57,33 +82,36 @@ const CategoryCarousel = () => {
 
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide "
+        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide"
         style={{ gap: "2.5rem", padding: "0 0.5rem" }}
       >
-        {categories.map((cat, index) => (
+        {categories.map((cat) => (
           <div
-            key={index}
-            className="snap-center shadow-md flex flex-col items-center justify-center p-5 cursor-pointer  h-[336px] min-w-[250px]"
+            key={cat.id}
+            className="snap-center shadow-md flex flex-col items-center justify-center p-5 cursor-pointer h-[336px] min-w-[250px] rounded-2xl bg-white"
             style={{
-              backgroundColor: cat.bgColor,
-              flex: "0 0 calc((100% - 3rem)/4)", // show 4 items with gap 1rem between
+              flex: "0 0 calc((100% - 3rem)/4)",
             }}
           >
-            <div className="w-[90%] h-[90%] relative mb-4"> {/* increased size from w-24 h-24 */}
-  <Image
-    src={cat.img}
-    alt={cat.name}
-    className="object-contain"
-    fill // this makes the image fill the parent div
-  />
-</div>
+            <div className="relative w-[90%] h-[90%] mb-4">
+              <Image
+                src={cat.image || FALLBACK_IMAGE}
+                alt={cat.name}
+                className="object-cover rounded-2xl"
+                fill
+              />
+            </div>
 
-            <p className="text-lg font-medium text-gray-700">{cat.name}</p>
+            <p className="text-lg font-medium text-gray-700 text-center px-3">
+              {cat.name}
+              {cat.count ? (
+                <span className="block text-sm text-gray-500">{cat.count} items</span>
+              ) : null}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Right Arrow */}
       {showRightArrow && (
         <button
           onClick={() => scroll("right")}

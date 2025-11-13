@@ -209,8 +209,16 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
   
   const productInWishlist = productId ? isInWishlist(productId) : false;
 
-  const originalPrice = product?.originalPrice || product?.regularPrice || product?.price || 0;
-  const discountedPrice = product?.discountedPrice || product?.salePrice || product?.price || 0;
+  const rawOriginalPrice = Number(
+    product?.originalPrice ?? product?.regularPrice ?? product?.price ?? 0
+  );
+  const rawDiscountedPrice = Number(
+    product?.discountedPrice ?? product?.salePrice ?? product?.price ?? rawOriginalPrice
+  );
+  const originalPrice = Number.isFinite(rawOriginalPrice) ? rawOriginalPrice : 0;
+  const discountedPrice = Number.isFinite(rawDiscountedPrice) ? rawDiscountedPrice : 0;
+  const hasDiscount = discountedPrice < originalPrice - 0.01;
+  const displayPrice = hasDiscount ? discountedPrice : originalPrice;
 
   if (!isOpen || !product) return null;
 
@@ -315,10 +323,10 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 line-clamp-2">{product?.title || product?.name || 'Product'}</h1>
 
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                {originalPrice > discountedPrice && (
+                {hasDiscount && (
                   <span className="text-sm sm:text-base text-gray-500 line-through">${originalPrice.toFixed(2)}</span>
                 )}
-                <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">${discountedPrice.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">${displayPrice.toFixed(2)}</span>
               </div>
 
               <div className="flex items-center gap-2 mb-1">

@@ -37,6 +37,13 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
   const [selectedSort, setSelectedSort] = useState('relevance');
   const [selectedPriceRange, setSelectedPriceRange] = useState(null);
 
+  const getEffectivePrice = (product) => {
+    const value = Number(
+      product?.discountedPrice ?? product?.price ?? product?.originalPrice ?? 0
+    );
+    return Number.isFinite(value) ? value : 0;
+  };
+
   useEffect(() => {
     fetchCategoryProducts();
   }, [categoryName, selectedSort, selectedPriceRange]);
@@ -72,9 +79,9 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
       // Apply client-side sorting if needed
       let sortedProducts = [...availableProducts];
       if (selectedSort === 'price-low') {
-        sortedProducts.sort((a, b) => (a.discountedPrice || a.price || 0) - (b.discountedPrice || b.price || 0));
+        sortedProducts.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
       } else if (selectedSort === 'price-high') {
-        sortedProducts.sort((a, b) => (b.discountedPrice || b.price || 0) - (a.discountedPrice || a.price || 0));
+        sortedProducts.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
       } else if (selectedSort === 'rating') {
         sortedProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       } else if (selectedSort === 'newest') {
@@ -173,7 +180,7 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
   }, []);
 
   // Show loading skeleton while loading
-  if (isLoading) {
+  if (isLoading && products.length === 0) {
     return <ProductGridSkeleton count={12} />;
   }
 
