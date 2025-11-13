@@ -1,13 +1,18 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getCurrentUser, isAuthenticated } from '../../../lib/auth';
-import { CheckCircle, Package, Truck, Home, FileText } from 'lucide-react';
+import { CheckCircle, Package, Truck, Home, FileText, Star } from 'lucide-react';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
 import InvoiceGenerator from '../../../components/shared/InvoiceGenerator';
 import { apiService as api } from '../../../services/api/apiClient';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
+import ReviewOrderModal from '../../../components/orders/ReviewOrderModal';
+import {
+  getPendingReviewCount,
+  isOrderReviewEligible,
+} from '../../../utils/reviews';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +34,7 @@ const PaymentSuccessPage = () => {
 
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -77,6 +83,20 @@ const PaymentSuccessPage = () => {
       if (response.success) {
         setOrder(response.data?.order || response.data);
       }
+  const isReviewEligible = useMemo(() => isOrderReviewEligible(order), [order]);
+  const pendingReviewCount = useMemo(() => getPendingReviewCount(order), [order]);
+
+  const handleOpenReviewModal = () => {
+    setReviewModalOpen(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setReviewModalOpen(false);
+  };
+
+  const handleReviewSubmitted = async () => {
+    await fetchOrder();
+  };
     } catch (err) {
       console.error('Failed to load order:', err);
     } finally {
@@ -251,6 +271,34 @@ const PaymentSuccessPage = () => {
               </div>
             </div>
           </div>
+
+          {isReviewEligible && (
+            <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-amber-100 p-2 text-amber-600">
+                    <Star className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-amber-900">
+                      {pendingReviewCount && pendingReviewCount > 1
+                        ? `Review ${pendingReviewCount} items from your order`
+                        : 'Share your experience with these products'}
+                    </h3>
+                    <p className="mt-1 text-sm text-amber-800">
+                      Tell other shoppers what you think. Reviews help us improve and unlock future perks for your account.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleOpenReviewModal}
+                  className="inline-flex items-center justify-center rounded-full bg-[#0B4866] px-5 py-2 text-sm font-semibold text-white shadow hover:bg-[#093b54]"
+                >
+                  Leave a review
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -286,6 +334,13 @@ const PaymentSuccessPage = () => {
           </p>
         </div>
       </div>
+
+      <ReviewOrderModal
+        isOpen={reviewModalOpen}
+        onClose={handleCloseReviewModal}
+        order={order}
+        onSubmitted={handleReviewSubmitted}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../stores/useAuthStore';
 import { RefreshCw, Edit, CreditCard, AlertCircle, Eye, Star } from 'lucide-react';
@@ -9,6 +9,12 @@ import Link from 'next/link';
 import ReApprovalModal from '../components/orders/ReApprovalModal';
 import ReviewOrderModal from '../components/orders/ReviewOrderModal';
 import { showAlert, setLoading as setGlobalLoading } from '../lib/ui';
+import {
+  getPendingReviewCount,
+  isOrderReviewEligible,
+  REVIEWABLE_PAYMENT_STATUSES,
+  normalisePaymentStatus,
+} from '../utils/reviews';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -41,6 +47,20 @@ export default function OrdersPage() {
     }
     fetchOrders();
   }, [mounted, isAuthenticated, router]);
+
+  const reviewableOrders = useMemo(
+    () => orders.filter(isOrderReviewEligible),
+    [orders]
+  );
+
+  const outstandingReviewCount = useMemo(() => {
+    return reviewableOrders.reduce((total, order) => {
+      const pendingCount = getPendingReviewCount(order);
+      return total + (pendingCount === null ? 1 : pendingCount);
+    }, 0);
+  }, [reviewableOrders]);
+
+  const nextReviewOrder = reviewableOrders[0] || null;
 
   const fetchOrders = async () => {
     if (!isAuthenticated) return;
@@ -170,9 +190,15 @@ export default function OrdersPage() {
         // Include orders rejected by owner or admin
         return orders.filter(o => o.status === 'REJECTED' || o.ownerRejected || o.adminRejected);
       case 'unpaid':
-        return orders.filter(o => (o.status === 'APPROVED' || o.adminApproved) && o.paymentStatus === 'PENDING');
+        return orders.filter(o => {
+          const paymentStatus = normalisePaymentStatus(o.paymentStatus);
+          return (o.status === 'APPROVED' || o.adminApproved) && paymentStatus === 'PENDING';
+        });
       case 'paid':
-        return orders.filter(o => o.paymentStatus === 'PAID');
+        return orders.filter(o => {
+          const paymentStatus = normalisePaymentStatus(o.paymentStatus);
+          return REVIEWABLE_PAYMENT_STATUSES.has(paymentStatus);
+        });
       default:
         return orders;
     }
@@ -242,6 +268,36 @@ export default function OrdersPage() {
               </Link>
             </div>
           </div>
+
+          {reviewableOrders.length > 0 && (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-amber-100 p-2 text-amber-600">
+                    <Star className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-amber-900">
+                      {outstandingReviewCount > 1
+                        ? `${outstandingReviewCount} items are ready for your review`
+                        : 'Share your thoughts about your latest order'}
+                    </h2>
+                    <p className="mt-1 text-sm text-amber-800">
+                      Let other shoppers know what you think. Reviews help us improve and unlock future perks
+                      for your account.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => nextReviewOrder && handleOpenReviewModal(nextReviewOrder)}
+                  className="inline-flex items-center justify-center rounded-full bg-[#0B4866] px-5 py-2 text-sm font-semibold text-white shadow hover:bg-[#093b54] disabled:opacity-60"
+                  disabled={!nextReviewOrder}
+                >
+                  Review now
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Status Filter Tabs */}
           <div className="flex gap-2 border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -490,11 +546,8 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
   const originalTotal = getOriginalTotal(order);
   const items = order.items || [];
   const status = order.status;
-  const hasReviewableItems = items.some(
-    (item) => !item.review || (item.review && item.review.status !== 'APPROVED')
-  );
-  const canReview =
-    hasReviewableItems && (order.paymentStatus === 'COMPLETED' || order.status === 'DELIVERED');
+  const pendingReviewCount = getPendingReviewCount(order);
+  const canReview = isOrderReviewEligible(order);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow w-full overflow-hidden">
@@ -587,7 +640,9 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
                 className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-[#0B4866]/20 text-[#0B4866] rounded-lg font-medium hover:bg-[#0B4866]/10 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Star size={16} />
-                Review Items
+                {pendingReviewCount && pendingReviewCount > 1
+                  ? `Review ${pendingReviewCount} items`
+                  : 'Review Items'}
               </button>
             )}
 

@@ -54,77 +54,6 @@ export const apiEndpoints = {
   },
 
   reviews: {
-    async submit({ orderId, orderItemId, productId, rating, title, comment }) {
-      const token = getAuthToken();
-      try {
-        const response = await axios.post(
-          `${api.defaults.baseURL}${apiEndpoints.reviews.submit}`,
-          { orderId, orderItemId, productId, rating, title, comment },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token ? `Bearer ${token}` : '',
-            },
-          }
-        );
-        return response.data;
-      } catch (error) {
-        console.error('API: Submit review error:', error.response?.data || error.message);
-        throw error;
-      }
-    },
-
-    async getEligible(orderId) {
-      const token = getAuthToken();
-      try {
-        const response = await axios.get(
-          `${api.defaults.baseURL}${apiEndpoints.reviews.eligible}`,
-          {
-            params: orderId ? { orderId } : undefined,
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-            },
-          }
-        );
-        return response.data;
-      } catch (error) {
-        console.error('API: Get eligible reviews error:', error.response?.data || error.message);
-        throw error;
-      }
-    },
-
-    async getMine(status) {
-      const token = getAuthToken();
-      try {
-        const response = await axios.get(
-          `${api.defaults.baseURL}${apiEndpoints.reviews.mine}`,
-          {
-            params: status ? { status } : undefined,
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-            },
-          }
-        );
-        return response.data;
-      } catch (error) {
-        console.error('API: Get user reviews error:', error.response?.data || error.message);
-        throw error;
-      }
-    },
-
-    async getProductReviews(productId) {
-      try {
-        const response = await axios.get(
-          `${api.defaults.baseURL}${apiEndpoints.products.getReviews(productId)}`
-        );
-        return response.data;
-      } catch (error) {
-        console.error('API: Get product reviews error:', error.response?.data || error.message);
-        throw error;
-      }
-    },
-  },
-  reviews: {
     submit: '/reviews',
     mine: '/reviews/mine',
     eligible: '/reviews/eligible',
@@ -700,6 +629,78 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('API: Request reapproval error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+  },
+  
+  reviews: {
+    async submit({ orderId, orderItemId, productId, rating, title, comment }) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.reviews.submit}`,
+          { orderId, orderItemId, productId, rating, title, comment },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Submit review error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+
+    async getEligible(orderId) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.reviews.eligible}`,
+          {
+            params: orderId ? { orderId } : undefined,
+            headers: {
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get eligible reviews error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+
+    async getMine(status) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.reviews.mine}`,
+          {
+            params: status ? { status } : undefined,
+            headers: {
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get user reviews error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+
+    async getProductReviews(productId) {
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.getReviews(productId)}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get product reviews error:', error.response?.data || error.message);
         throw error;
       }
     },
