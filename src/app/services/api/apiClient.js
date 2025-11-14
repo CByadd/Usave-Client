@@ -278,6 +278,19 @@ export const apiService = {
       }
     },
     
+    async getLandingPageProducts(category) {
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}/products/landing-page/${category}`
+        );
+        return response.data;
+      } catch (error) {
+        // Return empty array if endpoint fails (graceful degradation)
+        console.warn('API: Get landing page products error:', error.response?.data || error.message);
+        return { success: true, data: { products: [] } };
+      }
+    },
+    
     async search(query, params = {}) {
       try {
         const response = await axios.get(

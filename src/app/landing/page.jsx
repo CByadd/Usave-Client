@@ -1,40 +1,44 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
-import HeroSection from "../components/home/HeroSection";
-import CategoryHeader from "../components/search/CategoryHeader";
-import CategoryCarousel from "../components/home/CategoryCarousel";
-import FullWidthCategory from "../components/home/FullWidthCategories";
-import InfoSection from "../components/home/InfoSection";
-import CategoryShowcase from "../components/home/CategoryShowcase";
-import ProductCarousel from "../components/home/ProductCarousel";
-import ItemCard from "../components/product/ProductCard";
-import InfoBanner from "../components/shared/InfoBanner";
-import Image from "next/image";
-import { ProductGridSkeleton } from "../components/product/LoadingSkeletons";
-import productService from "../services/api/productService";
+import React, { useEffect, useRef, useState } from 'react'
+import { motion, useInView } from 'framer-motion'
+import HeroSection from '../components/home/HeroSection'
+import CategoryHeader from '../components/search/CategoryHeader'
+import CategoryCarousel from '../components/home/CategoryCarousel'
+import FullWidthCategory from '../components/home/FullWidthCategories'
+import InfoSection from '../components/home/InfoSection'
+import CategoryShowcase from '../components/home/CategoryShowcase'
+import ProductCarousel from '../components/home/ProductCarousel'
+import { Cat } from 'lucide-react'
+import ItemCard from '../components/product/ProductCard'
+import InfoBanner from '../components/shared/InfoBanner'
+import Image from 'next/image'
+import { LandingPageSkeleton } from '../components/shared/LoadingSkeleton'
+import InspirationSection from '../components/home/InspirationSection'
+import { apiService } from '../services/api/apiClient'
 
+// Animation variants for sections - buttery smooth
 const fadeInUp = {
-  hidden: {
-    opacity: 0,
+  hidden: { 
+    opacity: 0, 
     y: 40,
     scale: 0.98,
   },
-  visible: {
-    opacity: 1,
+  visible: { 
+    opacity: 1, 
     y: 0,
     scale: 1,
-    transition: {
-      duration: 0.7,
-      ease: [0.22, 1, 0.36, 1],
+    transition: { 
+      duration: 0.7, 
+      ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for ultra-smooth animation
       opacity: { duration: 0.5 },
       y: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
       scale: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  },
+    }
+  }
 };
 
-const AnimatedSection = ({ children, delay = 0, className = "" }) => {
+// Section wrapper component with animation - buttery smooth
+const AnimatedSection = ({ children, delay = 0, className = '' }) => {
   const ref = useRef(null);
   const [hasAnimated, setHasAnimated] = useState(false);
   const isInView = useInView(ref, { once: true, margin: "-100px", amount: 0.1 });
@@ -51,144 +55,167 @@ const AnimatedSection = ({ children, delay = 0, className = "" }) => {
       initial="hidden"
       animate={hasAnimated || isInView ? "visible" : "hidden"}
       variants={fadeInUp}
-      transition={{
-        delay,
-        duration: 0.8,
-        ease: [0.22, 1, 0.36, 1],
+      transition={{ 
+        delay, 
+        duration: 0.8, 
+        ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for buttery smooth animation
       }}
       className={className}
-      style={{ willChange: "transform, opacity" }}
+      style={{ willChange: 'transform, opacity' }}
     >
       {children}
     </motion.section>
   );
 };
 
-const SECTION_CONFIG = [
-  { key: "living", title: "Living room needs", link: "/categories/living" },
-  { key: "bedroom", title: "Bedroom needs", link: "/categories/bedroom" },
-  { key: "kitchen", title: "Kitchen needs", link: "/categories/kitchen" },
-];
-
 export default function LandingPage() {
-  const [collections, setCollections] = useState({
-    living: [],
-    bedroom: [],
-    kitchen: [],
+  const [livingRoomProducts, setLivingRoomProducts] = useState([]);
+  const [kitchenProducts, setKitchenProducts] = useState([]);
+  const [bedroomProducts, setBedroomProducts] = useState([]);
+  const [loading, setLoading] = useState({
+    livingroom: true,
+    kitchen: true,
+    bedroom: true,
   });
-  const [loadingCollections, setLoadingCollections] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadCollections = async () => {
+    // Fetch landing page products from API
+    const fetchLandingPageProducts = async () => {
       try {
-        setLoadingCollections(true);
-        const responses = await Promise.all(
-          SECTION_CONFIG.map((section) =>
-            productService.getAllProducts({ category: section.key, limit: 10 })
-          )
-        );
-
-        if (!isMounted) return;
-
-        const nextState = { living: [], bedroom: [], kitchen: [] };
-        responses.forEach((response, index) => {
-          const key = SECTION_CONFIG[index].key;
-          if (response?.success) {
-            nextState[key] = response.data?.products || [];
-          } else {
-            nextState[key] = [];
-          }
-        });
-
-        setCollections(nextState);
+        // Fetch living room products
+        const livingRoomRes = await apiService.products.getLandingPageProducts('livingroom');
+        if (livingRoomRes?.success && livingRoomRes?.data?.products?.length > 0) {
+          setLivingRoomProducts(livingRoomRes.data.products);
+        }
+        setLoading(prev => ({ ...prev, livingroom: false }));
       } catch (error) {
-        console.error("Failed to load landing collections", error);
-        if (isMounted) {
-          setCollections({ living: [], bedroom: [], kitchen: [] });
+        console.error('Error fetching living room products:', error);
+        setLoading(prev => ({ ...prev, livingroom: false }));
+      }
+
+      try {
+        // Fetch kitchen products
+        const kitchenRes = await apiService.products.getLandingPageProducts('kitchen');
+        if (kitchenRes?.success && kitchenRes?.data?.products?.length > 0) {
+          setKitchenProducts(kitchenRes.data.products);
         }
-      } finally {
-        if (isMounted) {
-          setLoadingCollections(false);
+        setLoading(prev => ({ ...prev, kitchen: false }));
+      } catch (error) {
+        console.error('Error fetching kitchen products:', error);
+        setLoading(prev => ({ ...prev, kitchen: false }));
+      }
+
+      try {
+        // Fetch bedroom products
+        const bedroomRes = await apiService.products.getLandingPageProducts('bedroom');
+        if (bedroomRes?.success && bedroomRes?.data?.products?.length > 0) {
+          setBedroomProducts(bedroomRes.data.products);
         }
+        setLoading(prev => ({ ...prev, bedroom: false }));
+      } catch (error) {
+        console.error('Error fetching bedroom products:', error);
+        setLoading(prev => ({ ...prev, bedroom: false }));
       }
     };
 
-    loadCollections();
-    return () => {
-      isMounted = false;
-    };
+    fetchLandingPageProducts();
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center mx-auto gap-16 md:gap-20">
+    <div className='flex flex-col items-center justify-center mx-auto gap-16 md:gap-20'>
+      {/* Hero section - visible immediately, no animation */}
       <section className="md:w-[95dvw] w-full overflow-hidden">
-        <HeroSection />
+        <HeroSection/>
       </section>
-
-      <AnimatedSection
-        className="flex flex-col items-center justify-center w-full overflow-hidden"
-        delay={0.1}
-      >
-        <div className="w-[90%]">
-          <CategoryHeader
-            title="Explore Product By Places"
-            buttonText="See All Products"
-            buttonLink="/products"
-          />
-        </div>
+      
+      <AnimatedSection className="md:w-[90dvw] w-full overflow-hidden" delay={0.1}>
         <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
-          <CategoryCarousel />
+          <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room"/>
+          <CategoryCarousel/>
         </div>
       </AnimatedSection>
 
-      <AnimatedSection
-        className="w-[99dvw] flex flex-col items-center justify-center overflow-hidden"
-        delay={0.3}
-      >
+
+      <AnimatedSection className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden' delay={0.3}>
         <div className="w-[90%]">
-          <CategoryHeader
-            title="Explore Product By Places"
-            buttonText="See All Products"
-            buttonLink="/products"
-          />
+          <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
         </div>
         <div className="w-[99dvw] overflow-hidden">
-          <FullWidthCategory />
-          <InfoSection />
+          <FullWidthCategory/>
+          <InfoSection/>
         </div>
       </AnimatedSection>
 
-      <AnimatedSection className="md:w-[90dvw] w-[100dvw]" delay={0.4}>
-        <CategoryShowcase />
+      <AnimatedSection className='md:w-[90dvw] w-[100dvw]' delay={0.4}>
+        <CategoryShowcase/>
       </AnimatedSection>
 
-      {SECTION_CONFIG.map((section, index) => {
-        const products = collections[section.key] || [];
-        return (
-          <AnimatedSection
-            className="w-[90dvw] overflow-hidden"
-            delay={0.5 + index * 0.1}
-            key={section.key}
-          >
-            <CategoryHeader
-              title={section.title}
-              buttonText="See All Products"
-              buttonLink={section.link}
-            />
-            {loadingCollections ? (
-              <ProductGridSkeleton count={4} />
+      <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.5}>
+        <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/living-room"/>
+        {loading.livingroom ? (
+          <div className="flex items-center justify-center py-12">
+            <LandingPageSkeleton />
+          </div>
+        ) : (
+          <ProductCarousel>
+            {livingRoomProducts.length > 0 ? (
+              livingRoomProducts.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))
             ) : (
-              <ProductCarousel>
-                {products.map((item) => (
-                  <ItemCard key={item.id} item={item} />
-                ))}
-              </ProductCarousel>
+              <div className="text-center py-12 text-muted-foreground">
+                No products available for Living Room needs
+              </div>
             )}
-          </AnimatedSection>
-        );
-      })}
+          </ProductCarousel>
+        )}
+      </AnimatedSection>
+
+      <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.6}>
+        <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/living-room"/>
+        {loading.bedroom ? (
+          <div className="flex items-center justify-center py-12">
+            <LandingPageSkeleton />
+          </div>
+        ) : (
+          <ProductCarousel>
+            {bedroomProducts.length > 0 ? (
+              bedroomProducts.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                No products available for Bedroom needs
+              </div>
+            )}
+          </ProductCarousel>
+        )}
+      </AnimatedSection>
+
+      <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.7}>
+        <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/living-room"/>
+        {loading.kitchen ? (
+          <div className="flex items-center justify-center py-12">
+            <LandingPageSkeleton />
+          </div>
+        ) : (
+          <ProductCarousel>
+            {kitchenProducts.length > 0 ? (
+              kitchenProducts.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                No products available for Kitchen needs
+              </div>
+            )}
+          </ProductCarousel>
+        )}
+      </AnimatedSection>
+
+      {/* <AnimatedSection className='w-full' delay={0.8}>
+        <InspirationSection/>
+      </AnimatedSection> */}
 
       <AnimatedSection className="w-[99dvw] relative overflow-hidden" delay={0.9}>
         <div className="relative w-full">
@@ -208,5 +235,5 @@ export default function LandingPage() {
         <InfoBanner />
       </AnimatedSection>
     </div>
-  );
+  )
 }
