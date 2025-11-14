@@ -9,20 +9,67 @@ const Skeleton = ({ className = "", ...props }) => (
   />
 );
 
-// Product card skeleton
+// Product card skeleton - Grid variant
 export const ProductCardSkeleton = () => (
-  <div className="bg-white rounded-lg shadow-md overflow-hidden">
+  <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
     <Skeleton className="h-48 w-full" />
-    <div className="p-4 space-y-3">
+    <div className="p-4 space-y-3 flex-1 flex flex-col">
       <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-4 w-1/2" />
       <div className="flex items-center space-x-2">
         <Skeleton className="h-4 w-16" />
         <Skeleton className="h-4 w-20" />
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-auto">
         <Skeleton className="h-6 w-20" />
         <Skeleton className="h-8 w-24" />
+      </div>
+    </div>
+  </div>
+);
+
+// Product card skeleton - Carousel variant (matches ProductCard carousel layout)
+export const ProductCardCarouselSkeleton = () => (
+  <div className="group min-w-[85vw] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[85vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]">
+    {/* Image container skeleton - matches h-[250px] sm:h-[300px] */}
+    <div className="relative flex justify-center items-center w-full h-[250px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden bg-transparent mb-3">
+      <Skeleton className="w-full h-full rounded-2xl" />
+      {/* Wishlist icon skeleton */}
+      <div className="absolute top-3 right-3">
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    </div>
+    
+    {/* Product info skeleton */}
+    <div className="w-full bg-white flex flex-col flex-1 p-3">
+      <div className="flex flex-col flex-1">
+        {/* Title skeleton - matches line-clamp-2 min-h-[2.5rem] with mt-3 */}
+        <Skeleton className="h-5 w-full mb-1 mt-3" />
+        <Skeleton className="h-5 w-3/4" />
+        
+        {/* Price skeleton - matches mt-1 */}
+        <div className="flex items-center gap-2 mb-1 mt-1">
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+        
+        {/* Rating skeleton - matches mt-1 */}
+        <div className="flex items-center gap-1 mb-2 mt-1">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-12" />
+        </div>
+        
+        {/* Stock status skeleton - matches mt-2 flex-shrink-0 */}
+        <div className="flex items-center gap-2 mb-2 mt-2 flex-shrink-0">
+          <Skeleton className="h-2 w-2 rounded-full" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </div>
+      
+      {/* Buttons skeleton - matches carousel button layout with mt-auto */}
+      <div className="flex gap-2 sm:gap-3 mt-auto flex-col sm:flex-row flex-shrink-0">
+        <Skeleton className="flex-1 border rounded-4xl h-[44px] sm:h-[50px]" />
+        <Skeleton className="flex-1 rounded-4xl h-[44px] sm:h-[50px]" />
       </div>
     </div>
   </div>
@@ -186,40 +233,27 @@ export const CategoryPageSkeleton = () => (
   </div>
 );
 
-// Landing page skeleton
-export const LandingPageSkeleton = () => (
-  <div className="min-h-screen bg-white">
-    {/* Hero section skeleton */}
-    <div className="relative h-96 bg-gray-100">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Skeleton className="h-12 w-96 mx-auto" />
-          <Skeleton className="h-6 w-64 mx-auto" />
-          <Skeleton className="h-10 w-32 mx-auto" />
-        </div>
+// Landing page skeleton - for carousel sections
+export const LandingPageSkeleton = () => {
+  const ProductCarousel = ({ children }) => (
+    <div className="relative w-full">
+      <div
+        className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide pb-1"
+        style={{ gap: "2rem", padding: "0 0.5rem" }}
+      >
+        {children}
       </div>
     </div>
+  );
 
-    {/* Categories skeleton */}
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <Skeleton className="h-8 w-48 mb-8" />
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="text-center space-y-3">
-            <Skeleton className="h-24 w-24 mx-auto rounded-lg" />
-            <Skeleton className="h-4 w-16 mx-auto" />
-          </div>
-        ))}
-      </div>
-    </div>
-
-    {/* Featured products skeleton */}
-    <div className="max-w-7xl mx-auto px-4 py-12">
-      <Skeleton className="h-8 w-48 mb-8" />
-      <ProductGridSkeleton count={8} />
-    </div>
-  </div>
-);
+  return (
+    <ProductCarousel>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <ProductCardCarouselSkeleton key={index} />
+      ))}
+    </ProductCarousel>
+  );
+};
 
 // Checkout page skeleton
 export const CheckoutPageSkeleton = () => (
