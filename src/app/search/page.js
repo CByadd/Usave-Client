@@ -24,7 +24,7 @@ function SearchPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', inStock: false });
+  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', subcategory: '', inStock: false });
   const [hasSearched, setHasSearched] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const router = useRouter();
@@ -40,25 +40,75 @@ function SearchPageContent() {
     setCartItems(getCartItems());
   };
 
-  // Initialize search when component mounts
+  // Initialize search when component mounts or query changes
   useEffect(() => {
-    const query = searchParams.get('q');
+    const query = searchParams.get('q') || '';
+    const category = searchParams.get('category') || '';
+    const subcategory = searchParams.get('subcategory') || '';
+    
+    // Update filters if category or subcategory is in URL
+    if (category && category !== filters.category) {
+      setFilters(prev => ({ ...prev, category }));
+    }
+    if (subcategory && subcategory !== filters.subcategory) {
+      setFilters(prev => ({ ...prev, subcategory }));
+    }
+    
+    // Perform search if query is provided, or if only category/subcategory is provided
     if (query && query !== searchQuery) {
       handleSearch(query);
+    } else if ((category || subcategory) && !query) {
+      // Category-only search without query
+      handleCategoryOnlySearch(category, subcategory);
     }
   }, [searchParams]);
 
+  // Re-search when filters change (if already searched)
+  useEffect(() => {
+    if (hasSearched && searchQuery) {
+      handleSearch(searchQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
   const handleSearch = async (query) => {
-    if (!query) return;
+    if (!query || !query.trim()) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
     setIsSearching(true);
     setSearchQuery(query);
     try {
       const results = await performSearch(query, filters);
-      setSearchResults(results);
+      setSearchResults(Array.isArray(results) ? results : []);
       setHasSearched(true);
     } catch (err) {
       console.error('Search error:', err);
       setSearchResults([]);
+      setHasSearched(true);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleCategoryOnlySearch = async (category, subcategory) => {
+    if (!category && !subcategory) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+    setIsSearching(true);
+    setSearchQuery('');
+    try {
+      // Use a generic search query that matches all products, filtered by category and subcategory
+      const results = await performSearch('*', { ...filters, category, subcategory });
+      setSearchResults(Array.isArray(results) ? results : []);
+      setHasSearched(true);
+    } catch (err) {
+      console.error('Category search error:', err);
+      setSearchResults([]);
+      setHasSearched(true);
     } finally {
       setIsSearching(false);
     }
@@ -68,104 +118,8 @@ function SearchPageContent() {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
 
-  const products = searchResults.length > 0 ? searchResults : [
-    {
-      id: 1,
-      title: "City Lounge 2 Seater",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      badge: "Top seller",
-      badgeColor: "bg-pink-600"
-    },
-    {
-      id: 2,
-      title: "City Lounge RHF Chase 2 Seater",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      originalPrice: 800,
-      discountedPrice: 1649,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      badge: "Top seller",
-      badgeColor: "bg-pink-600"
-    },
-    {
-      id: 3,
-      title: "Hasting 3 Seater Lounge with chaise",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
-      originalPrice: 2699,
-      discountedPrice: 2599,
-      rating: 4.5,
-      reviews: 3,
-      inStock: true,
-      badge: "2% New",
-      badgeColor: "bg-yellow-500"
-    },
-    {
-      id: 4,
-      title: "Rose Accent Chair",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true
-    },
-    {
-      id: 5,
-      title: "Melrose Chair",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      outOfStock: true
-    },
-    {
-      id: 6,
-      title: "Beth Head Board",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      lowStock: true
-    },
-    {
-      id: 7,
-      title: "Rose Accent Chair",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true
-    },
-    {
-      id: 8,
-      title: "Rose Accent Chair",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true
-    },
-    {
-      id: 9,
-      title: "Rose Accent Chair",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true
-    }
-  ];
+  // Use only API search results - no mock data
+  const products = Array.isArray(searchResults) ? searchResults : [];
 
   const toggleFilter = (filterName) => {
     setActiveFilters(prev => ({
@@ -226,10 +180,44 @@ function SearchPageContent() {
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal text-gray-800 mb-2">
-            Search results for <span className="font-medium">"{searchQuery || 'All Products'}"</span>
+            {(() => {
+              // Get category and subcategory from URL params
+              const category = searchParams.get('category');
+              const subcategory = searchParams.get('subcategory');
+              
+              // If there's a category but no search query, show category name
+              if (category && !searchQuery) {
+                const categoryLabel = category
+                  .split('-')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+                
+                if (subcategory) {
+                  const subcategoryLabel = subcategory
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                  return <span className="font-medium">{subcategoryLabel} Products</span>;
+                }
+                
+                return <span className="font-medium">{categoryLabel} Products</span>;
+              }
+              
+              // If there's a search query, show search results
+              if (searchQuery) {
+                return (
+                  <>
+                    Search results for <span className="font-medium">"{searchQuery}"</span>
+                  </>
+                );
+              }
+              
+              // Default fallback
+              return <span className="font-medium">All Products</span>;
+            })()}
           </h1>
           <p className="text-sm md:text-base text-gray-600">
-            {isSearching ? 'Searching...' : `${products.length} results`}
+            {isSearching ? 'Searching...' : hasSearched ? `${products.length} results` : 'Enter a search query to find products'}
           </p>
         </div>
 

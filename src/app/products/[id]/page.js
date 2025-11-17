@@ -84,6 +84,24 @@ export default function ProductDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
+  // Log product data structure
+  useEffect(() => {
+    if (product) {
+      console.log('=== PRODUCT DATA STRUCTURE ===');
+      console.log('Full Product Object:', product);
+      console.log('Product Keys:', Object.keys(product));
+      console.log('Product Dimensions:', product.dimensions);
+      console.log('Product Dimensions Type:', typeof product.dimensions);
+      if (product.dimensions && typeof product.dimensions === 'object') {
+        console.log('Dimensions Entries:', Object.entries(product.dimensions));
+        console.log('Dimensions Values:', Object.values(product.dimensions));
+      }
+      console.log('Product Color Variants:', product.colorVariants);
+      console.log('Product Size Variants:', product.sizeVariants);
+      console.log('============================');
+    }
+  }, [product]);
+
   // Get variants from product
   const colorVariants = product?.colorVariants || [];
   const sizeVariants = product?.sizeVariants || [];
@@ -133,10 +151,10 @@ export default function ProductDetailPage() {
   // Add additional size variants (Variant 2, 3, etc.)
   allSizeOptions.push(...sizeVariants.map(v => ({ ...v, isBaseVariant: false })));
   
-  // Show color variants if we have any color options
-  const hasColorVariants = allColorOptions.length > 0;
+  // Show color variants only if we have 2+ color options (hide if only one color)
+  const hasColorVariants = allColorOptions.length > 1;
   // Only show size section if size variants are enabled in the product settings
-  const hasSizeVariants = product?.hasSizeVariants === true && allSizeOptions.length > 0;
+  const hasSizeVariants = product?.hasSizeVariants === true && allSizeOptions.length > 1;
   const hasInstallation = product?.hasInstallation || false;
   
   // Debug: Log color variants to check data structure
@@ -161,12 +179,13 @@ export default function ProductDetailPage() {
   }
   
   // Get selected variant data
-  const selectedColorVariant = hasColorVariants && selectedColor 
-    ? allColorOptions.find(v => v.id === selectedColor || v.color === selectedColor)
-    : null;
-  const selectedSizeVariant = hasSizeVariants && selectedSize
-    ? allSizeOptions.find(v => v.id === selectedSize || v.size === selectedSize)
-    : null;
+  // Even if UI is hidden (single color), we still want to use the selected color for display
+  const selectedColorVariant = selectedColor && allColorOptions.length > 0
+    ? allColorOptions.find(v => v.id === selectedColor || v.color === selectedColor) || allColorOptions[0]
+    : allColorOptions.length === 1 ? allColorOptions[0] : null;
+  const selectedSizeVariant = selectedSize && allSizeOptions.length > 0
+    ? allSizeOptions.find(v => v.id === selectedSize || v.size === selectedSize) || allSizeOptions[0]
+    : allSizeOptions.length === 1 ? allSizeOptions[0] : null;
   
   // Determine displayed product data (use variant if selected, otherwise parent)
   const displayProduct = {
@@ -184,14 +203,27 @@ export default function ProductDetailPage() {
   };
   
   // Initialize selected variants on product load
+  // If only one color exists, automatically set it as default without showing the section
   React.useEffect(() => {
-    if (product && !selectedColor && hasColorVariants && allColorOptions.length > 0) {
-      setSelectedColor(allColorOptions[0].id || allColorOptions[0].color);
+    if (product && !selectedColor) {
+      if (hasColorVariants && allColorOptions.length > 1) {
+        // Multiple colors: set first one and show selection UI
+        setSelectedColor(allColorOptions[0].id || allColorOptions[0].color);
+      } else if (allColorOptions.length === 1) {
+        // Single color: set it as default but don't show the UI section
+        setSelectedColor(allColorOptions[0].id || allColorOptions[0].color);
+      }
     }
-    if (product && !selectedSize && hasSizeVariants && allSizeOptions.length > 0) {
-      setSelectedSize(allSizeOptions[0].id || allSizeOptions[0].size);
+    if (product && !selectedSize) {
+      if (hasSizeVariants && allSizeOptions.length > 1) {
+        // Multiple sizes: set first one and show selection UI
+        setSelectedSize(allSizeOptions[0].id || allSizeOptions[0].size);
+      } else if (allSizeOptions.length === 1) {
+        // Single size: set it as default but don't show the UI section
+        setSelectedSize(allSizeOptions[0].id || allSizeOptions[0].size);
+      }
     }
-  }, [product, hasColorVariants, hasSizeVariants]);
+  }, [product, hasColorVariants, hasSizeVariants, allColorOptions.length, allSizeOptions.length]);
   
   // Update images when variant changes
   React.useEffect(() => {
@@ -337,13 +369,13 @@ export default function ProductDetailPage() {
             </button>
 
             {/* Main Image */}
-            <div className="relative bg-gray-50 rounded-lg aspect-square overflow-hidden group mb-4 w-full">
+            <div className="relative bg-gray-50 rounded-lg overflow-hidden group mb-4 w-full flex items-center justify-center p-8">
               <OptimizedImage
                 src={productImages[selectedImage] || displayProduct.image || ''}
                 alt={product.title || 'Product'}
                 width={800}
                 height={800}
-                className="w-full h-full object-contain"
+                className="w-auto h-auto max-w-[70%] max-h-[500px] object-contain"
                 priority
               />
               
@@ -366,25 +398,43 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Thumbnails */}
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              {productImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition ${
-                    selectedImage === index ? 'border-[#0B4866]' : 'border-gray-200'
-                  }`}
-                >
-                  <OptimizedImage
-                    src={image || ''}
-                    alt={`${product.title || 'Product'} ${index + 1}`}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+            {/* Thumbnails with Titles */}
+            <div className="w-full">
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                {productImages.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className="flex-shrink-0 flex flex-col items-center gap-2 group"
+                  >
+                    <div
+                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 bg-gray-50 transition flex items-center justify-center ${
+                        selectedImage === index ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-200 group-hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center p-1.5">
+                        <OptimizedImage
+                          src={image || ''}
+                          alt={`${product.title || 'Product'} ${index + 1}`}
+                          width={80}
+                          height={80}
+                          className="w-auto h-auto max-w-full max-h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs text-center max-w-[80px] line-clamp-2 transition-colors ${
+                        selectedImage === index
+                          ? 'text-[#0B4866] font-medium'
+                          : 'text-gray-600 group-hover:text-gray-900'
+                      }`}
+                      title={`Image ${index + 1}`}
+                    >
+                      {product.title || 'Product'} {index + 1}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -669,7 +719,7 @@ export default function ProductDetailPage() {
           <div className="py-8 w-full overflow-hidden">
             {activeTab === 'details' && (
               <div className="space-y-6 w-full overflow-hidden">
-                <p className="text-gray-700 leading-relaxed break-words">{product.description || 'No description available.'}</p>
+                <p className="text-gray-700 leading-relaxed break-words whitespace-pre-line">{product.description || 'No description available.'}</p>
                 {product.features && Array.isArray(product.features) && product.features.length > 0 && (
                   <ul className="space-y-3">
                     {product.features.map((feature, index) => (
@@ -730,14 +780,44 @@ export default function ProductDetailPage() {
               )
             )}
 
-            {activeTab === 'dimensions' && product.dimensions && typeof product.dimensions === 'object' && (
-              <div className="grid md:grid-cols-3 gap-6">
-                {Object.entries(product.dimensions).map(([key, value]) => (
-                  <div key={key} className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-[#0B4866]">{String(value || 0)}cm</div>
-                    <div className="text-sm text-gray-600 capitalize mt-1">{String(key || '')}</div>
+            {activeTab === 'dimensions' && product.dimensions && (
+              <div className="space-y-4">
+                <p className="text-lg font-medium text-gray-900">Dimensions</p>
+                {typeof product.dimensions === 'object' ? (
+                  <div className="text-gray-700 whitespace-pre-line">
+                    {Object.entries(product.dimensions).map(([key, value]) => {
+                      // Skip showing the key if it's "text", just show the value
+                      const isTextKey = key.toLowerCase() === 'text';
+                      
+                      // Remove "text:" prefix from value if present (case-insensitive)
+                      let displayValue = String(value || 0)
+                        .replace(/^text:\s*/i, "")  // Remove "text:" at start
+                        .replace(/\s*text:\s*/gi, "")  // Remove "text:" anywhere else
+                        .trim();
+                      
+                      // Check if unit is already included
+                      const hasUnit = /cm|in|mm|m\s*$/i.test(displayValue);
+                      // Add unit if not present
+                      if (!hasUnit && displayValue && displayValue !== '0') {
+                        displayValue += ' cm';
+                      }
+                      
+                      return (
+                        <div key={key} className="mb-2">
+                          {!isTextKey && (
+                            <span className="capitalize font-medium">{String(key || '')}: </span>
+                          )}
+                          <span>{displayValue}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-gray-700">{String(product.dimensions)
+                    .replace(/^text:\s*/i, "")  // Remove "text:" at start
+                    .replace(/\s*text:\s*/gi, "")  // Remove "text:" anywhere else
+                    .trim()}</p>
+                )}
               </div>
             )}
 

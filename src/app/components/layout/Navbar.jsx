@@ -13,6 +13,7 @@ import { openAuthDrawer } from '../../lib/ui';
 import SearchBar from '../search/SearchBar';
 import NavbarDesktop from './NavbarDesktop';
 import NavbarMobile from './NavbarMobile';
+import productService from '../../services/api/productService';
 
 // Navigation links
 const mainNavLinks = [
@@ -20,64 +21,6 @@ const mainNavLinks = [
   // // { name: "BLOGS", href: "/" },
   // { name: "ABOUT US", href: "/" },
   // { name: "CONTACT US", href: "/contact" }
-];
-
-const categoryLinks = [
-    {
-    name: "SHOP BY PLACES",
-    href: "/search",
-    subcategories: [
-      { name: "Living Room", href: "/search?place=living-room" },
-      { name: "Bedroom", href: "/search?place=bedroom" },
-      { name: "Office", href: "/search?place=office" },
-    ],
-  },
-  {
-    name: "LIVING",
-    href: "/categories/living",
-    subcategories: [
-      { name: "Sofas", href: "/categories/living/sofas" },
-      { name: "Chairs", href: "/categories/living/chairs" },
-      { name: "Tables", href: "/categories/living/tables" },
-    ],
-  },
-  {
-    name: "DINING",
-    href: "/categories/dining",
-    subcategories: [
-      { name: "Dining Sets", href: "/categories/dining/dining-sets" },
-      { name: "Chairs", href: "/categories/dining/chairs" },
-      { name: "Storage Units", href: "/categories/dining/storage" },
-    ],
-  },
-  {
-    name: "BEDROOM",
-    href: "/categories/bedroom",
-    subcategories: [
-      { name: "Beds", href: "/categories/bedroom/beds" },
-      { name: "Wardrobes", href: "/categories/bedroom/wardrobes" },
-      { name: "Dressers", href: "/categories/bedroom/dressers" },
-    ],
-  },
-  {
-    name: "KITCHEN",
-    href: "/categories/kitchen",
-    subcategories: [
-      { name: "Cookware", href: "/categories/kitchen/cookware" },
-      { name: "Storage", href: "/categories/kitchen/storage" },
-      { name: "Appliances", href: "/categories/kitchen/appliances" },
-    ],
-  },
-  {
-    name: "ELECTRONICS",
-    href: "/categories/electronics",
-    subcategories: [
-      { name: "TVs", href: "/categories/electronics/tv" },
-      { name: "Speakers", href: "/categories/electronics/speakers" },
-      { name: "Laptops", href: "/categories/electronics/laptops" },
-    ],
-  }
-
 ];
 
 
@@ -96,6 +39,7 @@ const Navbar = () => {
   const [isCategoryBarCollapsed, setIsCategoryBarCollapsed] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrollDirection, setScrollDirection] = useState(null); // 'up' | 'down' | null
+  const [categoryLinks, setCategoryLinks] = useState([]);
 
   // Auth state
   const user = useAuthStore((state) => state.user);
@@ -109,6 +53,22 @@ const Navbar = () => {
   useEffect(() => {
     setIsMounted(true);
     checkAuth();
+    
+    // Fetch categories from API
+    const fetchCategories = async () => {
+      try {
+        const response = await productService.getNavCategories();
+        if (response?.success && response?.data?.categories) {
+          setCategoryLinks(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Failed to load navigation categories:', error);
+        // Keep empty array on error
+        setCategoryLinks([]);
+      }
+    };
+    
+    fetchCategories();
   }, [checkAuth]);
 
   useEffect(() => {

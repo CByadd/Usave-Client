@@ -31,6 +31,7 @@ export const apiEndpoints = {
     search: '/products/search',
     getSuggestions: '/products/suggestions',
     getReviews: (id) => `/products/${id}/reviews`,
+    getNavCategories: '/products/categories/nav',
   },
   cart: {
     get: '/cart',
@@ -293,9 +294,15 @@ export const apiService = {
     
     async search(query, params = {}) {
       try {
-        const response = await axios.get(
+        // Server expects POST with query in body
+        const response = await axios.post(
           `${api.defaults.baseURL}${apiEndpoints.products.search}`,
-          { params: { q: query, ...params } }
+          {
+            query: query,
+            limit: params.limit || 20,
+            offset: params.offset || 0,
+            ...params,
+          }
         );
         return response.data;
       } catch (error) {
@@ -313,6 +320,18 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('API: Get suggestions error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async getNavCategories() {
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.getNavCategories}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get nav categories error:', error.response?.data || error.message);
         throw error;
       }
     },

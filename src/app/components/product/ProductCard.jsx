@@ -139,12 +139,13 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     : "group min-w-[85vw] sm:min-w-[calc(50%-0.75rem)] md:min-w-0 w-[85vw] sm:w-[45vw] md:w-[28dvw] snap-center relative transition flex flex-col items-center overflow-visible rounded-b-4xl mb-5 max-h-[400px]";
   
   
+  
 
   const imageContainerClasses = variant === 'grid'
 
-    ? "relative bg-transparent p-6 aspect-square flex items-center justify-center w-full"
+    ? "relative flex aspect-[4/3] items-center justify-center w-full overflow-hidden bg-gradient-to-br from-white/80 to-white/40 p-6"
 
-    : "relative flex justify-center items-center w-full h-[250px] sm:h-[300px] rounded-2xl cursor-pointer overflow-hidden bg-transparent";
+    : "relative flex aspect-[4/3] items-center justify-center w-full rounded-2xl cursor-pointer overflow-hidden bg-gradient-to-br from-white/80 to-white/40 p-6";
 
   return (
 
@@ -235,22 +236,22 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
           >
 
-          <div className="relative w-full h-full flex justify-center items-center bg-transparent">
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <div className="flex h-full w-full items-center justify-center rounded-[24px] bg-white/70">
+              <OptimizedImage
 
-            <OptimizedImage
+                src={productItem.image}
 
-              src={productItem.image}
+                alt={productItem.title}
 
-              alt={productItem.title}
+                width={280}
 
-              width={280}
+                height={280}
 
-              height={280}
+                className="h-full w-full max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
 
-              className="object-contain max-h-full max-w-full rounded-xl transition-transform duration-300 ease-in-out group-hover:scale-105 bg-transparent"
-
-            />
-
+              />
+            </div>
           </div>
 
         </div>
@@ -281,19 +282,23 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
           )}
 
-          <OptimizedImage
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <div className="flex h-full w-full items-center justify-center rounded-[24px] bg-white/70">
+              <OptimizedImage
 
-            src={productItem.image}
+                src={productItem.image}
 
-            alt={productItem.title}
+                alt={productItem.title}
 
-            width={300}
+                width={300}
 
-            height={300}
+                height={300}
 
-            className="object-contain w-full h-full max-h-full max-w-full"
+                className="h-full w-full max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
 
-          />
+              />
+            </div>
+          </div>
 
           <button
 

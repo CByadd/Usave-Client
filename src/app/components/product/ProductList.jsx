@@ -1,229 +1,282 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { useSearch } from '../../stores/useSearchStore';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 import productService from '../../services/api/productService';
 import ItemCard from './ProductCard';
 
-const ProductListingPage = () => {
+const ProductListingPage = ({ title, subtitle, contextType }) => {
   const { isSearching, toggleActiveFilter } = useSearch();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0); // Total number of products from API
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef(null);
+  const [dynamicHeading, setDynamicHeading] = useState('All Products');
 
-  const fallbackProducts = [
-    {
-      id: 1,
-      title: "City Lounge 2 Seater",
-      slug: "city-lounge-2-seater",
-      description: "Comfortable 2-seater lounge with premium upholstery and supportive cushions.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 25,
-      colors: ["Midnight Blue", "Ash Grey"],
-      sizes: ["Standard"],
-      category: "living",
-      badge: "Top seller",
-      badgeColor: "bg-pink-600"
-    },
-    {
-      id: 2,
-      title: "City Lounge RHF Chase 2 Seater",
-      slug: "city-lounge-rhf-chase-2-seater",
-      description: "Right-hand chase lounge perfect for compact spaces with high-density foam.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
-      ],
-      originalPrice: 1649,
-      discountedPrice: 1450,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 12,
-      colors: ["Charcoal", "Pearl"],
-      sizes: ["Standard"],
-      category: "living",
-      badge: "Top seller",
-      badgeColor: "bg-pink-600"
-    },
-    {
-      id: 3,
-      title: "Hasting 3 Seater Lounge with chaise",
-      slug: "hasting-3-seater-lounge-with-chaise",
-      description: "Spacious 3 seater lounge featuring chaise and durable fabric.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
-      ],
-      originalPrice: 2699,
-      discountedPrice: 2599,
-      rating: 4.5,
-      reviews: 3,
-      inStock: true,
-      stockQuantity: 8,
-      colors: ["River Blue", "Slate"],
-      sizes: ["Standard"],
-      category: "living",
-      badge: "2% New",
-      badgeColor: "bg-yellow-500"
-    },
-    {
-      id: 4,
-      title: "Rose Accent Chair",
-      slug: "rose-accent-chair",
-      description: "Elegant accent chair with sturdy wooden frame and velvet finish.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 18,
-      colors: ["Blush", "Ivory"],
-      sizes: ["Standard"],
-      category: "living"
-    },
-    {
-      id: 5,
-      title: "Melrose Chair",
-      slug: "melrose-chair",
-      description: "Classic armchair with plush cushioning and removable covers.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: false,
-      stockQuantity: 0,
-      colors: ["Forest Green"],
-      sizes: ["Standard"],
-      category: "living"
-    },
-    {
-      id: 6,
-      title: "Beth Head Board",
-      slug: "beth-head-board",
-      description: "Upholstered headboard with tufted detailing and supportive padding.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 3,
-      colors: ["Cream"],
-      sizes: ["Queen", "King"],
-      category: "bedroom"
-    },
-    {
-      id: 7,
-      title: "Rose Accent Chair",
-      slug: "rose-accent-chair-2",
-      description: "Compact accent chair ideal for corners and reading nooks.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CityLounger2Seater_400x400_1_1_e2odgl-removebg-preview_mur0jb.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 22,
-      colors: ["Navy", "Sand"],
-      sizes: ["Standard"],
-      category: "living"
-    },
-    {
-      id: 8,
-      title: "Rose Accent Chair",
-      slug: "rose-accent-chair-3",
-      description: "Modern accent chair with ergonomic support and easy-clean fabric.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/CitylLoungeRHFchase2_400x400_1_oafcia-removebg-preview_nebksz.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 16,
-      colors: ["Charcoal"],
-      sizes: ["Standard"],
-      category: "living"
-    },
-    {
-      id: 9,
-      title: "Rose Accent Chair",
-      slug: "rose-accent-chair-4",
-      description: "Statement chair with sleek metal legs and plush upholstery.",
-      image: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png",
-      images: [
-        "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1759806308/Usave/Hasting3SeaterLounge_Chaise_2_400x400_1_g5gov0-removebg-preview_vcxoy0.png"
-      ],
-      originalPrice: 800,
-      discountedPrice: 699,
-      rating: 4.5,
-      reviews: 13,
-      inStock: true,
-      stockQuantity: 11,
-      colors: ["Olive"],
-      sizes: ["Standard"],
-      category: "living"
+  // Determine dynamic heading based on context
+  const getDynamicHeading = useCallback(() => {
+    // If title prop is provided, use it
+    if (title) {
+      return title;
     }
-  ];
 
-  const displayedProducts = products.length > 0 ? products : fallbackProducts;
+    // Determine context from URL path first (more reliable)
+    const isCategoryPage = pathname?.includes('/categories/');
+    const isPlacePage = pathname?.includes('/places/');
+    const isSearchPage = pathname?.includes('/search');
+    const isProductsPage = pathname === '/products' || pathname?.startsWith('/products');
 
+    // Check URL search params for context
+    const category = searchParams?.get('category');
+    const place = searchParams?.get('place');
+    const searchQuery = searchParams?.get('q') || searchParams?.get('search');
+    const subcategory = searchParams?.get('subcategory');
+
+    // Build heading based on context - prioritize search query
+    if (searchQuery && searchQuery.trim()) {
+      return `Search results for "${searchQuery.trim()}"`;
+    }
+    
+    // Check category from URL path (for /categories/dining routes)
+    if (isCategoryPage && pathname) {
+      const categorySlug = pathname.split('/categories/')[1]?.split('/')[0];
+      if (categorySlug) {
+        const categoryLabel = categorySlug
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        return `${categoryLabel} Products`;
+      }
+    }
+
+    // Check place from URL path (for /places/kitchen routes)
+    if (isPlacePage && pathname) {
+      const placeSlug = pathname.split('/places/')[1]?.split('/')[0];
+      if (placeSlug) {
+        const placeLabel = placeSlug
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        return `Products for ${placeLabel}`;
+      }
+    }
+    
+    // Check category from query params (for /products?category=dining routes)
+    if (category && category.trim()) {
+      const categoryLabel = category
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      return `${categoryLabel} Products`;
+    }
+    
+    // Check subcategory from query params
+    if (subcategory && subcategory.trim()) {
+      const subcategoryLabel = subcategory
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      return `${subcategoryLabel} Products`;
+    }
+    
+    // Check place from query params
+    if (place && place.trim()) {
+      const placeLabel = place
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      return `Products for ${placeLabel}`;
+    }
+
+    // Default fallback for /products page
+    if (isProductsPage) {
+      return 'All Products';
+    }
+
+    // Final fallback
+    return 'All Products';
+  }, [title, searchParams, pathname]);
+
+  // Update heading when URL params or pathname change
   useEffect(() => {
-    // initialize with fallback products
-    setProducts(fallbackProducts);
-    setTotalPages(1);
-    setPage(1);
-  }, []);
+    const heading = getDynamicHeading();
+    setDynamicHeading(heading);
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('ProductList Heading Update:', {
+        pathname,
+        searchParams: searchParams ? Object.fromEntries(searchParams.entries()) : null,
+        heading,
+        category: searchParams?.get('category'),
+      });
+    }
+  }, [getDynamicHeading]);
 
-  const loadMore = async () => {
+  const getDynamicSubtitle = () => {
+    if (subtitle) {
+      return subtitle;
+    }
+    return totalCount > 0 ? `${totalCount.toLocaleString()} results` : `${products.length} results`;
+  };
+
+  // Initial load of products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Build filters from URL params
+        const filters = { page: 1, limit: 12 };
+        const category = searchParams?.get('category');
+        const place = searchParams?.get('place');
+        const subcategory = searchParams?.get('subcategory');
+        
+        if (category) {
+          filters.category = category;
+        }
+        if (subcategory) {
+          filters.subcategory = subcategory;
+        }
+        if (place) {
+          filters.place = place;
+        }
+        
+        const response = await productService.getAllProducts(filters);
+        if (response.success) {
+          // API response format: { success: true, data: { products: [...], pagination: {...} } }
+          const fetchedProducts = response.data?.products || [];
+          setProducts(fetchedProducts);
+          
+          // Handle pagination from API response
+          if (response.data?.pagination) {
+            const pagination = response.data.pagination;
+            setTotalPages(pagination.totalPages || 1);
+            setTotalCount(pagination.total || fetchedProducts.length); // Store total count from API
+            setHasMore(pagination.page < pagination.totalPages);
+          } else {
+            // Fallback: determine if there's more based on items returned
+            setTotalPages(1);
+            setTotalCount(fetchedProducts.length);
+            setHasMore(fetchedProducts.length === 12);
+          }
+        } else {
+          setError(response.error || 'Failed to load products');
+          setProducts([]);
+          setTotalCount(0);
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError(err?.message || 'Failed to load products. Please try again later.');
+        setProducts([]);
+        setTotalCount(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || page >= totalPages) return;
+
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
       const response = await productService.getAllProducts({ page: nextPage, limit: 12 });
-      const newItems = response.data.products || [];
-      setProducts(prev => [...prev, ...newItems]);
-      setPage(nextPage);
-      setTotalPages(response.data.totalPages || nextPage);
+      
+      if (response.success) {
+        // API response format: { success: true, data: { products: [...], pagination: {...} } }
+        const newItems = response.data?.products || [];
+        if (newItems.length > 0) {
+          setProducts(prev => [...prev, ...newItems]);
+          setPage(nextPage);
+          
+          // Handle pagination from API response
+          if (response.data?.pagination) {
+            const pagination = response.data.pagination;
+            setTotalPages(pagination.totalPages || nextPage);
+            setHasMore(pagination.page < pagination.totalPages);
+          } else {
+            // Fallback: determine if there's more based on items returned
+            setHasMore(newItems.length === 12);
+          }
+        } else {
+          setHasMore(false);
+        }
+      } else {
+        setError(response.error || 'Failed to load more products');
+      }
+    } catch (err) {
+      console.error('Error loading more products:', err);
+      setError(err?.message || 'Failed to load more products. Please try again.');
     } finally {
       setIsLoadingMore(false);
     }
-  };
+  }, [page, totalPages, hasMore, isLoadingMore]);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' } // Trigger when 100px before reaching the element
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isLoadingMore, isLoading, loadMore]);
 
   const toggleFilter = (filterName) => {
     toggleActiveFilter(filterName);
   };
 
-  // Show loading skeleton while searching
-  if (isSearching) {
+  // Show loading skeleton while searching or initial load
+  if (isSearching || isLoading) {
     return <ProductGridSkeleton count={12} />;
+  }
+
+  // Show error state
+  if (error && products.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center px-4">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Failed to Load Products</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setIsLoading(true);
+              window.location.reload();
+            }}
+            className="px-6 py-2 bg-[#0B4866] text-white rounded-lg hover:bg-[#0a3d54] transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -231,9 +284,22 @@ const ProductListingPage = () => {
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal text-gray-800 mb-2">
-            Search results for <span className="font-medium">"All Products"</span>
+            {(() => {
+              const heading = dynamicHeading || getDynamicHeading();
+              if (heading.includes('Search results for "')) {
+                const query = heading.replace('Search results for "', '').replace('"', '');
+                return (
+                  <>
+                    Search results for <span className="font-medium">"{query}"</span>
+                  </>
+                );
+              }
+              return <span className="font-medium">{heading}</span>;
+            })()}
           </h1>
-          <p className="text-sm md:text-base text-gray-600">{displayedProducts.length} results</p>
+          <p className="text-sm md:text-base text-gray-600">
+            {getDynamicSubtitle()}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2 md:gap-3 mb-6 md:mb-8 items-center overflow-x-auto pb-2 scrollbar-hide">
@@ -279,31 +345,58 @@ const ProductListingPage = () => {
           </button>
         </div>
 
+        {/* Error message if there's an error but products are shown */}
+        {error && products.length > 0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+            {error}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && products.length === 0 && !error && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">No products found.</p>
+          </div>
+        )}
+
         {/* Mobile: horizontal carousel */}
-        <div className="md:hidden -mx-4 mb-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide">
-          {displayedProducts.map((product) => (
-            <div key={product.id} className="min-w-[80%] snap-center">
-              <ItemCard item={product} variant="carousel" />
+        {products.length > 0 && (
+          <div className="md:hidden -mx-4 mb-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide">
+            {products.map((product) => (
+              <div key={product.id} className="min-w-[80%] snap-center">
+                <ItemCard item={product} variant="carousel" />
               </div>
             ))}
-        </div>
+          </div>
+        )}
 
         {/* Desktop and tablet grid */}
-        <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {displayedProducts.map((product) => (
-            <ItemCard key={product.id} item={product} variant="grid" />
-          ))}
-        </div>
+        {products.length > 0 && (
+          <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => (
+              <ItemCard key={product.id} item={product} variant="grid" />
+            ))}
+          </div>
+        )}
 
-        <div className="mt-8 md:mt-12 flex justify-center">
-          <button
-            onClick={loadMore}
-            disabled={isLoadingMore || page >= totalPages}
-            className="px-6 md:px-8 py-2.5 md:py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            {isLoadingMore ? 'Loading…' : (page >= totalPages ? 'No more items' : 'Load More')}
-          </button>
-        </div>
+        {/* Infinite scroll sentinel and loading indicator */}
+        {products.length > 0 && (
+          <div ref={observerTarget} className="mt-8 md:mt-12">
+            {isLoadingMore && (
+              <div className="flex justify-center items-center py-8">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B4866]"></div>
+                  <p className="text-sm text-gray-600">Loading more products...</p>
+                </div>
+              </div>
+            )}
+            {!hasMore && !isLoadingMore && (
+              <div className="text-center text-gray-500 text-sm py-8">
+                You've reached the end of the product list.
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-12 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 py-8 md:py-12 border-t border-b border-gray-200">
           <div className="text-center">

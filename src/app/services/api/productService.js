@@ -129,6 +129,19 @@ class ProductService {
     }
   }
 
+  async getNavCategories() {
+    try {
+      return await apiService.products.getNavCategories();
+    } catch (error) {
+      console.error("Failed to fetch navigation categories", error);
+      return {
+        success: false,
+        data: { categories: [] },
+        error: error?.message || "Failed to fetch navigation categories",
+      };
+    }
+  }
+
   async getSearchSuggestions(query, limit = 10) {
     try {
       return await apiService.products.getSuggestions(query, limit);

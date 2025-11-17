@@ -88,15 +88,23 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
 
   // Update suggestions visibility when suggestions change
   useEffect(() => {
-    if (suggestions.length > 0 && query.trim()) {
-      // Only show suggestions if the input is focused
-      if (document.activeElement === inputRef.current) {
-        setShowSuggestions(true);
+    if (query.trim().length > 0) {
+      // Show suggestions if we have results OR if we're still fetching
+      if (suggestions.length > 0 || isFetchingSuggestions) {
+        // Only show suggestions if the input is focused
+        if (document.activeElement === inputRef.current) {
+          setShowSuggestions(true);
+        }
+      } else {
+        // If we have a query but no suggestions yet, keep showing the loading state
+        if (isFetchingSuggestions) {
+          setShowSuggestions(true);
+        }
       }
-    } else if (!query.trim()) {
+    } else {
       setShowSuggestions(false);
     }
-  }, [suggestions, query]);
+  }, [suggestions, query, isFetchingSuggestions]);
 
   // Update suggestions position when input position changes
   useEffect(() => {
@@ -225,9 +233,29 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
               <Loader2 className="animate-spin h-5 w-5 mx-auto mb-1" />
               <span className="text-xs">Searching...</span>
             </li>
-          ) : (
+          ) : suggestions.length > 0 ? (
             suggestions.map((s, idx) => {
-              const label = s?.name || s?.title || s;
+              // Handle both string suggestions and object suggestions
+              const label = typeof s === 'string' ? s : (s?.name || s?.title || s);
+              const labelStr = String(label);
+              const queryLower = query.trim().toLowerCase();
+              const labelLower = labelStr.toLowerCase();
+              
+              // Highlight the matching part of the suggestion for word completion
+              const highlightText = (text, searchTerm) => {
+                if (!searchTerm) return text;
+                
+                const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                const parts = text.split(regex);
+                
+                return parts.map((part, i) => {
+                  if (part.toLowerCase() === searchTerm.toLowerCase()) {
+                    return <mark key={i} className="bg-yellow-200 font-semibold">{part}</mark>;
+                  }
+                  return part;
+                });
+              };
+              
               return (
                 <li
                   key={`${label}-${idx}`}
@@ -239,15 +267,15 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    submitQuery(String(label));
+                    submitQuery(labelStr);
                   }}
-                  onClick={() => submitQuery(String(label))}
+                  onClick={() => submitQuery(labelStr)}
                 >
-                  {String(label)}
+                  {highlightText(labelStr, queryLower)}
                 </li>
               );
             })
-          )}
+          ) : null}
         </ul>,
         document.body
       )}

@@ -8,13 +8,20 @@ let suggestions = [];
 
 // Perform search with advanced filters
 export const performSearch = async (query, filterOptions = {}, advancedFilters = {}) => {
-  if (!query || query.trim().length < 2) {
-    searchResults = [];
-    return [];
+  // Allow empty query if category filter is provided, or require at least 2 characters
+  const hasCategoryFilter = filterOptions.category || (advancedFilters.category);
+  if ((!query || query.trim().length < 2) && !hasCategoryFilter) {
+    // Special case: allow "*" as a wildcard query for category-only searches
+    if (query === '*') {
+      query = '';
+    } else {
+      searchResults = [];
+      return [];
+    }
   }
 
   try {
-    searchQuery = query;
+    searchQuery = query || '';
     
     // Merge filter options with advanced filters
     const allFilters = { ...filterOptions };
@@ -40,7 +47,13 @@ export const performSearch = async (query, filterOptions = {}, advancedFilters =
     if (advancedFilters.onSale !== null) allFilters.onSale = advancedFilters.onSale;
     if (advancedFilters.topSeller !== null) allFilters.topSeller = advancedFilters.topSeller;
     
-    const response = await apiService.products.search(query, allFilters);
+    // Pass query and filters to search API
+    const response = await apiService.products.search(query, {
+      category: allFilters.category || undefined,
+      subcategory: allFilters.subcategory || undefined,
+      limit: allFilters.limit || 100, // Increased default limit to show more products
+      offset: allFilters.offset || 0,
+    });
     
     if (response.success && response.data) {
       searchResults = response.data.products || [];

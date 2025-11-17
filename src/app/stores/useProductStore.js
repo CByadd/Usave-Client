@@ -48,6 +48,23 @@ const useProductStore = create((set, get) => ({
       if (product && product.id) {
         const productColors = product?.colors || ['Beige', 'Brown'];
         
+        // Parse description if it's a JSON string with "text" field
+        if (product.description) {
+          try {
+            // Check if description is a JSON string
+            if (typeof product.description === 'string' && product.description.trim().startsWith('{')) {
+              const parsedDesc = JSON.parse(product.description);
+              // If parsed object has a "text" field, use it
+              if (parsedDesc && typeof parsedDesc === 'object' && parsedDesc.text) {
+                product.description = parsedDesc.text;
+              }
+            }
+          } catch (e) {
+            // If parsing fails, keep the original description
+            console.warn('Failed to parse description JSON:', e);
+          }
+        }
+        
         console.log('Setting product:', product);
         
         set({
