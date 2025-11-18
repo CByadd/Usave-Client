@@ -9,25 +9,25 @@ const categories = [
   {
     "title": "Living Room",
     "para": "Modern furniture for your living room.",
-    "link": "/search?category=living",
+    "link": "/places/living-room",
     "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264135/Usave/unsplash_p3UWyaujtQo_gor2oz.jpg"
   },
   {
     "title": "Dining Room",
     "para": "Elegant dining tables and chairs.",
-    "link": "/search?category=dining",
+    "link": "/places/dining-room",
     "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264157/Usave/unsplash_eyEy5YZhSvU_ebbzol.jpg"
   },
   {
     "title": "Bedroom",
     "para": "Cozy beds and wardrobes.",
-    "link": "/search?category=bedroom",
+    "link": "/places/bedroom",
     "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264157/Usave/unsplash_1eWGq_l_DuU_dcqug9.jpg"
   },
   {
     "title": "Office",
     "para": "Stylish office furniture.",
-    "link": "/search?category=electronics",
+    "link": "/places/office",
     "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264164/Usave/unsplash_Cu_uy3E7jPc_wsywbf.jpg"
   }
 ]

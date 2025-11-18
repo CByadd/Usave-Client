@@ -130,7 +130,7 @@ export default function LandingPage() {
       
       <AnimatedSection className="md:w-[90dvw] w-full overflow-hidden" delay={0.1}>
         <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
-          <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/living-room"/>
+          <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/products"/>
           <CategoryCarousel/>
         </div>
       </AnimatedSection>
@@ -138,7 +138,7 @@ export default function LandingPage() {
 
       <AnimatedSection className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden' delay={0.3}>
         <div className="w-[90%]">
-          <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/living-room"/>
+          <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/places"/>
         </div>
         <div className="w-[99dvw] overflow-hidden">
           <FullWidthCategory/>
@@ -151,7 +151,7 @@ export default function LandingPage() {
       </AnimatedSection>
 
       <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.5}>
-        <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/living-room"/>
+        <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/products?category=living"/>
         {loading.livingroom ? (
           <div className="flex items-center justify-center py-12">
             <LandingPageSkeleton />
@@ -172,7 +172,7 @@ export default function LandingPage() {
       </AnimatedSection>
 
       <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.6}>
-        <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/living-room"/>
+        <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/products?category=bedroom"/>
         {loading.bedroom ? (
           <div className="flex items-center justify-center py-12">
             <LandingPageSkeleton />
@@ -193,7 +193,7 @@ export default function LandingPage() {
       </AnimatedSection>
 
       <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.7}>
-        <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/living-room"/>
+        <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/products?category=kitchen"/>
         {loading.kitchen ? (
           <div className="flex items-center justify-center py-12">
             <LandingPageSkeleton />

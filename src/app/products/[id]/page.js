@@ -178,29 +178,128 @@ export default function ProductDetailPage() {
     }
   }
   
-  // Get selected variant data
-  // Even if UI is hidden (single color), we still want to use the selected color for display
-  const selectedColorVariant = selectedColor && allColorOptions.length > 0
-    ? allColorOptions.find(v => v.id === selectedColor || v.color === selectedColor) || allColorOptions[0]
-    : allColorOptions.length === 1 ? allColorOptions[0] : null;
-  const selectedSizeVariant = selectedSize && allSizeOptions.length > 0
-    ? allSizeOptions.find(v => v.id === selectedSize || v.size === selectedSize) || allSizeOptions[0]
-    : allSizeOptions.length === 1 ? allSizeOptions[0] : null;
+  // Get selected variant data - improved matching logic
+  const selectedColorVariant = React.useMemo(() => {
+    if (!selectedColor || allColorOptions.length === 0) {
+      return allColorOptions.length === 1 ? allColorOptions[0] : null;
+    }
+    
+    // Normalize selectedColor for comparison
+    const normalizedSelected = String(selectedColor).trim().toLowerCase();
+    
+    // Try multiple matching strategies
+    const found = allColorOptions.find(v => {
+      const variantId = v.id ? String(v.id).trim().toLowerCase() : null;
+      const variantColor = v.color ? String(v.color).trim().toLowerCase() : null;
+      const variantIdOrColor = variantId || variantColor;
+      
+      // Match by ID, color, or normalized comparison
+      return (variantId && variantId === normalizedSelected) ||
+             (variantColor && variantColor === normalizedSelected) ||
+             (variantIdOrColor && variantIdOrColor === normalizedSelected) ||
+             (v.id === selectedColor) ||
+             (v.color === selectedColor) ||
+             (variantIdOrColor === normalizedSelected);
+    });
+    
+    const result = found || (allColorOptions.length > 0 ? allColorOptions[0] : null);
+    
+    if (process.env.NODE_ENV === 'development' && result) {
+      console.log('[ProductDetail] Found color variant:', {
+        selectedColor,
+        normalizedSelected,
+        found: {
+          id: result.id,
+          color: result.color,
+          image: result.image,
+          images: result.images,
+          imagesLength: result.images?.length || 0
+        }
+      });
+    }
+    
+    return result;
+  }, [selectedColor, allColorOptions]);
   
-  // Determine displayed product data (use variant if selected, otherwise parent)
-  const displayProduct = {
-    ...product,
-    image: selectedColorVariant?.image || selectedSizeVariant?.image || product?.image,
-    images: selectedColorVariant?.images?.length > 0 
-      ? selectedColorVariant.images 
-      : selectedSizeVariant?.images?.length > 0
-      ? selectedSizeVariant.images
-      : product?.images || [product?.image || ''],
-    originalPrice: selectedColorVariant?.originalPrice ?? selectedSizeVariant?.originalPrice ?? product?.originalPrice,
-    discountedPrice: selectedColorVariant?.discountedPrice ?? selectedSizeVariant?.discountedPrice ?? product?.discountedPrice,
-    stockQuantity: selectedColorVariant?.stockQuantity ?? selectedSizeVariant?.stockQuantity ?? product?.stockQuantity,
-    inStock: selectedColorVariant?.inStock ?? selectedSizeVariant?.inStock ?? product?.inStock,
-  };
+  const selectedSizeVariant = React.useMemo(() => {
+    if (!selectedSize || allSizeOptions.length === 0) {
+      return allSizeOptions.length === 1 ? allSizeOptions[0] : null;
+    }
+    
+    return allSizeOptions.find(v => v.id === selectedSize || v.size === selectedSize) || 
+           (allSizeOptions.length > 0 ? allSizeOptions[0] : null);
+  }, [selectedSize, allSizeOptions]);
+  
+  // Determine displayed product data - improved image handling
+  const displayProduct = React.useMemo(() => {
+    if (!product) return {};
+    
+    // Get images from selected color variant
+    let variantImages = [];
+    let variantImage = null;
+    
+    if (selectedColorVariant) {
+      variantImage = selectedColorVariant.image;
+      
+      // Priority: images array > single image
+      if (selectedColorVariant.images && Array.isArray(selectedColorVariant.images) && selectedColorVariant.images.length > 0) {
+        variantImages = [...selectedColorVariant.images]; // Create copy to avoid mutation
+      } 
+      // If variant has a single image, create array from it
+      else if (selectedColorVariant.image) {
+        variantImages = [selectedColorVariant.image];
+      }
+    }
+    
+    // If no variant images, try size variant
+    if (variantImages.length === 0 && selectedSizeVariant) {
+      if (selectedSizeVariant.images && Array.isArray(selectedSizeVariant.images) && selectedSizeVariant.images.length > 0) {
+        variantImages = [...selectedSizeVariant.images];
+        variantImage = variantImage || selectedSizeVariant.image;
+      } else if (selectedSizeVariant.image) {
+        variantImages = [selectedSizeVariant.image];
+        variantImage = variantImage || selectedSizeVariant.image;
+      }
+    }
+    
+    // Fallback to product images
+    if (variantImages.length === 0) {
+      if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
+        variantImages = [...product.images];
+        variantImage = variantImage || product?.image;
+      } else if (product?.image) {
+        variantImages = [product.image];
+        variantImage = variantImage || product.image;
+      }
+    }
+    
+    const result = {
+      ...product,
+      image: variantImage || selectedColorVariant?.image || selectedSizeVariant?.image || product?.image,
+      images: variantImages,
+      originalPrice: selectedColorVariant?.originalPrice ?? selectedSizeVariant?.originalPrice ?? product?.originalPrice,
+      discountedPrice: selectedColorVariant?.discountedPrice ?? selectedSizeVariant?.discountedPrice ?? product?.discountedPrice,
+      stockQuantity: selectedColorVariant?.stockQuantity ?? selectedSizeVariant?.stockQuantity ?? product?.stockQuantity,
+      inStock: selectedColorVariant?.inStock ?? selectedSizeVariant?.inStock ?? product?.inStock,
+    };
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ProductDetail] displayProduct computed:', {
+        selectedColor,
+        selectedColorVariantId: selectedColorVariant?.id,
+        selectedColorVariantColor: selectedColorVariant?.color,
+        variantImage,
+        variantImages: variantImages,
+        variantImagesLength: variantImages.length,
+        resultImage: result.image,
+        resultImages: result.images,
+        resultImagesLength: result.images.length
+      });
+    }
+    
+    return result;
+  }, [product, selectedColorVariant, selectedSizeVariant, selectedColor]);
   
   // Initialize selected variants on product load
   // If only one color exists, automatically set it as default without showing the section
@@ -225,14 +324,32 @@ export default function ProductDetailPage() {
     }
   }, [product, hasColorVariants, hasSizeVariants, allColorOptions.length, allSizeOptions.length]);
   
-  // Update images when variant changes
+  // Update images when variant changes - reset to first image
   React.useEffect(() => {
-    if (selectedColorVariant?.images?.length > 0) {
-      setSelectedImage(0);
-    } else if (selectedSizeVariant?.images?.length > 0) {
+    if (selectedColor || selectedSize) {
       setSelectedImage(0);
     }
-  }, [selectedColor, selectedSize]);
+  }, [selectedColor, selectedSize, setSelectedImage]);
+  
+  // Debug: Log when images change
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && displayProduct) {
+      console.log('[ProductDetail] Image update:', {
+        selectedColor,
+        selectedColorVariant: selectedColorVariant ? {
+          id: selectedColorVariant.id,
+          color: selectedColorVariant.color,
+          image: selectedColorVariant.image,
+          images: selectedColorVariant.images,
+          imagesLength: selectedColorVariant.images?.length || 0
+        } : null,
+        displayProductImage: displayProduct?.image,
+        displayProductImages: displayProduct?.images,
+        displayProductImagesLength: displayProduct?.images?.length || 0,
+        selectedImage
+      });
+    }
+  }, [selectedColor, selectedColorVariant, displayProduct, selectedImage]);
 
   const handleQuickShop = async () => {
     if (!product) return;
@@ -329,7 +446,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const productImages = displayProduct.images || [displayProduct.image || ''];
+  const productImages = displayProduct?.images || (displayProduct?.image ? [displayProduct.image] : []);
   const rating = Number(reviewStats?.averageRating || product.rating || 0);
   const reviews = Number(reviewStats?.totalReviews || product.reviewCount || product.reviews || 0);
 
@@ -369,15 +486,17 @@ export default function ProductDetailPage() {
             </button>
 
             {/* Main Image */}
-            <div className="relative bg-gray-50 rounded-lg overflow-hidden group mb-4 w-full flex items-center justify-center p-8">
-              <OptimizedImage
-                src={productImages[selectedImage] || displayProduct.image || ''}
-                alt={product.title || 'Product'}
-                width={800}
-                height={800}
-                className="w-auto h-auto max-w-[70%] max-h-[500px] object-contain"
-                priority
-              />
+            <div className="relative bg-gray-50 rounded-lg overflow-hidden group mb-4 w-full flex items-center justify-center" style={{ minHeight: '400px', maxHeight: '600px' }}>
+              <div className="relative w-full h-full flex items-center justify-center p-4 sm:p-8">
+                <OptimizedImage
+                  src={productImages[selectedImage] || displayProduct?.image || ''}
+                  alt={product.title || 'Product'}
+                  width={800}
+                  height={800}
+                  className="w-auto h-auto max-w-full max-h-full object-contain"
+                  priority
+                />
+              </div>
               
               {/* Navigation Arrows */}
               {productImages.length > 1 && (
@@ -412,7 +531,7 @@ export default function ProductDetailPage() {
                         selectedImage === index ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-200 group-hover:border-gray-300'
                       }`}
                     >
-                      <div className="absolute inset-0 flex items-center justify-center p-1.5">
+                      <div className="relative w-full h-full flex items-center justify-center p-1.5">
                         <OptimizedImage
                           src={image || ''}
                           alt={`${product.title || 'Product'} ${index + 1}`}
@@ -535,26 +654,41 @@ export default function ProductDetailPage() {
                     return (
                       <button
                         key={variantId}
-                        onClick={() => setSelectedColor(variantId)}
-                        className={`relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 transition ${isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'}`}
+                        onClick={() => {
+                          console.log('[ProductDetail] Color variant clicked:', {
+                            variantId,
+                            variant: variant,
+                            variantImage: variant.image,
+                            variantImages: variant.images,
+                            variantImagesLength: variant.images?.length || 0,
+                            currentSelectedColor: selectedColor
+                          });
+                          setSelectedColor(variantId);
+                          setSelectedImage(0); // Reset to first image when color changes
+                        }}
+                        className={`relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 transition overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'}`}
                         title={variant.title || variant.color}
                       >
                         {swatchImage && swatchImage.trim() ? (
-                          <OptimizedImage
-                            src={swatchImage}
-                            alt={variant.title || variant.color}
-                            width={64}
-                            height={64}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
+                          <div className="relative w-full h-full flex items-center justify-center p-1">
+                            <OptimizedImage
+                              src={swatchImage}
+                              alt={variant.title || variant.color}
+                              width={64}
+                              height={64}
+                              className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                            />
+                          </div>
                         ) : mainImage && mainImage.trim() ? (
-                          <OptimizedImage
-                            src={mainImage}
-                            alt={variant.title || variant.color}
-                            width={64}
-                            height={64}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
+                          <div className="relative w-full h-full flex items-center justify-center p-1">
+                            <OptimizedImage
+                              src={mainImage}
+                              alt={variant.title || variant.color}
+                              width={64}
+                              height={64}
+                              className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                            />
+                          </div>
                         ) : (
                           <div
                             className="w-full h-full rounded-lg"

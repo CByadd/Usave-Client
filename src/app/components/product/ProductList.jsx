@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { useSearch } from '../../stores/useSearchStore';
 import { ProductGridSkeleton } from './LoadingSkeletons';
@@ -60,7 +61,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
     // Check place from URL path (for /places/kitchen routes)
     if (isPlacePage && pathname) {
-      const placeSlug = pathname.split('/places/')[1]?.split('/')[0];
+      const placeSlug = pathname.split('/places/')[1]?.split('?')[0]?.split('/')[0];
       if (placeSlug) {
         const placeLabel = placeSlug
           .split('-')
@@ -104,7 +105,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
     // Final fallback
     return 'All Products';
-  }, [title, searchParams, pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, searchParams?.toString(), pathname]);
 
   // Update heading when URL params or pathname change
   useEffect(() => {
@@ -119,7 +121,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         category: searchParams?.get('category'),
       });
     }
-  }, [getDynamicHeading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString(), pathname, title]);
 
   const getDynamicSubtitle = () => {
     if (subtitle) {
@@ -134,11 +137,28 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
       setIsLoading(true);
       setError(null);
       try {
-        // Build filters from URL params
+        // Build filters from URL params - extract values to create stable dependencies
         const filters = { page: 1, limit: 12 };
-        const category = searchParams?.get('category');
-        const place = searchParams?.get('place');
+        let category = searchParams?.get('category');
+        let place = searchParams?.get('place');
         const subcategory = searchParams?.get('subcategory');
+        
+        // Normalize category to lowercase
+        if (category) {
+          category = category.toLowerCase().trim();
+        }
+        
+        // If on a places route but no place param, extract from pathname
+        if (!place && pathname?.includes('/places/')) {
+          const placeSlug = pathname.split('/places/')[1]?.split('?')[0]?.split('/')[0];
+          if (placeSlug) {
+            // Convert slug to place param (e.g., "living-room" -> "living", "bedroom" -> "bedroom", "office" -> "office")
+            place = placeSlug
+              .replace('-room', '')
+              .replace(/^-+|-+$/g, '')
+              .replace(/-+/g, '');
+          }
+        }
         
         if (category) {
           filters.category = category;
@@ -150,7 +170,22 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           filters.place = place;
         }
         
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ProductList: Fetching products with filters:', filters);
+        }
+        
         const response = await productService.getAllProducts(filters);
+        
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ProductList: API response:', {
+            success: response.success,
+            productsCount: response.data?.products?.length || 0,
+            error: response.error,
+          });
+        }
+        
         if (response.success) {
           // API response format: { success: true, data: { products: [...], pagination: {...} } }
           const fetchedProducts = response.data?.products || [];
@@ -185,7 +220,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams?.toString(), pathname]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore || page >= totalPages) return;
@@ -193,7 +228,40 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const response = await productService.getAllProducts({ page: nextPage, limit: 12 });
+      
+      // Build filters from URL params to maintain category/place/subcategory filtering
+      const filters = { page: nextPage, limit: 12 };
+      let category = searchParams?.get('category');
+      let place = searchParams?.get('place');
+      const subcategory = searchParams?.get('subcategory');
+      
+      // Normalize category to lowercase
+      if (category) {
+        category = category.toLowerCase().trim();
+      }
+      
+      // If on a places route but no place param, extract from pathname
+      if (!place && pathname?.includes('/places/')) {
+        const placeSlug = pathname.split('/places/')[1]?.split('?')[0]?.split('/')[0];
+        if (placeSlug) {
+          place = placeSlug
+            .replace('-room', '')
+            .replace(/^-+|-+$/g, '')
+            .replace(/-+/g, '');
+        }
+      }
+      
+      if (category) {
+        filters.category = category;
+      }
+      if (subcategory) {
+        filters.subcategory = subcategory;
+      }
+      if (place) {
+        filters.place = place;
+      }
+      
+      const response = await productService.getAllProducts(filters);
       
       if (response.success) {
         // API response format: { success: true, data: { products: [...], pagination: {...} } }
@@ -223,7 +291,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [page, totalPages, hasMore, isLoadingMore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, totalPages, hasMore, isLoadingMore, searchParams?.toString(), pathname]);
 
   // Infinite scroll with Intersection Observer
   useEffect(() => {
@@ -399,7 +468,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         )}
 
         <div className="mt-12 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 py-8 md:py-12 border-t border-b border-gray-200">
-          <div className="text-center">
+          <Link href="/places" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
@@ -407,8 +476,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">SHOP BY PLACES</h3>
             <p className="text-xs md:text-sm text-gray-600">Rentals</p>
-          </div>
-          <div className="text-center">
+          </Link>
+          <Link href="/places/living-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h18M9 3v2m6-2v2M5 9h14m-7 4h.01M8 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -416,8 +485,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">LIVING</h3>
             <p className="text-xs md:text-sm text-gray-600">Lounges</p>
-          </div>
-          <div className="text-center">
+          </Link>
+          <Link href="/places/dining-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -425,8 +494,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">DINING</h3>
             <p className="text-xs md:text-sm text-gray-600">BBQ</p>
-          </div>
-          <div className="text-center">
+          </Link>
+          <Link href="/places/bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -434,7 +503,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">BEDROOM</h3>
             <p className="text-xs md:text-sm text-gray-600">Beds</p>
-          </div>
+          </Link>
         </div>
       </div>
     </div>

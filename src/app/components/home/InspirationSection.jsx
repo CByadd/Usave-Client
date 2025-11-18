@@ -26,8 +26,8 @@ export default function InspirationSection() {
       <CategoryHeader
         title="Get the inspiration ones"
         buttonText="See All Products"
-        buttonLink="/living-room"
-        disableButton={true}
+        buttonLink="/products"
+        disableButton={false}
       />
 
       {/* Image Row */}

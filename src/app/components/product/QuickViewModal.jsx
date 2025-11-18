@@ -219,28 +219,119 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
     }
   }
   
-  // Get selected variant data
-  const selectedColorVariant = hasColorVariants && selectedColor 
-    ? allColorOptions.find(v => v.id === selectedColor || v.color === selectedColor)
-    : null;
+  // Get selected variant data - improved matching logic
+  const selectedColorVariant = React.useMemo(() => {
+    if (!hasColorVariants || !selectedColor || allColorOptions.length === 0) {
+      return null;
+    }
+    
+    // Normalize selectedColor for comparison
+    const normalizedSelected = String(selectedColor).trim().toLowerCase();
+    
+    // Try multiple matching strategies
+    const found = allColorOptions.find(v => {
+      const variantId = v.id ? String(v.id).trim().toLowerCase() : null;
+      const variantColor = v.color ? String(v.color).trim().toLowerCase() : null;
+      const variantIdOrColor = variantId || variantColor;
+      
+      // Match by ID, color, or normalized comparison
+      return (variantId && variantId === normalizedSelected) ||
+             (variantColor && variantColor === normalizedSelected) ||
+             (variantIdOrColor && variantIdOrColor === normalizedSelected) ||
+             (v.id === selectedColor) ||
+             (v.color === selectedColor) ||
+             (variantIdOrColor === normalizedSelected);
+    });
+    
+    if (process.env.NODE_ENV === 'development' && found) {
+      console.log('[QuickView] Found color variant:', {
+        selectedColor,
+        normalizedSelected,
+        found: {
+          id: found.id,
+          color: found.color,
+          image: found.image,
+          images: found.images,
+          imagesLength: found.images?.length || 0
+        }
+      });
+    }
+    
+    return found;
+  }, [hasColorVariants, selectedColor, allColorOptions]);
+  
   const selectedSizeVariant = hasSizeVariants && selectedSize
     ? allSizeOptions.find(v => v.id === selectedSize || v.size === selectedSize)
     : null;
   
-  // Determine displayed product data
-  const displayProduct = {
-    ...productData,
-    image: selectedColorVariant?.image || selectedSizeVariant?.image || productData?.image,
-    images: selectedColorVariant?.images?.length > 0 
-      ? selectedColorVariant.images 
-      : selectedSizeVariant?.images?.length > 0
-      ? selectedSizeVariant.images
-      : (productData?.images?.length ? productData.images : productData?.image ? [productData.image] : []),
-    originalPrice: selectedColorVariant?.originalPrice ?? selectedSizeVariant?.originalPrice ?? productData?.originalPrice,
-    discountedPrice: selectedColorVariant?.discountedPrice ?? selectedSizeVariant?.discountedPrice ?? productData?.discountedPrice,
-    stockQuantity: selectedColorVariant?.stockQuantity ?? selectedSizeVariant?.stockQuantity ?? productData?.stockQuantity,
-    inStock: selectedColorVariant?.inStock ?? selectedSizeVariant?.inStock ?? productData?.inStock,
-  };
+  // Determine displayed product data - improved image handling
+  const displayProduct = React.useMemo(() => {
+    // Get images from selected color variant
+    let variantImages = [];
+    let variantImage = null;
+    
+    if (selectedColorVariant) {
+      variantImage = selectedColorVariant.image;
+      
+      // Priority: images array > single image
+      if (selectedColorVariant.images && Array.isArray(selectedColorVariant.images) && selectedColorVariant.images.length > 0) {
+        variantImages = [...selectedColorVariant.images]; // Create copy to avoid mutation
+      } 
+      // If variant has a single image, create array from it
+      else if (selectedColorVariant.image) {
+        variantImages = [selectedColorVariant.image];
+      }
+    }
+    
+    // If no variant images, try size variant
+    if (variantImages.length === 0 && selectedSizeVariant) {
+      if (selectedSizeVariant.images && Array.isArray(selectedSizeVariant.images) && selectedSizeVariant.images.length > 0) {
+        variantImages = [...selectedSizeVariant.images];
+        variantImage = variantImage || selectedSizeVariant.image;
+      } else if (selectedSizeVariant.image) {
+        variantImages = [selectedSizeVariant.image];
+        variantImage = variantImage || selectedSizeVariant.image;
+      }
+    }
+    
+    // Fallback to product images
+    if (variantImages.length === 0) {
+      if (productData?.images && Array.isArray(productData.images) && productData.images.length > 0) {
+        variantImages = [...productData.images];
+        variantImage = variantImage || productData?.image;
+      } else if (productData?.image) {
+        variantImages = [productData.image];
+        variantImage = variantImage || productData.image;
+      }
+    }
+    
+    const result = {
+      ...productData,
+      image: variantImage || selectedColorVariant?.image || selectedSizeVariant?.image || productData?.image,
+      images: variantImages,
+      originalPrice: selectedColorVariant?.originalPrice ?? selectedSizeVariant?.originalPrice ?? productData?.originalPrice,
+      discountedPrice: selectedColorVariant?.discountedPrice ?? selectedSizeVariant?.discountedPrice ?? productData?.discountedPrice,
+      stockQuantity: selectedColorVariant?.stockQuantity ?? selectedSizeVariant?.stockQuantity ?? productData?.stockQuantity,
+      inStock: selectedColorVariant?.inStock ?? selectedSizeVariant?.inStock ?? productData?.inStock,
+    };
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[QuickView] displayProduct computed:', {
+        selectedColor,
+        selectedColorVariantId: selectedColorVariant?.id,
+        selectedColorVariantColor: selectedColorVariant?.color,
+        variantImage,
+        variantImages: variantImages,
+        variantImagesLength: variantImages.length,
+        resultImage: result.image,
+        resultImages: result.images,
+        resultImagesLength: result.images.length
+      });
+    }
+    
+    return result;
+  }, [productData, selectedColorVariant, selectedSizeVariant, selectedColor]);
   
   const productImages = displayProduct.images || [];
   
@@ -414,7 +505,29 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
     }
   };
 
-  const currentImage = productImages[currentImageIndex] || productData?.image || '';
+  // Debug: Log when images change
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[QuickView] Image update:', {
+        selectedColor,
+        selectedColorVariant: selectedColorVariant ? {
+          id: selectedColorVariant.id,
+          color: selectedColorVariant.color,
+          image: selectedColorVariant.image,
+          images: selectedColorVariant.images,
+          imagesLength: selectedColorVariant.images?.length || 0
+        } : null,
+        displayProductImage: displayProduct?.image,
+        displayProductImages: displayProduct?.images,
+        productImages: productImages,
+        productImagesLength: productImages.length,
+        currentImageIndex,
+        currentImage: productImages[currentImageIndex]
+      });
+    }
+  }, [selectedColor, selectedColorVariant, displayProduct, productImages, currentImageIndex]);
+  
+  const currentImage = productImages[currentImageIndex] || displayProduct?.image || productData?.image || '';
   const rating = productData?.rating || 0;
   const reviews = productData?.reviews || 0;
   const inStock = displayProduct?.inStock !== false;
@@ -514,16 +627,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
           <div className="p-2 sm:p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6 flex-1 min-h-0">
           {/* Left: Product Images */}
           <div className="flex flex-col min-h-0">
-            <div className="relative bg-transparent rounded-lg overflow-hidden group flex-shrink-0" style={{ aspectRatio: '1 / 1', maxHeight: '50vh' }}>
+            <div className="relative bg-transparent rounded-lg overflow-hidden group flex-shrink-0 flex items-center justify-center" style={{ aspectRatio: '1 / 1', maxHeight: '50vh' }}>
               {productImages.length ? (
-                <OptimizedImage
-                  src={currentImage}
-                  alt={productData?.title || productData?.name || 'Product'}
-                  width={600}
-                  height={600}
-                  className="w-full h-full object-contain"
-                  fill
-                />
+                <div className="relative w-full h-full flex items-center justify-center p-4">
+                  <OptimizedImage
+                    src={currentImage}
+                    alt={productData?.title || productData?.name || 'Product'}
+                    width={600}
+                    height={600}
+                    className="w-auto h-auto max-w-full max-h-full object-contain"
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full bg-transparent flex items-center justify-center text-gray-400">
                   No image
@@ -670,31 +784,45 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            console.log('[QuickView] Color variant clicked:', {
+                              variantId,
+                              variant: variant,
+                              variantImage: variant.image,
+                              variantImages: variant.images,
+                              variantImagesLength: variant.images?.length || 0,
+                              currentSelectedColor: selectedColor
+                            });
+                            // Update selected color first
                             setSelectedColor(variantId);
+                            // Reset image index when color changes
                             setCurrentImageIndex(0);
                           }}
-                          className={`relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg border-2 transition ${
+                          className={`relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg border-2 transition overflow-hidden flex items-center justify-center ${
                             isSelected ? 'border-[#0B4866] ring-1 ring-[#0B4866]' : 'border-gray-300 hover:border-gray-400'
                           }`}
                           aria-label={`Select color ${variant.title || variant.color}`}
                           title={variant.title || variant.color}
                         >
                           {swatchImage ? (
-                            <OptimizedImage
-                              src={swatchImage}
-                              alt={variant.title || variant.color}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
+                            <div className="relative w-full h-full flex items-center justify-center p-0.5">
+                              <OptimizedImage
+                                src={swatchImage}
+                                alt={variant.title || variant.color}
+                                width={64}
+                                height={64}
+                                className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                              />
+                            </div>
                           ) : mainImage ? (
-                            <OptimizedImage
-                              src={mainImage}
-                              alt={variant.title || variant.color}
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
+                            <div className="relative w-full h-full flex items-center justify-center p-0.5">
+                              <OptimizedImage
+                                src={mainImage}
+                                alt={variant.title || variant.color}
+                                width={64}
+                                height={64}
+                                className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                              />
+                            </div>
                           ) : (
                             <div
                               className="w-full h-full rounded-lg"

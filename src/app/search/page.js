@@ -562,7 +562,7 @@ function SearchPageContent() {
         )}
 
         <div className="mt-12 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 py-8 md:py-12 border-t border-b border-gray-200">
-          <div className="text-center">
+          <Link href="/places" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
@@ -570,8 +570,8 @@ function SearchPageContent() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">SHOP BY PLACES</h3>
             <p className="text-xs md:text-sm text-gray-600">Rentals</p>
-          </div>
-          <div className="text-center">
+          </Link>
+          <Link href="/places/living-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h18M9 3v2m6-2v2M5 9h14m-7 4h.01M8 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -579,8 +579,8 @@ function SearchPageContent() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">LIVING</h3>
             <p className="text-xs md:text-sm text-gray-600">Lounges</p>
-          </div>
-          <div className="text-center">
+          </Link>
+          <Link href="/places/dining-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -588,8 +588,8 @@ function SearchPageContent() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">DINING</h3>
             <p className="text-xs md:text-sm text-gray-600">BBQ</p>
-          </div>
-          <div className="text-center">
+          </Link>
+          <Link href="/places/bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -597,7 +597,7 @@ function SearchPageContent() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">BEDROOM</h3>
             <p className="text-xs md:text-sm text-gray-600">Beds</p>
-          </div>
+          </Link>
         </div>
       </div>
 

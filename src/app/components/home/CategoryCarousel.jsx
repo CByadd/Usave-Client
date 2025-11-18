@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import productService from "../../services/api/productService";
 
@@ -102,8 +103,13 @@ const CategoryCarousel = () => {
           const label = cat?.name || cat?.id || "Category";
           const count = cat?.count || 0;
 
+          // Create route from category name/id
+          const categorySlug = (cat?.id || label || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          const categoryRoute = categorySlug ? `/categories/${categorySlug}` : '/products';
+
           return (
-            <div
+            <Link
+              href={categoryRoute}
               key={cat?.id || label}
               className="snap-center flex flex-col items-center justify-center p-5 cursor-pointer h-[336px] min-w-[250px] rounded-[32px] shadow-md hover:shadow-xl transition-transform hover:-translate-y-1"
               style={{ flex: "0 0 calc((100% - 3rem)/4)", backgroundColor: bgColor }}
@@ -122,7 +128,7 @@ const CategoryCarousel = () => {
                   <span className="block text-xs text-gray-500 mt-1">{count} products</span>
                 ) : null}
               </p>
-            </div>
+            </Link>
           );
         })}
       </div>
