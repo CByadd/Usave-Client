@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, ShoppingBag, ShoppingCart, Minus, Plus, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAnimationStore } from '../../stores/useAnimationStore';
-import OptimizedImage from '../shared/OptimizedImage';
 import { useRouter } from 'next/navigation';
 import { openCartDrawer, showToast } from '../../lib/ui';
 import { useWishlist } from '../../stores/useWishlistStore';
@@ -630,12 +629,11 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
             <div className="relative bg-transparent rounded-lg overflow-hidden group flex-shrink-0 flex items-center justify-center" style={{ aspectRatio: '1 / 1', maxHeight: '50vh' }}>
               {productImages.length ? (
                 <div className="relative w-full h-full flex items-center justify-center p-4">
-                  <OptimizedImage
+                  <img
                     src={currentImage}
                     alt={productData?.title || productData?.name || 'Product'}
-                    width={600}
-                    height={600}
                     className="w-auto h-auto max-w-full max-h-full object-contain"
+                    loading="lazy"
                   />
                 </div>
               ) : (
@@ -805,22 +803,20 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                         >
                           {swatchImage ? (
                             <div className="relative w-full h-full flex items-center justify-center p-0.5">
-                              <OptimizedImage
+                              <img
                                 src={swatchImage}
                                 alt={variant.title || variant.color}
-                                width={64}
-                                height={64}
                                 className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                                loading="lazy"
                               />
                             </div>
                           ) : mainImage ? (
                             <div className="relative w-full h-full flex items-center justify-center p-0.5">
-                              <OptimizedImage
+                              <img
                                 src={mainImage}
                                 alt={variant.title || variant.color}
-                                width={64}
-                                height={64}
                                 className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                                loading="lazy"
                               />
                             </div>
                           ) : (

@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect } from 'react';
-import OptimizedImage from '../../components/shared/OptimizedImage';
 import { ProductDetailSkeleton } from '../../components/shared/LoadingSkeleton';
 import { Heart, ShoppingCart, ShoppingBag, ChevronLeft, ChevronRight, ArrowRight, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -476,7 +475,7 @@ export default function ProductDetailPage() {
             {/* Wishlist Button */}
             <button
               onClick={handleWishlistToggle}
-              className="absolute top-4 right-4 p-2 text-gray-600 hover:text-red-500 transition-colors z-10"
+              className="absolute top-4 right-4 p-2 text-gray-600 hover:text-red-500 z-10"
             >
               {isInWishlist(product.id) ? (
                 <Heart size={24} className="fill-red-500 text-red-500" />
@@ -486,16 +485,18 @@ export default function ProductDetailPage() {
             </button>
 
             {/* Main Image */}
-            <div className="relative bg-gray-50 rounded-lg overflow-hidden group mb-4 w-full flex items-center justify-center" style={{ minHeight: '400px', maxHeight: '600px' }}>
+            <div className="relative bg-gray-50 rounded-lg overflow-hidden mb-4 w-full flex items-center justify-center" style={{ minHeight: '400px', maxHeight: '600px' }}>
               <div className="relative w-full h-full flex items-center justify-center p-4 sm:p-8">
-                <OptimizedImage
-                  src={productImages[selectedImage] || displayProduct?.image || ''}
-                  alt={product.title || 'Product'}
-                  width={800}
-                  height={800}
-                  className="w-auto h-auto max-w-full max-h-full object-contain"
-                  priority
-                />
+                {productImages[selectedImage] || displayProduct?.image ? (
+                  <img
+                    src={productImages[selectedImage] || displayProduct?.image || ''}
+                    alt={product.title || 'Product'}
+                    className="w-auto h-auto max-w-full max-h-full object-contain"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="text-gray-500">No image</div>
+                )}
               </div>
               
               {/* Navigation Arrows */}
@@ -503,13 +504,13 @@ export default function ProductDetailPage() {
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg"
                   >
                     <ChevronLeft size={24} />
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg"
                   >
                     <ChevronRight size={24} />
                   </button>
@@ -527,25 +528,28 @@ export default function ProductDetailPage() {
                     className="flex-shrink-0 flex flex-col items-center gap-2 group"
                   >
                     <div
-                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 bg-gray-50 transition flex items-center justify-center ${
-                        selectedImage === index ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-200 group-hover:border-gray-300'
+                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 bg-gray-50 flex items-center justify-center ${
+                        selectedImage === index ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-200'
                       }`}
                     >
                       <div className="relative w-full h-full flex items-center justify-center p-1.5">
-                        <OptimizedImage
-                          src={image || ''}
-                          alt={`${product.title || 'Product'} ${index + 1}`}
-                          width={80}
-                          height={80}
-                          className="w-auto h-auto max-w-full max-h-full object-contain"
-                        />
+                        {image ? (
+                          <img
+                            src={image || ''}
+                            alt={`${product.title || 'Product'} ${index + 1}`}
+                            className="w-auto h-auto max-w-full max-h-full object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="text-xs text-gray-400">No image</div>
+                        )}
                       </div>
                     </div>
                     <span
-                      className={`text-xs text-center max-w-[80px] line-clamp-2 transition-colors ${
+                      className={`text-xs text-center max-w-[80px] line-clamp-2 ${
                         selectedImage === index
                           ? 'text-[#0B4866] font-medium'
-                          : 'text-gray-600 group-hover:text-gray-900'
+                          : 'text-gray-600'
                       }`}
                       title={`Image ${index + 1}`}
                     >
@@ -666,27 +670,25 @@ export default function ProductDetailPage() {
                           setSelectedColor(variantId);
                           setSelectedImage(0); // Reset to first image when color changes
                         }}
-                        className={`relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 transition overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'}`}
+                        className={`relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg border-2 overflow-hidden flex items-center justify-center ${isSelected ? 'border-[#0B4866] ring-2 ring-[#0B4866]' : 'border-gray-300'}`}
                         title={variant.title || variant.color}
                       >
                         {swatchImage && swatchImage.trim() ? (
                           <div className="relative w-full h-full flex items-center justify-center p-1">
-                            <OptimizedImage
+                            <img
                               src={swatchImage}
                               alt={variant.title || variant.color}
-                              width={64}
-                              height={64}
                               className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                              loading="lazy"
                             />
                           </div>
                         ) : mainImage && mainImage.trim() ? (
                           <div className="relative w-full h-full flex items-center justify-center p-1">
-                            <OptimizedImage
+                            <img
                               src={mainImage}
                               alt={variant.title || variant.color}
-                              width={64}
-                              height={64}
                               className="w-auto h-auto max-w-full max-h-full object-contain rounded"
+                              loading="lazy"
                             />
                           </div>
                         ) : (
@@ -733,15 +735,15 @@ export default function ProductDetailPage() {
                     return (
                       <button
                         key={variantId}
-                        onClick={() => !isOutOfStock && setSelectedSize(variantId)}
-                        disabled={isOutOfStock}
-                        className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg text-xs sm:text-sm font-medium border-2 transition ${
-                          isSelected
-                            ? 'border-[#0B4866] bg-[#0B4866] text-white'
-                            : isOutOfStock
-                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}
+                    onClick={() => !isOutOfStock && setSelectedSize(variantId)}
+                    disabled={isOutOfStock}
+                    className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg text-xs sm:text-sm font-medium border-2 ${
+                      isSelected
+                        ? 'border-[#0B4866] bg-[#0B4866] text-white'
+                        : isOutOfStock
+                        ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300'
+                    }`}
                         title={variant.title || variant.size}
                       >
                         {variant.size}
@@ -781,13 +783,13 @@ export default function ProductDetailPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setIncludeInstallation(!includeInstallation)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      includeInstallation ? 'bg-[#0B4866]' : 'bg-gray-200'
-                    }`}
+                onClick={() => setIncludeInstallation(!includeInstallation)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full ${
+                  includeInstallation ? 'bg-[#0B4866]' : 'bg-gray-200'
+                }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 rounded-full bg-white ${
                         includeInstallation ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -801,7 +803,7 @@ export default function ProductDetailPage() {
               <button
                 onClick={handleQuickShop}
                 disabled={!displayProduct.inStock}
-                className="w-full sm:flex-1 border border-[#0B4866] bg-white text-[#0B4866] py-3 px-4 sm:px-6 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                className="w-full sm:flex-1 border border-[#0B4866] bg-white text-[#0B4866] py-3 px-4 sm:px-6 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 <ShoppingBag size={18} className="sm:w-5 sm:h-5" />
                 <span className="whitespace-nowrap">Quick Shop</span>
@@ -809,12 +811,12 @@ export default function ProductDetailPage() {
               <button
                 onClick={handleAddToCart}
                 disabled={!displayProduct.inStock}
-                className={`w-full sm:flex-1 py-3 px-4 sm:px-6 rounded-lg font-medium flex items-center justify-center gap-2 transition text-sm sm:text-base ${
+                className={`w-full sm:flex-1 py-3 px-4 sm:px-6 rounded-lg font-medium flex items-center justify-center gap-2 text-sm sm:text-base ${
                   !product.inStock
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : isInCart(product.id)
-                    ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                    : 'bg-[#0B4866] text-white hover:bg-[#0a3d55]'
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-[#0B4866] text-white'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
@@ -838,10 +840,10 @@ export default function ProductDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition whitespace-nowrap ${
+                  className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-[#0B4866] text-[#0B4866]'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500'
                   }`}
                 >
                   {tab.label}

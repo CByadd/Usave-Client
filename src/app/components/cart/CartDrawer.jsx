@@ -9,7 +9,6 @@ import { useUIStore } from '../../stores/useUIStore';
 import { useAnimationStore } from '../../stores/useAnimationStore';
 import { isAuthenticated } from '../../lib/auth';
 import { openAuthDrawer } from '../../lib/ui';
-import OptimizedImage from '../shared/OptimizedImage';
 
 const CartDrawer = () => {
   const { 
@@ -234,12 +233,11 @@ const CartDrawer = () => {
                 <div key={item.id} className="flex gap-4 p-4 border border-gray-200 rounded-lg">
                   {/* Product Image */}
                   <div className="flex-shrink-0">
-                    <OptimizedImage
+                    <img
                       src={item.image}
                       alt={item.title}
-                      width={80}
-                      height={80}
                       className="w-20 h-20 object-cover rounded-lg"
+                      loading="lazy"
                     />
                   </div>
 

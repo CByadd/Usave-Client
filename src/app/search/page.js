@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, Suspense } from 'react';
-import OptimizedImage from '../components/shared/OptimizedImage';
 import { Heart, ShoppingCart, ChevronDown, SlidersHorizontal, Search } from 'lucide-react';
 import Link from 'next/link';
 import { performSearch, getSearchResults, getSearchQuery } from '../lib/search';
@@ -441,12 +440,11 @@ function SearchPageContent() {
                 <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition">
                   <Heart size={20} />
                 </button>
-                <OptimizedImage
+                <img
                   src={product.image}
                   alt={product.title}
-                  width={300}
-                  height={300}
                   className="object-contain max-h-[250px] w-auto"
+                  loading="lazy"
                 />
                 <button onClick={(e) => {
                   e.stopPropagation();

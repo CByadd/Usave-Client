@@ -9,7 +9,6 @@ import { useCart } from '../stores/useCartStore';
 import { useCheckout } from '../stores/useCheckoutStore';
 import SuccessModal from '../components/shared/SuccessModal';
 import { apiService } from '../services/api/apiClient';
-import OptimizedImage from '../components/shared/OptimizedImage';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -1009,12 +1008,11 @@ export default function CheckoutPage() {
                         <div key={item.id} className="flex flex-col space-y-2 pb-3 border-b border-gray-100 last:border-b-0">
                           <div className="flex space-x-3">
                             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                              <OptimizedImage
+                              <img
                                 src={item.product?.image || item.product?.images?.[0] || item.image || item.product?.image || '/placeholder.svg'}
                                 alt={item.product?.title || item.product?.name || item.title || item.name || 'Product'}
-                                width={64}
-                                height={64}
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                               />
                             </div>
                             <div className="flex-1 min-w-0">
