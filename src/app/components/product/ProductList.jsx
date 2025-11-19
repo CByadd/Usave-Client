@@ -428,20 +428,9 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           </div>
         )}
 
-        {/* Mobile: horizontal carousel */}
+        {/* Products Grid - Vertical on mobile, grid on desktop */}
         {products.length > 0 && (
-          <div className="md:hidden -mx-4 mb-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide">
-            {products.map((product) => (
-              <div key={product.id} className="min-w-[80%] snap-center">
-                <ItemCard item={product} variant="carousel" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Desktop and tablet grid */}
-        {products.length > 0 && (
-          <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {products.map((product) => (
               <ItemCard key={product.id} item={product} variant="grid" />
             ))}

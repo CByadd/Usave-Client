@@ -393,17 +393,8 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
         {/* Products Grid */}
         {products.length > 0 && (
           <>
-            {/* Mobile: horizontal carousel showing 2 cards at a time */}
-            <div className="md:hidden -mx-4 px-4">
-              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-2 scrollbar-hide">
-                {products.map((product) => (
-                  <ItemCard key={product.id} item={product} variant="carousel" />
-                ))}
-              </div>
-            </div>
-
-            {/* Desktop and tablet grid */}
-            <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+            {/* Products Grid - Vertical on mobile, grid on desktop */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
               {products.map((product) => (
                 <ItemCard key={product.id} item={product} variant="grid" />
               ))}
