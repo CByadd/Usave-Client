@@ -129,7 +129,7 @@ export default function LandingPage() {
         <HeroSection/>
       </section>
       
-      <AnimatedSection className="md:w-[90dvw] w-full flex flex-col items-center justify-center overflow-hidden " delay={0.1}>
+      <AnimatedSection className=" w-full flex flex-col items-center justify-center overflow-hidden " delay={0.1}>
         <div className="w-[90%]">
        <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/products"/>
         </div>
