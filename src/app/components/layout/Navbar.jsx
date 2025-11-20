@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import { UserRound, LogOut } from 'lucide-react';
 import { LOGO_WHITE_BG } from '../../lib/constants';
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -40,6 +41,9 @@ const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrollDirection, setScrollDirection] = useState(null); // 'up' | 'down' | null
   const [categoryLinks, setCategoryLinks] = useState([]);
+  const [isMountedClient, setIsMountedClient] = useState(false);
+  const accountMenuRef = useRef(null);
+  const [accountMenuPosition, setAccountMenuPosition] = useState(null);
 
   // Auth state
   const user = useAuthStore((state) => state.user);
@@ -52,6 +56,7 @@ const Navbar = () => {
 
   useEffect(() => {
     setIsMounted(true);
+    setIsMountedClient(true);
     checkAuth();
     
     // Fetch categories from API
@@ -268,6 +273,48 @@ const Navbar = () => {
     </div>
   ), []);
 
+  // Update account menu position when it opens
+  useEffect(() => {
+    if (isAccountMenuOpen && accountMenuRef.current) {
+      const updatePosition = () => {
+        if (accountMenuRef.current) {
+          const rect = accountMenuRef.current.getBoundingClientRect();
+          setAccountMenuPosition({
+            top: rect.bottom + 8,
+            right: window.innerWidth - rect.right,
+          });
+        }
+      };
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      // Close menu when clicking outside
+      const handleClickOutside = (e) => {
+        if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) {
+          // Check if click is not on the dropdown menu itself
+          const dropdown = document.querySelector('[data-account-dropdown]');
+          if (dropdown && !dropdown.contains(e.target)) {
+            setIsAccountMenuOpen(false);
+          }
+        }
+      };
+      
+      // Use setTimeout to avoid immediate closure
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 0);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+        document.removeEventListener('click', handleClickOutside);
+      };
+    } else {
+      setAccountMenuPosition(null);
+    }
+  }, [isAccountMenuOpen]);
+
  const renderUserMenu = () => {
   // Get first two letters of name for profile circle
   const getInitials = () => {
@@ -291,6 +338,7 @@ const Navbar = () => {
         <>
           {/* Profile Circle - Show when authenticated */}
           <button
+            ref={accountMenuRef}
             type="button"
             className="flex items-center justify-center w-9 h-9 rounded-full bg-[#0B4866] text-white font-medium text-sm hover:bg-[#094058] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:ring-offset-2"
             aria-label="User account"
@@ -301,46 +349,6 @@ const Navbar = () => {
           >
             {getInitials()}
           </button>
-
-          {/* Dropdown Menu */}
-          <div
-            className={`fixed right-4 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9000] transition-all duration-200 ${
-              isAccountMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
-            }`}
-          >
-            <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm text-gray-600 font-medium">
-                {user?.firstName || user?.name || 'User'}
-              </p>
-              {user?.email && (
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-              )}
-            </div>
-            <Link
-              href="/account"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsAccountMenuOpen(false)}
-            >
-              My Account
-            </Link>
-            <Link
-              href="/orders"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsAccountMenuOpen(false)}
-            >
-              My Orders
-            </Link>
-            <button
-              onClick={() => {
-                handleLogout();
-                setIsAccountMenuOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
-            >
-              <LogOut size={16} className="mr-2" />
-              Sign Out
-            </button>
-          </div>
         </>
       ) : (
         <>
@@ -369,7 +377,7 @@ const Navbar = () => {
   const cartCount = getCartCount();
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
+    <header className="sticky top-0 z-[100] bg-white shadow-sm">
       <NavbarDesktop
         mainNavLinks={mainNavLinks}
         categoryLinks={categoryLinks}
@@ -400,6 +408,54 @@ const Navbar = () => {
         openAuthDrawer={openAuthDrawer}
         closeAccountMenu={closeAccountMenu}
       />
+
+      {/* Account Dropdown Menu - Rendered in portal to escape stacking context */}
+      {isMountedClient && typeof document !== 'undefined' && isAccountMenuOpen && isAuth && accountMenuPosition && createPortal(
+        <div
+          data-account-dropdown
+          className="fixed w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 transition-all duration-200"
+          style={{
+            top: `${accountMenuPosition.top}px`,
+            right: `${accountMenuPosition.right}px`,
+            zIndex: 10100,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-4 py-2 border-b border-gray-100">
+            <p className="text-sm text-gray-600 font-medium">
+              {user?.firstName || user?.name || 'User'}
+            </p>
+            {user?.email && (
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            )}
+          </div>
+          <Link
+            href="/account"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsAccountMenuOpen(false)}
+          >
+            My Account
+          </Link>
+          <Link
+            href="/orders"
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => setIsAccountMenuOpen(false)}
+          >
+            My Orders
+          </Link>
+          <button
+            onClick={() => {
+              handleLogout();
+              setIsAccountMenuOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+          >
+            <LogOut size={16} className="mr-2" />
+            Sign Out
+          </button>
+        </div>,
+        document.body
+      )}
     </header>
   );
 };

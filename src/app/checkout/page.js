@@ -894,13 +894,12 @@ export default function CheckoutPage() {
                             )}
                           </div>
                           
-                          {/* Time Picker */}
+                          {/* Time Picker - 15-minute intervals */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Time *
                             </label>
-                            <input
-                              type="time"
+                            <select
                               value={deliveryTime}
                               onChange={(e) => {
                                 setDeliveryTime(e.target.value);
@@ -914,9 +913,36 @@ export default function CheckoutPage() {
                               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
                                 errors.deliveryTime ? 'border-red-500' : 'border-gray-300'
                               }`}
-                              placeholder="Select a time"
                               required={shippingOption === 'delivery'}
-                            />
+                            >
+                              <option value="">Select a time</option>
+                              {(() => {
+                                const times = [];
+                                // Generate times from 8:00 AM to 8:00 PM in 15-minute intervals
+                                for (let hour = 8; hour <= 20; hour++) {
+                                  for (let minute = 0; minute < 60; minute += 15) {
+                                    // Convert 24-hour to 12-hour format
+                                    let hour12 = hour;
+                                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                                    if (hour === 0) {
+                                      hour12 = 12; // Midnight
+                                    } else if (hour > 12) {
+                                      hour12 = hour - 12; // Afternoon hours
+                                    }
+                                    // hour 1-12 stays as is
+                                    
+                                    const time24 = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                                    const time12 = `${hour12}:${String(minute).padStart(2, '0')} ${ampm}`;
+                                    times.push({ value: time24, label: time12 });
+                                  }
+                                }
+                                return times.map((time) => (
+                                  <option key={time.value} value={time.value}>
+                                    {time.label}
+                                  </option>
+                                ));
+                              })()}
+                            </select>
                             {errors.deliveryTime && (
                               <p className="text-red-500 text-xs mt-1">{errors.deliveryTime}</p>
                             )}
@@ -1018,12 +1044,17 @@ export default function CheckoutPage() {
                             <div className="flex-1 min-w-0">
                               <h3 className="font-medium text-sm text-gray-900 truncate">{item.product?.title || item.product?.name || item.title || item.name || 'Product'}</h3>
                               <p className="text-xs text-gray-600">Qty: {item.quantity || 1}</p>
-                              {item.color && (
-                                <p className="text-xs text-gray-600">Color: {item.color}</p>
-                              )}
-                              {item.size && (
-                                <p className="text-xs text-gray-600">Size: {item.size}</p>
-                              )}
+                              {(() => {
+                                // Only show color if product has multiple color options (more than 1)
+                                const product = item.product || item;
+                                const colorVariantsCount = Array.isArray(product.colorVariants) ? product.colorVariants.length : 0;
+                                const hasBaseColor = product.color ? 1 : 0;
+                                const totalColorOptions = colorVariantsCount + hasBaseColor;
+                                const shouldShowColor = item.color && totalColorOptions > 1;
+                                return shouldShowColor ? (
+                                  <p className="text-xs text-gray-600">Color: {item.color}</p>
+                                ) : null;
+                              })()}
                               <div className="flex items-center space-x-2 mt-1">
                                 {(item.product?.originalPrice || item.originalPrice || 0) > (item.product?.discountedPrice || item.product?.price || item.discountedPrice || item.price || 0) && (
                                   <span className="text-xs line-through text-gray-400">

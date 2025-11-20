@@ -13,7 +13,7 @@ const Hero = () => {
           alt="Hero background"
           fill
           priority
-          className="object-cover brightness-75"
+          className="object-cover brightness-70"
         />
       </div>
 
@@ -22,13 +22,24 @@ const Hero = () => {
         <h1 className="text-4xl md:text-6xl font-medium mb-4 drop-shadow-lg font-serifx">
           Discover
         </h1>
-        <p className="text-base md:text-xl max-w-md md:max-w-xl mb-8 opacity-90">
+        <p className="text-base md:text-xl max-w-md md:max-w-xl mb-8 opacity-80">
           Experience a uniquely curated selection of furniture, lighting, flooring, and designed objects in a distinctive space.
         </p>
         <Link href="/products">
-          <button className="px-8 py-3 border-white border transition-all rounded-full font-semibold shadow-lg w-[180px] hover:bg-white hover:text-gray-800">
-            Shop Now
-          </button>
+ <button
+  className="
+    relative z-10 px-8 py-3 bg-white border-none transition-all rounded-full font-semibold 
+    shadow-lg w-[180px] text-gray-800 overflow-hidden
+    hover:text-white hover:bg-transparent hover:border-white border-2
+    before:content-[''] before:absolute before:inset-0 before:bg-white/20 
+    before:backdrop-blur-lg before:opacity-0 hover:before:opacity-100 
+    before:transition-all before:duration-300 before:-z-10
+  "
+>
+  Shop Now
+</button>
+
+
         </Link>
       </div>
     </section>

@@ -5,7 +5,8 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { config } from '../../../lib/config';
 import AdminOrderEditor from '../../../components/admin/AdminOrderEditor';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
-import { CheckCircle2, XCircle, AlertCircle, Loader2, Edit, ThumbsUp, FileText, X as XIcon } from 'lucide-react';
+import QuickViewModal from '../../../components/product/QuickViewModal';
+import { CheckCircle2, XCircle, AlertCircle, Loader2, Edit, ThumbsUp, FileText, X as XIcon, Eye } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,7 @@ function OwnerApproveOrderPageContent() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [success, setSuccess] = useState(false);
   const [action, setAction] = useState(''); // 'approved' or 'rejected'
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   const orderId = params.id;
   const token = searchParams.get('token');
@@ -44,6 +46,19 @@ function OwnerApproveOrderPageContent() {
 
     fetchOrderDetails();
   }, [orderId, token]);
+
+  // Load existing notes when order is fetched
+  useEffect(() => {
+    if (order?.ownerApprovalNotes) {
+      setApprovalNotes(order.ownerApprovalNotes);
+    } else if (typeof window !== 'undefined') {
+      // Try to load from localStorage as backup
+      const savedNotes = localStorage.getItem(`order_${orderId}_notes`);
+      if (savedNotes) {
+        setApprovalNotes(savedNotes);
+      }
+    }
+  }, [order, orderId]);
 
   const fetchOrderDetails = async () => {
     try {
@@ -105,6 +120,13 @@ function OwnerApproveOrderPageContent() {
           setGlobalLoading(true, 'Approving order...');
           setError('');
 
+          // Get notes from state or localStorage
+          let notesToSend = approvalNotes.trim() || null;
+          if (!notesToSend && typeof window !== 'undefined') {
+            const savedNotes = localStorage.getItem(`order_${orderId}_notes`);
+            notesToSend = savedNotes || null;
+          }
+          
           const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
             method: 'POST',
             headers: {
@@ -113,7 +135,7 @@ function OwnerApproveOrderPageContent() {
             body: JSON.stringify({
               token,
               approved: true,
-              approvalNotes: approvalNotes.trim() || null,
+              approvalNotes: notesToSend,
             }),
           });
 
@@ -129,6 +151,10 @@ function OwnerApproveOrderPageContent() {
             setAction('approved');
             setApprovalNotes('');
             setShowNotesModal(false);
+            // Clear localStorage notes
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem(`order_${orderId}_notes`);
+            }
             showAlert({
               title: 'Success',
               message: 'Order approved successfully!',
@@ -194,6 +220,10 @@ function OwnerApproveOrderPageContent() {
         setAction('rejected');
         setShowRejectForm(false);
         setRejectionNotes('');
+        // Clear localStorage notes
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(`order_${orderId}_notes`);
+        }
       } else {
         throw new Error(data.message || 'Failed to reject order');
       }
@@ -350,15 +380,24 @@ function OwnerApproveOrderPageContent() {
             {/* Product Images */}
             <div className="flex gap-2 flex-shrink-0">
               {items.slice(0, 4).map((item, index) => (
-                <div key={index} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                <div key={index} className="relative group w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                   {item.product?.image ? (
-                    <OptimizedImage
-                      src={item.product.image}
-                      alt={item.product.title || 'Product'}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <OptimizedImage
+                        src={item.product.image}
+                        alt={item.product.title || 'Product'}
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => setQuickViewProduct(item.product)}
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        title="Quick View"
+                      >
+                        <Eye size={20} className="text-white" />
+                      </button>
+                    </>
                   ) : (
                     <div className="w-full h-full bg-gray-200" />
                   )}
@@ -467,7 +506,7 @@ function OwnerApproveOrderPageContent() {
                 <XIcon size={20} />
               </button>
             </div>
-            <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} />
+            <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} ownerToken={token} />
           </div>
         )}
 
@@ -502,14 +541,21 @@ function OwnerApproveOrderPageContent() {
 
         {/* Notes Modal */}
         {showNotesModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Blur overlay background */}
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => {
+                setShowNotesModal(false);
+              }}
+            />
+            {/* Modal content */}
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Approval Notes</h3>
                 <button
                   onClick={() => {
                     setShowNotesModal(false);
-                    setApprovalNotes('');
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -526,7 +572,6 @@ function OwnerApproveOrderPageContent() {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    setApprovalNotes('');
                     setShowNotesModal(false);
                   }}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
@@ -534,23 +579,69 @@ function OwnerApproveOrderPageContent() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setShowNotesModal(false);
-                    // Notes are saved when approve is clicked
+                  onClick={async () => {
+                    try {
+                      setProcessing(true);
+                      setError('');
+                      
+                      // Store notes in localStorage as backup, and update local state
+                      // Notes will be sent when approving/rejecting
+                      const notesToSave = approvalNotes.trim() || null;
+                      
+                      // Update local order state to show notes immediately
+                      setOrder(prevOrder => ({
+                        ...prevOrder,
+                        ownerApprovalNotes: notesToSave
+                      }));
+                      
+                      // Store in localStorage as backup
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem(`order_${orderId}_notes`, notesToSave || '');
+                      }
+                      
+                      setShowNotesModal(false);
+                      setError('');
+                    } catch (err) {
+                      console.error('Error saving notes:', err);
+                      setError(err.message || 'Failed to save notes');
+                    } finally {
+                      setProcessing(false);
+                    }
                   }}
-                  className="flex-1 px-4 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#0a3d55]"
+                  disabled={processing}
+                  className="flex-1 px-4 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#0a3d55] disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Save Notes
+                  {processing ? 'Saving...' : 'Save Notes'}
                 </button>
               </div>
             </div>
           </div>
         )}
 
+        {/* Quick View Modal */}
+        {quickViewProduct && (
+          <QuickViewModal
+            product={quickViewProduct}
+            isOpen={!!quickViewProduct}
+            onClose={() => setQuickViewProduct(null)}
+            previewOnly={true}
+          />
+        )}
+
         {/* Reject Form Modal */}
         {showRejectForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Blur overlay background */}
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => {
+                setShowRejectForm(false);
+                setRejectionNotes('');
+                setError('');
+              }}
+            />
+            {/* Modal content */}
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Reject Order</h3>
                 <button
@@ -597,6 +688,16 @@ function OwnerApproveOrderPageContent() {
                   {processing ? 'Rejecting...' : 'Confirm Rejection'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Display saved notes */}
+        {order?.ownerApprovalNotes && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Saved Notes</h3>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">{order.ownerApprovalNotes}</p>
             </div>
           </div>
         )}

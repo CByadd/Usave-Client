@@ -265,12 +265,17 @@ const CartDrawer = () => {
                     </Link>
                     
                     <div className="mt-1 text-sm text-gray-500 space-y-1">
-                      {item.color && (
-                        <div>Color: <span className="font-medium">{item.color}</span></div>
-                      )}
-                      {item.size && (
-                        <div>Size: <span className="font-medium">{item.size}</span></div>
-                      )}
+                      {(() => {
+                        // Only show color if product has multiple color options (more than 1)
+                        const product = item.product || item;
+                        const colorVariantsCount = Array.isArray(product.colorVariants) ? product.colorVariants.length : 0;
+                        const hasBaseColor = product.color ? 1 : 0;
+                        const totalColorOptions = colorVariantsCount + hasBaseColor;
+                        const shouldShowColor = item.color && totalColorOptions > 1;
+                        return shouldShowColor ? (
+                          <div>Color: <span className="font-medium">{item.color}</span></div>
+                        ) : null;
+                      })()}
                       {(item.includeInstallation || item.options?.includeInstallation) && (
                         <div className="flex items-center gap-1 text-[#0B4866] bg-blue-50 px-2 py-0.5 rounded mt-1 inline-flex text-xs">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

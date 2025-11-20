@@ -21,22 +21,32 @@ export default function ContactPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
     
     setLoading(true, 'Sending message...');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message');
+      }
       
       showAlert({
         title: 'Message Sent!',
-        message: 'Thank you for your message! We will get back to you soon.',
+        message: data.message || 'Thank you for your message! We will get back to you soon.',
         type: 'success',
         confirmText: 'OK',
       });
       
+      // Reset form
       setFormData({
         name: '',
         email: '',
@@ -45,9 +55,10 @@ export default function ContactPage() {
         message: ''
       });
     } catch (error) {
+      console.error('Error submitting contact form:', error);
       showAlert({
         title: 'Error',
-        message: 'Failed to send message. Please try again.',
+        message: error.message || 'Failed to send message. Please try again.',
         type: 'error',
         confirmText: 'OK',
       });
@@ -65,6 +76,42 @@ export default function ContactPage() {
             Get in touch with us for any questions about our products or services. 
             We're here to help you find the perfect furniture for your space.
           </p>
+        </div>
+
+        {/* Google Map Section */}
+        {/* NOTE: Replace the embed URL below with your actual Google Maps embed URL */}
+        {/* To get your embed URL: Go to Google Maps > Search your location > Share > Embed a map > Copy the iframe src */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Find Us</h2>
+          <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg">
+            <div className="aspect-video w-full">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3749.1234567890!2d145.7654321!3d-16.8765432!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTbCsDUyJzM1LjYiUyAxNDVcsDQ1JzU1LjYiRQ!5e0!3m2!1sen!2sau!4v1234567890123!5m2!1sen!2sau"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-full"
+                title="Usave Commercial Location - Port Douglas & Portsmith, Cairns"
+              />
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-gray-600">
+              <strong>Port Douglas & Portsmith</strong><br />
+              Cairns, QLD 4870, Far North Queensland
+            </p>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Port+Douglas+Portsmith+Cairns+QLD+4870"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0B4866] hover:underline mt-2 inline-block"
+            >
+              Open in Google Maps →
+            </a>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

@@ -144,15 +144,17 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
       {/* Background blur when suggestions are open */}
       {showSuggestions && suggestions.length > 0 && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+          style={{ zIndex: 200 }}
           onClick={() => setShowSuggestions(false)}
         />
       )}
       
       <div
-        className={`relative w-full z-[65] ${
+        className={`relative w-full ${
           isMobile && !isExpanded ? 'hidden' : ''
         }`}
+        style={{ zIndex: 300, position: 'relative' }}
         ref={containerRef}
       >
         <form
@@ -160,6 +162,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
           className={`flex items-center w-full mx-auto bg-white/80 backdrop-blur-md rounded-xl shadow-sm overflow-hidden border border-gray-500 transition-all duration-200 ${
             isMobile ? 'ml-0 px-0' : 'ml-7'
           }`}
+          style={{ position: 'relative', zIndex: 300 }}
         >
           <button
             type="submit"
@@ -220,11 +223,12 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
         <ul
           ref={suggestionsRef}
           id="search-suggestions"
-          className="fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-lg max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-auto text-xs sm:text-sm md:text-base"
+          className="fixed bg-white border border-gray-200 rounded-xl shadow-lg max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-auto text-xs sm:text-sm md:text-base"
           style={{
             top: `${suggestionsPosition.top}px`,
             left: `${suggestionsPosition.left}px`,
             width: `${suggestionsPosition.width}px`,
+            zIndex: 250,
           }}
           role="listbox"
         >

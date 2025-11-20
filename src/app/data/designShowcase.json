@@ -1,13 +1,13 @@
 {
     "left": [
       {
-        "title": "Modern Kitchens",
-        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264158/Usave/unsplash_wF9NH87U-2E_z1iumw.jpg",
+        "title": "AirBnB",
+        "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598205/Gemini_Generated_Image_h8j575h8j575h8j5_x0yoau.png",
         "link": "/search?category=kitchen",
-        "class": "md:rounded-tl-[20rem] rounded-tl-[7rem]"
+        "class": "md:rounded-tl-[20rem] rounded-tl-[7rem] object-contain"
       },
       {
-        "title": "Luxury Bathrooms",
+        "title": "Luxury",
         "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264120/Usave/unsplash_23TiGQ7PgWU_f6n03q.jpg",
         "link": "/search?category=bedroom",
         "class": "md:rounded-tr-[20rem] rounded-tr-[7rem]"
@@ -15,20 +15,20 @@
     ],
     "right": [
       {
-        "title": "Outdoor Spaces",
-        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264148/Usave/unsplash_iAftdIcgpFc_cags1a.jpg",
+        "title": "Resort",
+        "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598335/download_5_wlj46d.png",
         "link": "/search?category=dining",
         "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
       },
       {
-        "title": "Living Rooms",
+        "title": "Lounges",
         "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264165/Usave/unsplash_ogLcoE6oRpY_upts9o.jpg",
         "link": "/search?category=living",
         "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
       },
       {
-        "title": "Office Interiors",
-        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_UDDULE_eIBY_r9wgwp.jpg",
+        "title": "Dining",
+        "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598512/download_6_wirf82.png",
         "link": "/search?category=electronics",
         "class": "md:rounded-bl-[10rem] rounded-bl-[5rem]"
       }

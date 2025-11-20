@@ -1,18 +1,19 @@
 import React from "react";
 import { MapPin, Phone } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { LOGO_NONE_BG } from './../../lib/constants.js';
 
 const Footer = () => {
   return (
     <footer className="bg-[#e7eff3] text-gray-800 pt-10 pb-4">
-      <div className="max-w-full mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
+      <div className="max-w-[95dvw] mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
         {/* Left Section */}
         <div className="md:col-span-2">
          <Image
-            src={LOGO_NONE_BG}
+            src="https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763599313/dowsnload_11_qqd2gv.png"
             alt="USAVE Logo"
-            width={150}
+            width={125}
             height={50}
             className="mb-4"
          
@@ -39,70 +40,69 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold text-[#00688B] mb-2">SHOP BY PLACES</h3>
           <ul className="space-y-1 text-sm">
-            <li>Rentals</li>
-            <li>Resorts</li>
             <li>Airbnb</li>
-            <li>Hotels</li>
+            <li>Luxury</li>
+            <li>Resorts</li>
           </ul>
         </div>
 
-        {/* Living */}
-        <div>
-          <h3 className="font-semibold text-[#00688B] mb-2">LIVING</h3>
-          <ul className="space-y-1 text-sm">
-            <li>Lounges</li>
-            <li>Sofas</li>
-            <li>Chair</li>
-            <li>Mats</li>
-          </ul>
-        </div>
+        {/* Lounges */}
+<div>
+  <h3 className="font-semibold text-[#00688B] mb-2">LOUNGES</h3>
+  <ul className="space-y-1 text-sm">
+    <li>Corner Recliner</li>
+    <li>Corner Sofabed</li>
+    <li>Fabric 3 + 2 / Chaise</li>
+    <li>Fabric Recliner Lounge</li>
+    <li>Leather 3 + 2 / Chaise</li>
+    <li>Leather Recliner Lounge</li>
+    <li>Modular Lounge</li>
+    <li>Occasional Armchairs</li>
+    <li>Sofabed</li>
+  </ul>
+</div>
 
-        {/* Dining */}
-        <div>
-          <h3 className="font-semibold text-[#00688B] mb-2">DINING</h3>
-          <ul className="space-y-1 text-sm">
-            <li>BBQ</li>
-            <li>Outdoor</li>
-            <li>Chair</li>
-            <li>Mats</li>
-          </ul>
-        </div>
+
+       {/* Dining */}
+<div>
+  <h3 className="font-semibold text-[#00688B] mb-2">DINING</h3>
+  <ul className="space-y-1 text-sm">
+    <li>Bar Stools</li>
+    <li>Dining Chairs</li>
+    <li>Occasionals</li>
+    <li>Timber Natural</li>
+    <li>Two Tone</li>
+    <li>White/Black</li>
+  </ul>
+</div>
+
+    
+
 
         {/* Bedroom */}
-        <div>
-          <h3 className="font-semibold text-[#00688B] mb-2">BEDROOM</h3>
-          <ul className="space-y-1 text-sm">
-            <li>Beds</li>
-            <li>Mattress</li>
-            <li>Headboard</li>
-          </ul>
-        </div>
+<div>
+  <h3 className="font-semibold text-[#00688B] mb-2">BEDROOM</h3>
+  <ul className="space-y-1 text-sm">
+    <li>Bedbase</li>
+    <li>Bunk Beds</li>
+    <li>Fabric Bed</li>
+    <li>Mattress</li>
+    <li>Metal</li>
+    <li>Timber Natural</li>
+    <li>Timber - White/Black</li>
+  </ul>
+</div>
 
-        {/* Electronics */}
-        <div>
-          <h3 className="font-semibold text-[#00688B] mb-2">ELECTRONICS</h3>
-          <ul className="space-y-1 text-sm">
-            <li>Heating</li>
-            <li>Cooling</li>
-            <li>Washers</li>
-            <li>Dryers</li>
-            <li>TV’s & Sound bars</li>
-            <li>BBQ</li>
-          </ul>
-        </div>
+{/* Outdoor */}
+<div>
+  <h3 className="font-semibold text-[#00688B] mb-2">OUTDOOR</h3>
+  <ul className="space-y-1 text-sm">
+    <li>Aluminium/Wicker</li>
+    <li>Timber</li>
+  </ul>
+</div>
 
-        {/* Kitchen */}
-        <div>
-          <h3 className="font-semibold text-[#00688B] mb-2">KITCHEN</h3>
-          <ul className="space-y-1 text-sm">
-            <li>Fridges</li>
-            <li>Freezers</li>
-            <li>Dishwashers</li>
-            <li>Ovens</li>
-            <li>Outdoor</li>
-            <li>BBQ</li>
-          </ul>
-        </div>
+
       </div>
 
       {/* Subscribe Section */}
@@ -120,6 +120,23 @@ const Footer = () => {
           <button className="bg-[#004c63] text-white px-6 py-2 rounded-md hover:bg-[#00688B] transition-all">
             Subscribe
           </button>
+        </div>
+      </div>
+
+      {/* Links Section */}
+      <div className="max-w-7xl mx-auto px-6 mt-6 border-b border-gray-300 pb-6">
+        <div className="flex flex-wrap justify-center gap-6 text-sm">
+          <Link href="/contact" className="text-gray-700 hover:text-[#00688B] transition-colors">
+            Contact Us
+          </Link>
+          <span className="text-gray-400">|</span>
+          <Link href="/" className="text-gray-700 hover:text-[#00688B] transition-colors">
+            About Us
+          </Link>
+          <span className="text-gray-400">|</span>
+          <Link href="/products" className="text-gray-700 hover:text-[#00688B] transition-colors">
+            All Products
+          </Link>
         </div>
       </div>
 

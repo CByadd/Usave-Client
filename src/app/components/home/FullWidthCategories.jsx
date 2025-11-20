@@ -10,25 +10,25 @@ const categories = [
     "title": "Living Room",
     "para": "Modern furniture for your living room.",
     "link": "/places/living-room",
-    "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264135/Usave/unsplash_p3UWyaujtQo_gor2oz.jpg"
+    "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598824/download_7_x7v9kf.png"
   },
   {
     "title": "Dining Room",
     "para": "Elegant dining tables and chairs.",
     "link": "/places/dining-room",
-    "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264157/Usave/unsplash_eyEy5YZhSvU_ebbzol.jpg"
+    "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598965/download_10_xemzob.png"
   },
   {
     "title": "Bedroom",
     "para": "Cozy beds and wardrobes.",
     "link": "/places/bedroom",
-    "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264157/Usave/unsplash_1eWGq_l_DuU_dcqug9.jpg"
+    "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598821/download_8_xiby6w.png"
   },
   {
-    "title": "Office",
-    "para": "Stylish office furniture.",
+    "title": "Outdoor",
+    "para": "Stylish outdoor furniture.",
     "link": "/places/office",
-    "bgImg": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264164/Usave/unsplash_Cu_uy3E7jPc_wsywbf.jpg"
+    "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598821/download_9_er1z7t.png"
   }
 ]
 

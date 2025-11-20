@@ -259,18 +259,19 @@ export default function OrderDetailsPage() {
                       
                       {/* Configuration Options */}
                       <div className="flex flex-wrap gap-4 mb-3 text-sm">
-                        {color && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-700">Color:</span>
-                            <span className="text-gray-600">{typeof color === 'string' ? color : (color.value || color.name || JSON.stringify(color))}</span>
-                          </div>
-                        )}
-                        {size && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-700">Size:</span>
-                            <span className="text-gray-600">{typeof size === 'string' ? size : (size.value || size.label || JSON.stringify(size))}</span>
-                          </div>
-                        )}
+                        {(() => {
+                          // Only show color if product has multiple color options (more than 1)
+                          const colorVariantsCount = Array.isArray(product.colorVariants) ? product.colorVariants.length : 0;
+                          const hasBaseColor = product.color ? 1 : 0;
+                          const totalColorOptions = colorVariantsCount + hasBaseColor;
+                          const shouldShowColor = color && totalColorOptions > 1;
+                          return shouldShowColor ? (
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-700">Color:</span>
+                              <span className="text-gray-600">{typeof color === 'string' ? color : (color.value || color.name || JSON.stringify(color))}</span>
+                            </div>
+                          ) : null;
+                        })()}
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-gray-700">Quantity:</span>
                           <span className="text-gray-600">{quantity}</span>

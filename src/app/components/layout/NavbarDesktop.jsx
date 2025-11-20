@@ -86,7 +86,7 @@ const NavbarDesktop = ({
   return (
     <>
       {/* --- DESKTOP NAVBAR (hidden below md) --- */}
-      <div className="hidden md:block border-b border-gray-100 bg-white w-full overflow-x-hidden overflow-y-visible relative z-[1000]">
+      <div className="hidden md:block border-b border-gray-100 bg-white w-full overflow-x-hidden overflow-y-visible relative z-[100]" style={{ zIndex: 100 }}>
         <div
           className="
             mx-auto 
@@ -162,12 +162,11 @@ const NavbarDesktop = ({
 
       {/* --- CATEGORY BAR (also hidden below md) --- */}
       <div
-        className={`hidden md:flex border-t border-gray-100 w-full relative z-50 transition-all duration-300 ease-in-out bg-white ${
+        className={`hidden md:flex border-t border-gray-100 w-full relative z-[50] transition-all duration-300 ease-in-out bg-white ${
           isCategoryBarCollapsed
             ? "max-h-0 opacity-0 border-t-0 overflow-hidden"
             : "max-h-16 opacity-100 overflow-visible"
         }`}
-        style={{ zIndex: 1000 }}
       >
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 w-full flex items-center justify-center no-scrollbar overflow-x-auto overflow-y-visible">
           <nav
@@ -223,10 +222,11 @@ const NavbarDesktop = ({
 
         return createPortal(
           <div
-            className="fixed w-48 bg-white border border-gray-200 rounded-md shadow-xl z-[10000]"
+            className="fixed w-48 bg-white border border-gray-200 rounded-md shadow-xl"
             style={{
               top: `${dropdownPosition.top}px`,
               left: `${dropdownPosition.left}px`,
+              zIndex: 10050,
             }}
             onMouseEnter={() => {
               clearHideTimeout();

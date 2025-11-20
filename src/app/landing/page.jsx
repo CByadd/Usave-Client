@@ -14,6 +14,7 @@ import InfoBanner from '../components/shared/InfoBanner'
 import Image from 'next/image'
 import { LandingPageSkeleton } from '../components/shared/LoadingSkeleton'
 import InspirationSection from '../components/home/InspirationSection'
+import ContactSection from '../components/home/ContactSection'
 import { apiService } from '../services/api/apiClient'
 
 // Animation variants for sections - buttery smooth
@@ -128,9 +129,12 @@ export default function LandingPage() {
         <HeroSection/>
       </section>
       
-      <AnimatedSection className="md:w-[90dvw] w-full overflow-hidden" delay={0.1}>
+      <AnimatedSection className="md:w-[90dvw] w-full flex flex-col items-center justify-center overflow-hidden " delay={0.1}>
+        <div className="w-[90%]">
+       <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/products"/>
+        </div>
+         
         <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
-          <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/products"/>
           <CategoryCarousel/>
         </div>
       </AnimatedSection>
@@ -216,6 +220,11 @@ export default function LandingPage() {
       {/* <AnimatedSection className='w-full' delay={0.8}>
         <InspirationSection/>
       </AnimatedSection> */}
+
+      {/* Contact Section */}
+      <AnimatedSection className="w-full" delay={0.8}>
+        <ContactSection />
+      </AnimatedSection>
 
       <AnimatedSection className="w-[99dvw] relative overflow-hidden" delay={0.9}>
         <div className="relative w-full">

@@ -9,7 +9,7 @@ import { openCartDrawer, showToast } from '../../lib/ui';
 import { useWishlist } from '../../stores/useWishlistStore';
 import { useCart } from '../../stores/useCartStore';
 
-const QuickViewModal = ({ product, isOpen, onClose }) => {
+const QuickViewModal = ({ product, isOpen, onClose, previewOnly = false }) => {
   const router = useRouter();
   const { getAnimationConfig, animationsEnabled } = useAnimationStore();
   const modalConfig = getAnimationConfig('modal');
@@ -170,8 +170,8 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
     return options;
   }, [productData, sizeVariants]);
   
-  // Show color variants if we have any color options
-  const hasColorVariants = allColorOptions.length > 0;
+  // Show color variants only if we have more than 1 color option
+  const hasColorVariants = allColorOptions.length > 1;
   // Only show size section if size variants are enabled in the product settings
   const hasSizeVariants = productData?.hasSizeVariants === true && allSizeOptions.length > 0;
   const hasInstallation = productData?.hasInstallation || false;
@@ -599,18 +599,20 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900">Quick View</h2>
           <div className="flex items-center gap-2">
-            {/* Wishlist button */}
-            <button
-              onClick={handleWishlistToggle}
-              disabled={isWishlistLoading}
-              className="p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-              aria-label={productInWishlist ? "Remove from wishlist" : "Add to wishlist"}
-            >
-              <Heart 
-                size={20} 
-                className={`sm:w-[22px] sm:h-[22px] ${productInWishlist ? 'fill-red-500 text-red-500' : ''}`} 
-              />
-            </button>
+            {/* Wishlist button - only show if not preview only */}
+            {!previewOnly && (
+              <button
+                onClick={handleWishlistToggle}
+                disabled={isWishlistLoading}
+                className="p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                aria-label={productInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+              >
+                <Heart 
+                  size={20} 
+                  className={`sm:w-[22px] sm:h-[22px] ${productInWishlist ? 'fill-red-500 text-red-500' : ''}`} 
+                />
+              </button>
+            )}
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -700,48 +702,46 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Quantity */}
-            <div className="flex-shrink-0 mb-2">
-              <label className="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Quantity</label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleQuantityChange(-1);
-                  }}
-                  disabled={quantity <= 1}
-                  className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus size={14} className="sm:w-[16px] sm:h-[16px]" />
-                </button>
-                <span className="text-sm sm:text-base font-medium w-8 sm:w-10 text-center">{quantity}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleQuantityChange(1);
-                  }}
-                  disabled={quantity >= (product?.maxQuantity || 10)}
-                  className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                  aria-label="Increase quantity"
-                >
-                  <Plus size={14} className="sm:w-[16px] sm:h-[16px]" />
-                </button>
+            {/* Quantity - only show if not preview only */}
+            {!previewOnly && (
+              <div className="flex-shrink-0 mb-2">
+                <label className="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Quantity</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleQuantityChange(-1);
+                    }}
+                    disabled={quantity <= 1}
+                    className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus size={14} className="sm:w-[16px] sm:h-[16px]" />
+                  </button>
+                  <span className="text-sm sm:text-base font-medium w-8 sm:w-10 text-center">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleQuantityChange(1);
+                    }}
+                    disabled={quantity >= (product?.maxQuantity || 10)}
+                    className="p-1.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus size={14} className="sm:w-[16px] sm:h-[16px]" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Colors */}
-            <div className="flex-shrink-0 mb-2">
-              {loadingProduct && allColorOptions.length <= 1 && (
-                <div className="text-xs text-gray-500 mb-2">Loading color options...</div>
-              )}
-              {hasColorVariants && allColorOptions.length > 0 && (
-                <>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Choose Color</label>
+            {/* Colors - Only show if more than 1 color option and not preview only */}
+            {!previewOnly && hasColorVariants && allColorOptions.length > 1 && (
+              <div className="flex-shrink-0 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Choose Color</label>
                   <div className="flex flex-wrap gap-1.5 sm:gap-2 ml-1">
                     {allColorOptions.map((variant) => {
                       const variantId = variant.id || variant.color;
@@ -836,7 +836,7 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                   );
                 })}
                   </div>
-                  {selectedColorVariant && (
+                  {selectedColorVariant && hasColorVariants && allColorOptions.length > 1 && (
                     <div className="mt-2 flex items-center gap-2">
                       <span className="text-xs sm:text-sm font-medium text-gray-900">
                         Selected Color:
@@ -849,13 +849,13 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                       )}
                     </div>
                   )}
-                </>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Sizes */}
-            <div className="flex-shrink-0 mb-2">
-              {hasSizeVariants && (
+            {/* Sizes - only show if not preview only */}
+            {!previewOnly && (
+              <div className="flex-shrink-0 mb-2">
+                {hasSizeVariants && (
                 <>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Choose Size</label>
                   <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -892,25 +892,13 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
                       );
                     })}
                   </div>
-                  {selectedSizeVariant && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-medium text-gray-900">
-                        Selected Size:
-                      </span>
-                      <span className="text-xs sm:text-sm text-gray-700">
-                        {selectedSizeVariant.title || selectedSizeVariant.size}
-                      </span>
-                      {!selectedSizeVariant.inStock && (
-                        <span className="text-xs text-red-600 font-medium">(Out of Stock)</span>
-                      )}
-                    </div>
-                  )}
                 </>
               )}
-            </div>
+              </div>
+            )}
 
-            {/* Installation Option */}
-            {hasInstallation && (
+            {/* Installation Option - only show if not preview only */}
+            {!previewOnly && hasInstallation && (
               <div className="flex-shrink-0 mb-2 border border-gray-200 rounded-lg p-2 sm:p-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -945,44 +933,48 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               </div>
             )}
 
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 mt-auto pt-2 sm:pt-3 border-t border-gray-200 flex-shrink-0">
-              <button
-                type="button"
-                onClick={handleQuickShop}
-                disabled={!inStock}
-                className="flex-1 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-1 sm:gap-2 cursor-pointer disabled:cursor-not-allowed text-xs sm:text-sm md:text-base"
-              >
-                <ShoppingBag size={12} className="sm:w-[14px] sm:h-[14px] md:w-[16px] md:h-[16px]" /> 
-                <span className="hidden sm:inline">Quick Shop</span>
-                <span className="sm:hidden">Quick</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={!inStock || productInCart}
-                className={`flex-1 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-white flex items-center justify-center gap-1 sm:gap-2 transition text-xs sm:text-sm md:text-base ${
-                  !inStock
-                    ? 'bg-gray-400'
-                    : productInCart
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-[#0F4C81] hover:bg-[#0D3F6A]'
-                }`}
-              >
-                <ShoppingCart size={12} className="sm:w-[14px] sm:h-[14px] md:w-[16px] md:h-[16px]" />
-                <span className="hidden sm:inline">{!inStock ? 'Out of Stock' : productInCart ? 'In Cart' : 'Add to Cart'}</span>
-                <span className="sm:hidden">{!inStock ? 'Out' : productInCart ? 'In Cart' : 'Add'}</span>
-              </button>
-            </div>
+            {/* Buttons - only show if not preview only */}
+            {!previewOnly && (
+              <>
+                <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 mt-auto pt-2 sm:pt-3 border-t border-gray-200 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleQuickShop}
+                    disabled={!inStock}
+                    className="flex-1 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-1 sm:gap-2 cursor-pointer disabled:cursor-not-allowed text-xs sm:text-sm md:text-base"
+                  >
+                    <ShoppingBag size={12} className="sm:w-[14px] sm:h-[14px] md:w-[16px] md:h-[16px]" /> 
+                    <span className="hidden sm:inline">Quick Shop</span>
+                    <span className="sm:hidden">Quick</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    disabled={!inStock || productInCart}
+                    className={`flex-1 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-white flex items-center justify-center gap-1 sm:gap-2 transition text-xs sm:text-sm md:text-base ${
+                      !inStock
+                        ? 'bg-gray-400'
+                        : productInCart
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : 'bg-[#0F4C81] hover:bg-[#0D3F6A]'
+                    }`}
+                  >
+                    <ShoppingCart size={12} className="sm:w-[14px] sm:h-[14px] md:w-[16px] md:h-[16px]" />
+                    <span className="hidden sm:inline">{!inStock ? 'Out of Stock' : productInCart ? 'In Cart' : 'Add to Cart'}</span>
+                    <span className="sm:hidden">{!inStock ? 'Out' : productInCart ? 'In Cart' : 'Add'}</span>
+                  </button>
+                </div>
 
-            <div className="text-center pb-1 sm:pb-2 flex-shrink-0 mt-5">
-              <button
-                onClick={handleViewFullDetails}
-                className="text-[#0F4C81] hover:text-[#0D3F6A] text-xs sm:text-sm underline font-medium"
-              >
-                View Full Detail Page
-              </button>
-            </div>
+                <div className="text-center pb-1 sm:pb-2 flex-shrink-0 mt-5">
+                  <button
+                    onClick={handleViewFullDetails}
+                    className="text-[#0F4C81] hover:text-[#0D3F6A] text-xs sm:text-sm underline font-medium"
+                  >
+                    View Full Detail Page
+                  </button>
+                </div>
+              </>
+            )}
           </div>
           </div>
         </div>

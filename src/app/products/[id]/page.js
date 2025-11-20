@@ -706,7 +706,7 @@ export default function ProductDetailPage() {
                     );
                   })}
                 </div>
-                {selectedColorVariant && (
+                {selectedColorVariant && hasColorVariants && allColorOptions.length > 1 && (
                   <div className="mt-3 flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
                       Selected Color:
@@ -751,19 +751,6 @@ export default function ProductDetailPage() {
                     );
                   })}
                 </div>
-                {selectedSizeVariant && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      Selected Size:
-                    </span>
-                    <span className="text-sm text-gray-700">
-                      {selectedSizeVariant.title || selectedSizeVariant.size}
-                    </span>
-                    {!selectedSizeVariant.inStock && (
-                      <span className="text-xs text-red-600 font-medium">(Out of Stock)</span>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 

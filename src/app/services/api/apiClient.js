@@ -10,6 +10,58 @@ const api = axios.create({
   },
 });
 
+// Helper function to handle logout
+const handleLogout = () => {
+  if (typeof window !== 'undefined') {
+    // Don't logout if we're on an order approval page (uses token query param, not Bearer token)
+    const isOrderApprovalPage = window.location.pathname.includes('/orders/') && 
+                                window.location.pathname.includes('/owner-approve');
+    
+    if (isOrderApprovalPage) {
+      // For order approval pages, just clear the auth token but don't redirect
+      // The page will handle showing the error message
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      return;
+    }
+    
+    // Clear auth data
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    
+    // Redirect to home page
+    // Use window.location to ensure full page reload and clear any cached state
+    if (window.location.pathname !== '/') {
+      window.location.href = '/';
+    } else {
+      // If already on home page, reload to clear any cached state
+      window.location.reload();
+    }
+  }
+};
+
+// Response interceptor to handle 401 errors (token expired/invalid)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Check if this is a Bearer token request (has Authorization header)
+      const hasAuthHeader = error.config?.headers?.Authorization || 
+                           error.config?.headers?.authorization;
+      
+      // Only auto-logout for Bearer token authentication failures
+      // Token query parameter endpoints (like order approval) should handle errors themselves
+      if (hasAuthHeader) {
+        // Token expired or invalid - logout user
+        console.warn('Authentication failed: Token expired or invalid. Logging out...');
+        handleLogout();
+      }
+      // For token query parameter requests, let the error propagate so the page can handle it
+    }
+    return Promise.reject(error);
+  }
+);
+
 // API endpoints
 export const apiEndpoints = {
   auth: {
@@ -661,6 +713,82 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('API: Request reapproval error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async addItemToOrder(orderId, productId, quantity = 1, ownerToken = null) {
+      const token = ownerToken || getAuthToken();
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}/orders/${orderId}/items`,
+          { productId, quantity, ...(ownerToken ? { token: ownerToken } : {}) },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && !ownerToken ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Add item to order error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async updateOrderItemQuantity(orderId, itemId, quantity) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.put(
+          `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}`,
+          { quantity },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Update order item quantity error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async removeItemFromOrder(orderId, itemId) {
+      const token = getAuthToken();
+      try {
+        const response = await axios.delete(
+          `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}`,
+          {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Remove item from order error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async saveOrderNotes(orderId, notes, token) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}/orders/${orderId}/owner-approve`,
+          { token, notes },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Save order notes error:', error.response?.data || error.message);
         throw error;
       }
     },

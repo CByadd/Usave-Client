@@ -1,18 +1,20 @@
 "use client";
 import React, { useState } from 'react';
-import { Plus, Minus, Trash2, Search, X } from 'lucide-react';
+import { Plus, Minus, Trash2, Search, X, Eye } from 'lucide-react';
 import { apiService } from '../../services/api/apiClient';
 import productService from '../../services/api/productService';
 import OptimizedImage from '../shared/OptimizedImage';
+import QuickViewModal from '../product/QuickViewModal';
 import { showAlert, setLoading } from '../../lib/ui';
 
-const AdminOrderEditor = ({ order, onOrderUpdate }) => {
+const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   const handleSearch = async (query) => {
     if (!query || query.length < 2) {
@@ -35,18 +37,40 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
   const handleAddItem = async (product) => {
     setError('');
     setSuccess('');
+    setLoading(true, 'Adding item...');
     try {
-      const response = await apiService.orders.addItemToOrder(order.id, product.id, 1);
+      const response = await apiService.orders.addItemToOrder(order.id, product.id, 1, ownerToken);
       if (response.success) {
-        onOrderUpdate(response.data);
+        // Handle different response structures
+        const updatedOrder = response.data?.order || response.data || response;
+        onOrderUpdate(updatedOrder);
         setSuccess(`Added ${product.title} to order`);
         setSearchQuery('');
         setSearchResults([]);
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(response.message || 'Failed to add item');
+        const errorMsg = response.message || response.error || 'Failed to add item';
+        setError(errorMsg);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add item');
+      // Handle different error formats
+      let errorMessage = 'Failed to add item';
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      } else if (err.error) {
+        errorMessage = err.error;
+      }
+      
+      setError(errorMessage);
+      console.error('Add item error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -191,7 +215,16 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
               )}
               
               <div className="flex-1">
-                <h5 className="font-medium text-gray-900">{product.title || 'Item'}</h5>
+                <div className="flex items-center gap-2">
+                  <h5 className="font-medium text-gray-900">{product.title || 'Item'}</h5>
+                  <button
+                    onClick={() => setQuickViewProduct(product)}
+                    className="p-1 text-gray-400 hover:text-[#0B4866] transition-colors"
+                    title="Quick View"
+                  >
+                    <Eye size={16} />
+                  </button>
+                </div>
                 <p className="text-sm text-gray-600">${(item.price || 0).toFixed(2)} each</p>
               </div>
 
@@ -299,6 +332,16 @@ const AdminOrderEditor = ({ order, onOrderUpdate }) => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Quick View Modal */}
+      {quickViewProduct && (
+        <QuickViewModal
+          product={quickViewProduct}
+          isOpen={!!quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          previewOnly={true}
+        />
       )}
 
       {/* Order Totals */}

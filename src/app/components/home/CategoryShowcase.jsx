@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from 'lucide-react';
 import designData from '../../data/designShowcase.json';
@@ -20,12 +19,11 @@ export default function DesignCat() {
     key={index}
     className={`group relative overflow-hidden shadow-md hover:shadow-xl transition-all ${item.class || "rounded-2xl"}`}
   >
-    <Image
+    <img
       src={item.image}
       alt={item.title}
-      width={600}
-      height={100}
       className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+      loading="lazy"
     />
 
     {/* Gradient overlay for text visibility */}
@@ -52,12 +50,11 @@ export default function DesignCat() {
         key={index}
         className={`group relative overflow-hidden shadow-md hover:shadow-xl transition-all ${item.class || "rounded-2xl"}`}
       >
-        <Image
+        <img
           src={item.image}
           alt={item.title}
-          width={600}
-          height={400}
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
         />
 
         {/* Gradient overlay */}
