@@ -40,23 +40,46 @@ const handleLogout = () => {
   }
 };
 
+// Request interceptor to automatically add Authorization header
+api.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage
+    const token = getAuthToken();
+    
+    // Add Authorization header if token exists
+    if (token && !config.headers.Authorization && !config.headers.authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor to handle 401 errors (token expired/invalid)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Check if this is a Bearer token request (has Authorization header)
-      const hasAuthHeader = error.config?.headers?.Authorization || 
-                           error.config?.headers?.authorization;
+      // Check if there was a token in localStorage (meaning user was authenticated)
+      const hadToken = typeof window !== 'undefined' && localStorage.getItem('authToken');
       
-      // Only auto-logout for Bearer token authentication failures
-      // Token query parameter endpoints (like order approval) should handle errors themselves
-      if (hasAuthHeader) {
+      // Check if this is an order approval page (uses token query param, not Bearer token)
+      const isOrderApprovalPage = typeof window !== 'undefined' && 
+                                  window.location.pathname.includes('/orders/') && 
+                                  window.location.pathname.includes('/owner-approve');
+      
+      // Only auto-logout if:
+      // 1. User had a token (was authenticated)
+      // 2. Not on order approval page (which uses query param tokens)
+      if (hadToken && !isOrderApprovalPage) {
         // Token expired or invalid - logout user
         console.warn('Authentication failed: Token expired or invalid. Logging out...');
         handleLogout();
       }
-      // For token query parameter requests, let the error propagate so the page can handle it
+      // For token query parameter requests or unauthenticated requests, let the error propagate
     }
     return Promise.reject(error);
   }
@@ -737,16 +760,16 @@ export const apiService = {
       }
     },
     
-    async updateOrderItemQuantity(orderId, itemId, quantity) {
-      const token = getAuthToken();
+    async updateOrderItemQuantity(orderId, itemId, quantity, ownerToken = null) {
+      const token = ownerToken || getAuthToken();
       try {
         const response = await axios.put(
           `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}`,
-          { quantity },
+          { quantity, ...(ownerToken ? { token: ownerToken } : {}) },
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': token ? `Bearer ${token}` : '',
+              ...(token && !ownerToken ? { 'Authorization': `Bearer ${token}` } : {}),
             },
           }
         );
@@ -757,14 +780,14 @@ export const apiService = {
       }
     },
     
-    async removeItemFromOrder(orderId, itemId) {
-      const token = getAuthToken();
+    async removeItemFromOrder(orderId, itemId, ownerToken = null) {
+      const token = ownerToken || getAuthToken();
       try {
         const response = await axios.delete(
-          `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}`,
+          `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}${ownerToken ? `?token=${ownerToken}` : ''}`,
           {
             headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
+              ...(token && !ownerToken ? { 'Authorization': `Bearer ${token}` } : {}),
             },
           }
         );
