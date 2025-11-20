@@ -63,18 +63,23 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Check if there was a token in localStorage (meaning user was authenticated)
-      const hadToken = typeof window !== 'undefined' && localStorage.getItem('authToken');
-      
       // Check if this is an order approval page (uses token query param, not Bearer token)
       const isOrderApprovalPage = typeof window !== 'undefined' && 
                                   window.location.pathname.includes('/orders/') && 
                                   window.location.pathname.includes('/owner-approve');
       
+      // Check if request had Authorization header (was an authenticated request)
+      const config = error.config || {};
+      const headers = config.headers || {};
+      const hadAuthHeader = !!(headers.Authorization || headers.authorization);
+      
+      // Check if there's a token in localStorage (user was logged in)
+      const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+      
       // Only auto-logout if:
-      // 1. User had a token (was authenticated)
+      // 1. Request had Authorization header OR user has token in localStorage (was authenticated)
       // 2. Not on order approval page (which uses query param tokens)
-      if (hadToken && !isOrderApprovalPage) {
+      if ((hadAuthHeader || hasToken) && !isOrderApprovalPage) {
         // Token expired or invalid - logout user
         console.warn('Authentication failed: Token expired or invalid. Logging out...');
         handleLogout();
@@ -592,16 +597,9 @@ export const apiService = {
   
   orders: {
     async getAll() {
-      const token = getAuthToken();
+      // Use api instance (with interceptors) instead of axios directly
       try {
-        const response = await axios.get(
-          `${api.defaults.baseURL}${apiEndpoints.orders.getAll}`,
-          {
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-            },
-          }
-        );
+        const response = await api.get(apiEndpoints.orders.getAll);
         return response.data;
       } catch (error) {
         console.error('API: Get orders error:', error.response?.data || error.message);
@@ -610,16 +608,9 @@ export const apiService = {
     },
     
     async getById(id) {
-      const token = getAuthToken();
+      // Use api instance (with interceptors) instead of axios directly
       try {
-        const response = await axios.get(
-          `${api.defaults.baseURL}${apiEndpoints.orders.getById(id)}`,
-          {
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-            },
-          }
-        );
+        const response = await api.get(apiEndpoints.orders.getById(id));
         return response.data;
       } catch (error) {
         console.error('API: Get order by ID error:', error.response?.data || error.message);

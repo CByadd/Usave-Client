@@ -16,6 +16,13 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
   const [success, setSuccess] = useState('');
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
+  // Safety check: ensure order and items exist
+  if (!order) {
+    return <div className="p-4 text-gray-500">No order data available</div>;
+  }
+
+  const orderItems = order.items || [];
+
   const handleSearch = async (query) => {
     if (!query || query.length < 2) {
       setSearchResults([]);
@@ -198,7 +205,10 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
 
       {/* Order Items List */}
       <div className="space-y-3 mb-4">
-        {order.items.map((item) => {
+        {orderItems.length === 0 ? (
+          <div className="text-center py-4 text-gray-500 text-sm">No items in this order</div>
+        ) : (
+          orderItems.map((item) => {
           const product = item.product || {};
           return (
             <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
@@ -265,7 +275,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
               )}
             </div>
           );
-        })}
+        }))}
       </div>
 
       {/* Add Item Search */}
