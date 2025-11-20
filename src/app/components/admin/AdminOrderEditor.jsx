@@ -85,7 +85,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
     }
     
     try {
-      const response = await apiService.orders.updateOrderItemQuantity(order.id, itemId, newQuantity);
+      const response = await apiService.orders.updateOrderItemQuantity(order.id, itemId, newQuantity, ownerToken);
       if (response.success) {
         onOrderUpdate(response.data);
         setSuccess('Quantity updated successfully');
@@ -125,7 +125,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
         setSuccess('');
         setLoading(true, 'Removing item...');
         try {
-          const response = await apiService.orders.removeItemFromOrder(order.id, itemId);
+          const response = await apiService.orders.removeItemFromOrder(order.id, itemId, ownerToken);
           if (response.success) {
             onOrderUpdate(response.data);
             setSuccess('Item removed');
