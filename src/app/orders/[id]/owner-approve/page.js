@@ -3,10 +3,12 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { config } from '../../../lib/config';
+import { apiService } from '../../../services/api/apiClient';
 import AdminOrderEditor from '../../../components/admin/AdminOrderEditor';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
 import QuickViewModal from '../../../components/product/QuickViewModal';
 import { CheckCircle2, XCircle, AlertCircle, Loader2, Edit, ThumbsUp, FileText, X as XIcon, Eye } from 'lucide-react';
+import { showAlert, setLoading as setGlobalLoading } from '../../../lib/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +67,9 @@ function OwnerApproveOrderPageContent() {
       setLoading(true);
       setError('');
 
+      // Use fetch with token query parameter for owner approval pages
+      // This doesn't require authentication token, uses query param token instead
+      // Use config.api.baseURL which correctly handles environment
       const response = await fetch(`${config.api.baseURL}/orders/${orderId}?token=${token}`, {
         method: 'GET',
         headers: {
@@ -127,6 +132,8 @@ function OwnerApproveOrderPageContent() {
             notesToSend = savedNotes || null;
           }
           
+          // Use fetch with correct baseURL for owner approval
+          // Use config.api.baseURL which correctly handles environment
           const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
             method: 'POST',
             headers: {
@@ -196,6 +203,8 @@ function OwnerApproveOrderPageContent() {
       setProcessing(true);
       setError('');
 
+      // Use fetch with correct baseURL for owner approval
+      // Use config.api.baseURL which correctly handles environment
       const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
         method: 'POST',
         headers: {

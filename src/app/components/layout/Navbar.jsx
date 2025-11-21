@@ -340,7 +340,7 @@ const Navbar = () => {
           <button
             ref={accountMenuRef}
             type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#0B4866] text-white font-medium text-sm hover:bg-[#094058] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:ring-offset-2"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#0B4866] text-white font-medium text-sm hover:bg-[#094058] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:ring-offset-2 cursor-pointer"
             aria-label="User account"
             onClick={(e) => {
               e.stopPropagation();
@@ -355,7 +355,7 @@ const Navbar = () => {
           {/* Account Icon - Show when not authenticated */}
           <button
             type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none cursor-pointer"
             aria-label="Sign in"
             onClick={(e) => {
               e.preventDefault();

@@ -1209,11 +1209,22 @@ const AuthDrawer = () => {
   };
   
   const handleLogout = async () => {
-    await logout();
-    closeAuthDrawer();
-    setForceOpen(false);
-    setAuthRedirectPath(null);
-    window.location.reload();
+    try {
+      await logout();
+      closeAuthDrawer();
+      setForceOpen(false);
+      setAuthRedirectPath(null);
+      // Use router to navigate instead of reload for immediate effect
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if logout fails
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    }
   };
   
   const safeCloseAuthDrawer = (e) => {

@@ -58,7 +58,7 @@ export default function ContactSection() {
                 <h3 className="font-semibold text-lg mb-2">Email Us</h3>
                 <a 
                   href={`mailto:${contactInfo.email}`}
-                  className="text-gray-400 hover:text-white transition-colors text-sm break-all"
+                  className="text-gray-400 hover:text-[#0B4866] transition-colors text-sm break-all"
                 >
                   {contactInfo.email}
                 </a>
@@ -77,7 +77,7 @@ export default function ContactSection() {
                 <h3 className="font-semibold text-lg mb-2">Call Us</h3>
                 <a 
                   href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}
-                  className="text-gray-400 hover:text-white transition-colors text-sm"
+                  className="text-gray-400 hover:text-[#0B4866] transition-colors text-sm"
                 >
                   {contactInfo.phone}
                 </a>

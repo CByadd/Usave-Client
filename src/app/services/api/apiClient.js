@@ -806,6 +806,29 @@ export const apiService = {
         throw error;
       }
     },
+    
+    async ownerApprove(orderId, token, approved, approvalNotes = null, rejectionNotes = null) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}/orders/${orderId}/owner-approve`,
+          {
+            token,
+            approved,
+            approvalNotes,
+            rejectionNotes,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Owner approve order error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
   },
   
   reviews: {

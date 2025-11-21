@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, AlertCircle, MapPin, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, MapPin, Plus, Edit, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../stores/useAuthStore';
@@ -9,6 +9,7 @@ import { useCart } from '../stores/useCartStore';
 import { useCheckout } from '../stores/useCheckoutStore';
 import SuccessModal from '../components/shared/SuccessModal';
 import { apiService } from '../services/api/apiClient';
+import { showAlert, showToast } from '../lib/ui';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState('new');
   const [saveAddress, setSaveAddress] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [editAddressForm, setEditAddressForm] = useState(null);
   const {
     shippingOption,
     warranty,
@@ -140,6 +143,101 @@ export default function CheckoutPage() {
     if (selectedAddress) {
       fillAddressForm(selectedAddress);
     }
+  };
+
+  const handleEditAddress = (addressId, e) => {
+    e.stopPropagation();
+    const address = savedAddresses.find(addr => addr.id === addressId);
+    if (address) {
+      setEditingAddressId(addressId);
+      setEditAddressForm({
+        firstName: address.firstName || '',
+        lastName: address.lastName || '',
+        company: address.company || '',
+        address1: address.address1 || '',
+        address2: address.address2 || '',
+        city: address.city || '',
+        state: address.state || '',
+        postalCode: address.postalCode || '',
+        country: address.country || 'Australia',
+        phone: address.phone || '',
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAddressId(null);
+    setEditAddressForm(null);
+  };
+
+  const handleSaveEdit = async (addressId) => {
+    if (!editAddressForm) return;
+
+    // Validate required fields
+    if (!editAddressForm.firstName || !editAddressForm.lastName || !editAddressForm.address1 || 
+        !editAddressForm.city || !editAddressForm.state || !editAddressForm.postalCode) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    try {
+      setLoadingAddresses(true);
+      const response = await apiService.user.updateAddress(addressId, editAddressForm);
+      
+      if (response.success) {
+        // Reload addresses
+        await loadSavedAddresses();
+        setEditingAddressId(null);
+        setEditAddressForm(null);
+        showToast('Address updated successfully', 'success');
+      } else {
+        showToast(response.message || 'Failed to update address', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating address:', error);
+      showToast(error.response?.data?.message || 'Failed to update address', 'error');
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const handleDeleteAddress = (addressId, e) => {
+    e.stopPropagation();
+    const address = savedAddresses.find(addr => addr.id === addressId);
+    
+    showAlert({
+      title: 'Delete Address',
+      message: `Are you sure you want to delete this address? This action cannot be undone.`,
+      type: 'warning',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          setLoadingAddresses(true);
+          const response = await apiService.user.deleteAddress(addressId);
+          
+          if (response.success) {
+            // Remove from local state
+            setSavedAddresses(prev => prev.filter(addr => addr.id !== addressId));
+            
+            // If deleted address was selected, switch to new address
+            if (selectedAddressId === addressId) {
+              setSelectedAddressId('new');
+              resetAddressForm();
+            }
+            
+            showToast('Address deleted successfully', 'success');
+          } else {
+            showToast(response.message || 'Failed to delete address', 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting address:', error);
+          showToast(error.response?.data?.message || 'Failed to delete address', 'error');
+        } finally {
+          setLoadingAddresses(false);
+        }
+      },
+    });
   };
 
   // Initialize form data from user
@@ -357,6 +455,19 @@ export default function CheckoutPage() {
     if (!saveAddress || !isAuthenticated) return;
     
     try {
+      // Check if address already exists to avoid duplicates
+      const addressExists = savedAddresses.some(addr => 
+        addr.address1?.toLowerCase().trim() === addressData.address1?.toLowerCase().trim() &&
+        addr.city?.toLowerCase().trim() === addressData.city?.toLowerCase().trim() &&
+        addr.postalCode?.trim() === addressData.postalCode?.trim() &&
+        addr.state?.toLowerCase().trim() === addressData.state?.toLowerCase().trim()
+      );
+      
+      if (addressExists) {
+        console.log('Address already exists, skipping save');
+        return;
+      }
+      
       await apiService.user.addAddress({
         ...addressData,
         type: 'shipping',
@@ -486,10 +597,17 @@ export default function CheckoutPage() {
 
       if (orderResponse.success) {
         // Save shipping address to user's saved addresses (optional - don't block order creation)
-        if (isAuthenticated && user?.id) {
+        if (isAuthenticated && user?.id && saveAddress) {
           try {
-            // Check if user service exists before calling
-            if (apiService.user && typeof apiService.user.addAddress === 'function') {
+            // Check if address already exists to avoid duplicates
+            const addressExists = savedAddresses.some(addr => 
+              addr.address1?.toLowerCase().trim() === formData.address1?.toLowerCase().trim() &&
+              addr.city?.toLowerCase().trim() === formData.city?.toLowerCase().trim() &&
+              addr.postalCode?.trim() === formData.postalCode?.trim() &&
+              addr.state?.toLowerCase().trim() === formData.state?.toLowerCase().trim()
+            );
+            
+            if (!addressExists && apiService.user && typeof apiService.user.addAddress === 'function') {
               await apiService.user.addAddress({
                 type: 'shipping',
                 firstName: formData.firstName,
@@ -591,43 +709,180 @@ export default function CheckoutPage() {
 
                       {savedAddresses.map((addr) => {
                         const isSelected = selectedAddressId === addr.id;
+                        const isEditing = editingAddressId === addr.id;
+                        
                         return (
-                          <button
+                          <div
                             key={addr.id}
-                            type="button"
-                            onClick={() => handleSavedAddressSelect(addr.id)}
-                            className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${
+                            className={`w-full border-2 rounded-lg transition-colors ${
                               isSelected
                                 ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
-                                : 'border-gray-200 hover:border-[#0F4C81]'
+                                : 'border-gray-200'
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <p className="text-sm font-semibold text-gray-900">
-                                  {addr.firstName} {addr.lastName}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                                  {addr.address1}
-                                  {addr.address2 ? `, ${addr.address2}` : ''}
-                                  <br />
-                                  {addr.city}, {addr.state} {addr.postalCode}
-                                  <br />
-                                  {addr.country}
-                                </p>
-                                {addr.phone && (
-                                  <p className="text-xs text-gray-600 mt-2">
-                                    Phone: {addr.phone}
-                                  </p>
-                                )}
+                            {isEditing ? (
+                              // Edit Mode
+                              <div className="p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h3 className="text-sm font-semibold text-gray-900">Edit Address</h3>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="text-gray-400 hover:text-gray-600"
+                                    type="button"
+                                  >
+                                    <X size={18} />
+                                  </button>
+                                </div>
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <input
+                                        type="text"
+                                        value={editAddressForm?.firstName || ''}
+                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, firstName: e.target.value }))}
+                                        placeholder="First Name *"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                      />
+                                    </div>
+                                    <div>
+                                      <input
+                                        type="text"
+                                        value={editAddressForm?.lastName || ''}
+                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, lastName: e.target.value }))}
+                                        placeholder="Last Name *"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.address1 || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, address1: e.target.value }))}
+                                      placeholder="Street Address *"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.address2 || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, address2: e.target.value }))}
+                                      placeholder="Apartment, Suite, etc."
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                      <input
+                                        type="text"
+                                        value={editAddressForm?.city || ''}
+                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, city: e.target.value }))}
+                                        placeholder="City *"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                      />
+                                    </div>
+                                    <div>
+                                      <input
+                                        type="text"
+                                        value={editAddressForm?.state || ''}
+                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, state: e.target.value }))}
+                                        placeholder="State *"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                      />
+                                    </div>
+                                    <div>
+                                      <input
+                                        type="text"
+                                        value={editAddressForm?.postalCode || ''}
+                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                                        placeholder="Postal Code *"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="tel"
+                                      value={editAddressForm?.phone || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, phone: e.target.value }))}
+                                      placeholder="Phone Number"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                  <div className="flex gap-2 pt-2">
+                                    <button
+                                      onClick={() => handleSaveEdit(addr.id)}
+                                      className="flex-1 px-4 py-2 bg-[#0F4C81] text-white text-sm font-medium rounded-lg hover:bg-[#0D3F6A] transition-colors"
+                                      type="button"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={handleCancelEdit}
+                                      className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                                      type="button"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
-                              {addr.isDefault && (
-                                <span className="inline-flex items-center rounded-full bg-[#0F4C81]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0F4C81]">
-                                  Default
-                                </span>
-                              )}
-                            </div>
-                          </button>
+                            ) : (
+                              // View Mode
+                              <button
+                                type="button"
+                                onClick={() => handleSavedAddressSelect(addr.id)}
+                                className="w-full text-left p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81]"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {addr.firstName} {addr.lastName}
+                                      </p>
+                                      {addr.isDefault && (
+                                        <span className="inline-flex items-center rounded-full bg-[#0F4C81]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0F4C81]">
+                                          Default
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                                      {addr.address1}
+                                      {addr.address2 ? `, ${addr.address2}` : ''}
+                                      <br />
+                                      {addr.city}, {addr.state} {addr.postalCode}
+                                      <br />
+                                      {addr.country}
+                                    </p>
+                                    {addr.phone && (
+                                      <p className="text-xs text-gray-600 mt-2">
+                                        Phone: {addr.phone}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      onClick={(e) => handleEditAddress(addr.id, e)}
+                                      className="p-2 text-gray-400 hover:text-[#0F4C81] hover:bg-blue-50 rounded-lg transition-colors"
+                                      type="button"
+                                      title="Edit address"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={(e) => handleDeleteAddress(addr.id, e)}
+                                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                      type="button"
+                                      title="Delete address"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

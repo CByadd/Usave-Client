@@ -23,7 +23,7 @@ function SearchPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', subcategory: '', inStock: false });
+  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', subcategory: '', inStock: false, color: '', size: '', collection: '' });
   const [hasSearched, setHasSearched] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const router = useRouter();
@@ -79,7 +79,16 @@ function SearchPageContent() {
     setIsSearching(true);
     setSearchQuery(query);
     try {
-      const results = await performSearch(query, filters);
+      const results = await performSearch(query, filters, {
+        color: filters.color,
+        size: filters.size,
+        collection: filters.collection,
+        minPrice: filters.priceRange?.min,
+        maxPrice: filters.priceRange?.max,
+        category: filters.category,
+        sortBy: filters.sortBy,
+        inStock: filters.inStock,
+      });
       setSearchResults(Array.isArray(results) ? results : []);
       setHasSearched(true);
     } catch (err) {
@@ -101,7 +110,16 @@ function SearchPageContent() {
     setSearchQuery('');
     try {
       // Use a generic search query that matches all products, filtered by category and subcategory
-      const results = await performSearch('*', { ...filters, category, subcategory });
+      const results = await performSearch('*', { ...filters, category, subcategory }, {
+        color: filters.color,
+        size: filters.size,
+        collection: filters.collection,
+        minPrice: filters.priceRange?.min,
+        maxPrice: filters.priceRange?.max,
+        category: category || filters.category,
+        sortBy: filters.sortBy,
+        inStock: filters.inStock,
+      });
       setSearchResults(Array.isArray(results) ? results : []);
       setHasSearched(true);
     } catch (err) {
@@ -140,6 +158,21 @@ function SearchPageContent() {
   const handleCategoryChange = (category) => {
     updateFilters({ category });
     setActiveFilters(prev => ({ ...prev, category: false }));
+  };
+
+  const handleColorChange = (color) => {
+    updateFilters({ color });
+    setActiveFilters(prev => ({ ...prev, color: false }));
+  };
+
+  const handleSizeChange = (size) => {
+    updateFilters({ size });
+    setActiveFilters(prev => ({ ...prev, size: false }));
+  };
+
+  const handleCollectionChange = (collection) => {
+    updateFilters({ collection });
+    setActiveFilters(prev => ({ ...prev, collection: false }));
   };
 
   const handleStockFilter = (inStock) => {
@@ -226,12 +259,12 @@ function SearchPageContent() {
           <div className="relative filter-dropdown">
             <button
               onClick={() => toggleFilter('sort')}
-              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap cursor-pointer"
             >
               Sort <ChevronDown size={14} className="md:w-4 md:h-4" />
             </button>
             {activeFilters.sort && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-visible">
                 <div className="py-1">
                   <button
                     onClick={() => handleSortChange('relevance')}
@@ -271,12 +304,12 @@ function SearchPageContent() {
           <div className="relative filter-dropdown">
             <button
               onClick={() => toggleFilter('price')}
-              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap cursor-pointer"
             >
               Price <ChevronDown size={14} className="md:w-4 md:h-4" />
             </button>
             {activeFilters.price && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-visible">
                 <div className="py-1">
                   <button
                     onClick={() => handlePriceChange({ min: 0, max: 500 })}
@@ -316,12 +349,12 @@ function SearchPageContent() {
           <div className="relative filter-dropdown">
             <button
               onClick={() => toggleFilter('category')}
-              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
+              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap cursor-pointer"
             >
               Category <ChevronDown size={14} className="md:w-4 md:h-4" />
             </button>
             {activeFilters.category && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-visible">
                 <div className="py-1">
                   <button
                     onClick={() => handleCategoryChange('')}
@@ -364,24 +397,132 @@ function SearchPageContent() {
             )}
           </div>
 
-          <button
-            onClick={() => toggleFilter('color')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Color <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('size')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Size <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('collection')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Collection <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
+          <div className="relative filter-dropdown">
+            <button
+              onClick={() => toggleFilter('color')}
+              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap cursor-pointer"
+            >
+              Color <ChevronDown size={14} className="md:w-4 md:h-4" />
+            </button>
+            {activeFilters.color && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-visible">
+                <div className="py-1 max-h-64 overflow-y-auto">
+                  <button
+                    onClick={() => handleColorChange('')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    All Colors
+                  </button>
+                  <button
+                    onClick={() => handleColorChange('black')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Black
+                  </button>
+                  <button
+                    onClick={() => handleColorChange('white')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    White
+                  </button>
+                  <button
+                    onClick={() => handleColorChange('brown')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Brown
+                  </button>
+                  <button
+                    onClick={() => handleColorChange('gray')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Gray
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="relative filter-dropdown">
+            <button
+              onClick={() => toggleFilter('size')}
+              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap cursor-pointer"
+            >
+              Size <ChevronDown size={14} className="md:w-4 md:h-4" />
+            </button>
+            {activeFilters.size && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-visible">
+                <div className="py-1 max-h-64 overflow-y-auto">
+                  <button
+                    onClick={() => handleSizeChange('')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    All Sizes
+                  </button>
+                  <button
+                    onClick={() => handleSizeChange('small')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Small
+                  </button>
+                  <button
+                    onClick={() => handleSizeChange('medium')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Medium
+                  </button>
+                  <button
+                    onClick={() => handleSizeChange('large')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Large
+                  </button>
+                  <button
+                    onClick={() => handleSizeChange('xlarge')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Extra Large
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="relative filter-dropdown">
+            <button
+              onClick={() => toggleFilter('collection')}
+              className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap cursor-pointer"
+            >
+              Collection <ChevronDown size={14} className="md:w-4 md:h-4" />
+            </button>
+            {activeFilters.collection && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-visible">
+                <div className="py-1 max-h-64 overflow-y-auto">
+                  <button
+                    onClick={() => handleCollectionChange('')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    All Collections
+                  </button>
+                  <button
+                    onClick={() => handleCollectionChange('rose')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Rose Collection
+                  </button>
+                  <button
+                    onClick={() => handleCollectionChange('european')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    European Collection
+                  </button>
+                  <button
+                    onClick={() => handleCollectionChange('modern')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Modern Collection
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <button className="ml-auto px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-[#0B4866] hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap">
             <SlidersHorizontal size={14} className="md:w-4 md:h-4" />
             <span className="hidden sm:inline">All Filters</span>
@@ -456,7 +597,7 @@ function SearchPageContent() {
               </div>
 
               <div className="p-4">
-                <Link href={`/products/${product.id}`}>
+                <Link href={`/products/${product.id}`} className="cursor-pointer">
                   <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
                     {product.title}
                   </h3>

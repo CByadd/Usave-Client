@@ -158,9 +158,9 @@ export default function OrdersPage() {
   };
 
   const handleEditOrder = (orderId) => {
-    // For rejected orders, allow editing
+    // For rejected orders (by owner or admin), allow editing
     const order = orders.find(o => o.id === orderId);
-    if (order?.status === 'REJECTED') {
+    if (order?.status === 'REJECTED' || order?.ownerRejected || order?.adminRejected) {
       // Redirect to checkout to edit order
       router.push(`/checkout?editOrder=${orderId}`);
     } else {
@@ -669,7 +669,7 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
               )}
 
               {/* Edit Order - for rejected orders only */}
-              {status === 'REJECTED' && (
+              {(status === 'REJECTED' || order?.ownerRejected || order?.adminRejected) && (
                 <button
                   onClick={() => onEditOrder(order.id)}
                   className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
