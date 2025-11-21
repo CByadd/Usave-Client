@@ -21,6 +21,7 @@ export default function CheckoutPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [editAddressForm, setEditAddressForm] = useState(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
   const {
     shippingOption,
     warranty,
@@ -85,9 +86,11 @@ export default function CheckoutPage() {
         if (defaultAddress) {
           setSelectedAddressId(defaultAddress.id);
           fillAddressForm(defaultAddress);
+          setShowAddressForm(false); // Don't show form by default
         } else {
           setSelectedAddressId('new');
           resetAddressForm();
+          setShowAddressForm(false); // Don't show form by default
         }
       }
     } catch (error) {
@@ -136,12 +139,14 @@ export default function CheckoutPage() {
 
     if (addressId === 'new') {
       resetAddressForm();
+      setShowAddressForm(true); // Show form when selecting "new address"
       return;
     }
 
     const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
     if (selectedAddress) {
       fillAddressForm(selectedAddress);
+      setShowAddressForm(false); // Hide form when selecting an existing address
     }
   };
 
@@ -149,7 +154,11 @@ export default function CheckoutPage() {
     e.stopPropagation();
     const address = savedAddresses.find(addr => addr.id === addressId);
     if (address) {
-      setEditingAddressId(addressId);
+      setSelectedAddressId(addressId); // Select this address
+      setShowAddressForm(true); // Show main form for editing
+      // Fill the main form with this address data for editing
+      fillAddressForm(address);
+      // Also set editAddressForm for inline edit (if user wants to use that instead)
       setEditAddressForm({
         firstName: address.firstName || '',
         lastName: address.lastName || '',
@@ -168,6 +177,7 @@ export default function CheckoutPage() {
   const handleCancelEdit = () => {
     setEditingAddressId(null);
     setEditAddressForm(null);
+    setShowAddressForm(false); // Hide form when canceling edit
   };
 
   const handleSaveEdit = async (addressId) => {
@@ -189,6 +199,7 @@ export default function CheckoutPage() {
         await loadSavedAddresses();
         setEditingAddressId(null);
         setEditAddressForm(null);
+        setShowAddressForm(false); // Hide form after saving
         showToast('Address updated successfully', 'success');
       } else {
         showToast(response.message || 'Failed to update address', 'error');
@@ -232,7 +243,11 @@ export default function CheckoutPage() {
           }
         } catch (error) {
           console.error('Error deleting address:', error);
-          showToast(error.response?.data?.message || 'Failed to delete address', 'error');
+          const errorMessage = error.response?.data?.message || 
+                              error.response?.data?.error || 
+                              error.message || 
+                              'Failed to delete address';
+          showToast(errorMessage, 'error');
         } finally {
           setLoadingAddresses(false);
         }
@@ -890,24 +905,44 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Save Address Checkbox (only show for new address) */}
-              {selectedAddressId === 'new' && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <label className="flex items-start cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={saveAddress}
-                      onChange={(e) => setSaveAddress(e.target.checked)}
-                      className="mt-1 h-4 w-4 text-[#0B4866] focus:ring-[#0B4866] border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">
-                      Save this address to my account for future orders
-                    </span>
-                  </label>
-                </div>
-              )}
+              {/* Address Form - Only show when showAddressForm is true */}
+              {showAddressForm && (
+                <>
+                  {/* Back button to hide form */}
+                  {selectedAddressId !== 'new' && (
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddressForm(false);
+                          setEditingAddressId(null);
+                        }}
+                        className="text-sm text-[#0F4C81] hover:text-[#0D3F6A] font-medium flex items-center gap-1"
+                      >
+                        <ChevronUp size={16} />
+                        Back to addresses
+                      </button>
+                    </div>
+                  )}
 
-              <div className="space-y-4">
+                  {/* Save Address Checkbox (only show for new address) */}
+                  {selectedAddressId === 'new' && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <label className="flex items-start cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={saveAddress}
+                          onChange={(e) => setSaveAddress(e.target.checked)}
+                          className="mt-1 h-4 w-4 text-[#0B4866] focus:ring-[#0B4866] border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Save this address to my account for future orders
+                        </span>
+                      </label>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1080,7 +1115,8 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
-            </div>
+                </>
+              )}
 
             {/* Shipping Options */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
