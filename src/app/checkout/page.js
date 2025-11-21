@@ -938,178 +938,178 @@ export default function CheckoutPage() {
                   )}
 
                   <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                        errors.firstName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {errors.firstName && (
-                      <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
-                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.firstName}
+                          onChange={(e) => handleInputChange('firstName', e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                            errors.firstName ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
+                        />
+                        {errors.firstName && (
+                          <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.lastName}
+                          onChange={(e) => handleInputChange('lastName', e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                            errors.lastName ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
+                        />
+                        {errors.lastName && (
+                          <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                          errors.email ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        required
+                      />
+                      {errors.email && (
+                        <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                          errors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="+61 XXX XXX XXX"
+                        required
+                      />
+                      {errors.phone && (
+                        <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Company (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.company || ''}
+                        onChange={(e) => handleInputChange('company', e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                        placeholder="Company name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Street Address *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.address1}
+                        onChange={(e) => handleInputChange('address1', e.target.value)}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                          errors.address1 ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        required
+                      />
+                      {errors.address1 && (
+                        <p className="text-red-500 text-xs mt-1">{errors.address1}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Apartment, Suite, etc. (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.address2}
+                        onChange={(e) => handleInputChange('address2', e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                        placeholder="Apt 4B, Suite 200, etc."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          City *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.city}
+                          onChange={(e) => handleInputChange('city', e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                            errors.city ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
+                        />
+                        {errors.city && (
+                          <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          State *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.state}
+                          onChange={(e) => handleInputChange('state', e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                            errors.state ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
+                        />
+                        {errors.state && (
+                          <p className="text-red-500 text-xs mt-1">{errors.state}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Postal Code *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.postalCode}
+                          onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                            errors.postalCode ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          required
+                        />
+                        {errors.postalCode && (
+                          <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                        errors.lastName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {errors.lastName && (
-                      <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    required
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                      errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="+61 XXX XXX XXX"
-                    required
-                  />
-                  {errors.phone && (
-                    <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Company (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.company || ''}
-                    onChange={(e) => handleInputChange('company', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                    placeholder="Company name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Street Address *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address1}
-                    onChange={(e) => handleInputChange('address1', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                      errors.address1 ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    required
-                  />
-                  {errors.address1 && (
-                    <p className="text-red-500 text-xs mt-1">{errors.address1}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Apartment, Suite, etc. (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address2}
-                    onChange={(e) => handleInputChange('address2', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                    placeholder="Apt 4B, Suite 200, etc."
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                        errors.city ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {errors.city && (
-                      <p className="text-red-500 text-xs mt-1">{errors.city}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      State *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                        errors.state ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {errors.state && (
-                      <p className="text-red-500 text-xs mt-1">{errors.state}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Postal Code *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.postalCode}
-                      onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                        errors.postalCode ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {errors.postalCode && (
-                      <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
                 </>
               )}
             </div>

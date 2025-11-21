@@ -306,7 +306,7 @@ function ApproveOrderPageContent() {
               </div>
 
               {/* Admin Order Editor with Add/Edit/Delete functionality */}
-              <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} />
+              <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} orderId={orderId} />
 
               {(order.shippingAddress || order.billingAddress) && (
                 <div className="mb-6">

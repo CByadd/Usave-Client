@@ -515,7 +515,7 @@ function OwnerApproveOrderPageContent() {
                 <XIcon size={20} />
               </button>
             </div>
-            <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} ownerToken={token} />
+            <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} ownerToken={token} orderId={orderId} />
           </div>
         )}
 

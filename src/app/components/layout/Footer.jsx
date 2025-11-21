@@ -106,7 +106,7 @@ const Footer = () => {
       </div>
 
       {/* Subscribe Section */}
-      <div className="max-w-7xl mx-auto px-6 mt-6 border-b border-gray-300 pb-6">
+      {/* <div className="max-w-7xl mx-auto px-6 mt-6 border-b border-gray-300 pb-6">
         <h3 className="font-semibold text-gray-900 mb-1">Stay Updated</h3>
         <p className="text-sm text-gray-600 mb-3">
           Get the latest updates on the products
@@ -121,7 +121,7 @@ const Footer = () => {
             Subscribe
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Links Section */}
       <div className="max-w-7xl mx-auto px-6 mt-6 border-b border-gray-300 pb-6">
@@ -129,10 +129,10 @@ const Footer = () => {
           <Link href="/contact" className="text-gray-700 hover:text-[#00688B] transition-colors">
             Contact Us
           </Link>
-          <span className="text-gray-400">|</span>
+          {/* <span className="text-gray-400">|</span>
           <Link href="/" className="text-gray-700 hover:text-[#00688B] transition-colors">
             About Us
-          </Link>
+          </Link> */}
           <span className="text-gray-400">|</span>
           <Link href="/products" className="text-gray-700 hover:text-[#00688B] transition-colors">
             All Products

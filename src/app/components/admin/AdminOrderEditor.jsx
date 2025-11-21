@@ -7,7 +7,7 @@ import OptimizedImage from '../shared/OptimizedImage';
 import QuickViewModal from '../product/QuickViewModal';
 import { showAlert, setLoading } from '../../lib/ui';
 
-const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
+const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: propOrderId = null }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -19,6 +19,15 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
   // Safety check: ensure order and items exist
   if (!order) {
     return <div className="p-4 text-gray-500">No order data available</div>;
+  }
+
+  // Use propOrderId first, then order.id as fallback - this ensures we always have an orderId
+  // even if order.id is lost when all items are deleted
+  const orderId = propOrderId || order.id;
+  
+  // Validate orderId exists before allowing operations
+  if (!orderId) {
+    return <div className="p-4 text-red-500">Error: Order ID is missing. Please refresh the page.</div>;
   }
 
   const orderItems = order.items || [];
@@ -42,11 +51,16 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
   };
 
   const handleAddItem = async (product) => {
+    if (!orderId) {
+      setError('Order ID is missing. Please refresh the page.');
+      return;
+    }
+    
     setError('');
     setSuccess('');
     setLoading(true, 'Adding item...');
     try {
-      const response = await apiService.orders.addItemToOrder(order.id, product.id, 1, ownerToken);
+      const response = await apiService.orders.addItemToOrder(orderId, product.id, 1, ownerToken);
       if (response.success) {
         // Handle different response structures
         const updatedOrder = response.data?.order || response.data || response;
@@ -82,6 +96,11 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
   };
 
   const handleUpdateQuantity = async (itemId, newQuantity) => {
+    if (!orderId) {
+      setError('Order ID is missing. Please refresh the page.');
+      return;
+    }
+    
     setError('');
     setSuccess('');
     
@@ -92,7 +111,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
     }
     
     try {
-      const response = await apiService.orders.updateOrderItemQuantity(order.id, itemId, newQuantity, ownerToken);
+      const response = await apiService.orders.updateOrderItemQuantity(orderId, itemId, newQuantity, ownerToken);
       if (response.success) {
         onOrderUpdate(response.data);
         setSuccess('Quantity updated successfully');
@@ -121,6 +140,11 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
   };
 
   const handleRemoveItem = async (itemId) => {
+    if (!orderId) {
+      setError('Order ID is missing. Please refresh the page.');
+      return;
+    }
+    
     showAlert({
       title: 'Remove Item',
       message: 'Are you sure you want to remove this item from the order?',
@@ -132,7 +156,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null }) => {
         setSuccess('');
         setLoading(true, 'Removing item...');
         try {
-          const response = await apiService.orders.removeItemFromOrder(order.id, itemId, ownerToken);
+          const response = await apiService.orders.removeItemFromOrder(orderId, itemId, ownerToken);
           if (response.success) {
             onOrderUpdate(response.data);
             setSuccess('Item removed');
