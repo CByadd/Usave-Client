@@ -81,17 +81,10 @@ export default function CheckoutPage() {
         const addresses = response.data.addresses;
         setSavedAddresses(addresses);
         
-        // Auto-select default address if exists
-        const defaultAddress = addresses.find(addr => addr.isDefault);
-        if (defaultAddress) {
-          setSelectedAddressId(defaultAddress.id);
-          fillAddressForm(defaultAddress);
-          setShowAddressForm(false); // Don't show form by default
-        } else {
-          setSelectedAddressId('new');
-          resetAddressForm();
-          setShowAddressForm(false); // Don't show form by default
-        }
+        // Always default to "new address" but don't show form
+        setSelectedAddressId('new');
+        resetAddressForm();
+        setShowAddressForm(false); // Don't show form by default
       }
     } catch (error) {
       console.error('Error loading addresses:', error);
@@ -118,10 +111,11 @@ export default function CheckoutPage() {
   };
 
   const resetAddressForm = () => {
+    // Completely blank form - no user data pre-filled
     const updatedForm = {
       ...formData,
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
+      firstName: '',
+      lastName: '',
       company: '',
       address1: '',
       address2: '',
@@ -129,7 +123,8 @@ export default function CheckoutPage() {
       state: '',
       postalCode: '',
       country: 'Australia',
-      phone: user?.phone || '',
+      phone: '',
+      email: user?.email || '', // Keep email as it's needed for order
     };
     setFormData(updatedForm);
   };
@@ -138,8 +133,8 @@ export default function CheckoutPage() {
     setSelectedAddressId(addressId);
 
     if (addressId === 'new') {
-      resetAddressForm();
-      setShowAddressForm(true); // Show form when selecting "new address"
+      resetAddressForm(); // Completely blank form
+      setShowAddressForm(true); // Show form when clicking "new address"
       return;
     }
 
@@ -716,9 +711,9 @@ export default function CheckoutPage() {
                         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-[#0F4C81] mb-3">
                           <Plus size={18} />
                         </div>
-                        <p className="text-sm font-semibold text-gray-900">Use a new address</p>
+                        <p className="text-sm font-semibold text-gray-900">Add new address</p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Enter a different shipping address.
+                          Enter a new shipping address.
                         </p>
                       </button>
 
@@ -1117,6 +1112,7 @@ export default function CheckoutPage() {
               </div>
                 </>
               )}
+            </div>
 
             {/* Shipping Options */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
