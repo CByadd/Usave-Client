@@ -145,9 +145,15 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
       return;
     }
     
+    // Check if this is the last item
+    const isLastItem = orderItems.length === 1;
+    const warningMessage = isLastItem 
+      ? 'This is the last item in the order. Removing it will leave the order empty. You can add new items after removing this one. Are you sure you want to continue?'
+      : 'Are you sure you want to remove this item from the order?';
+    
     showAlert({
       title: 'Remove Item',
-      message: 'Are you sure you want to remove this item from the order?',
+      message: warningMessage,
       type: 'warning',
       confirmText: 'Remove',
       cancelText: 'Cancel',
@@ -159,24 +165,40 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
           const response = await apiService.orders.removeItemFromOrder(orderId, itemId, ownerToken);
           if (response.success) {
             onOrderUpdate(response.data);
-            setSuccess('Item removed');
-            showAlert({
-              title: 'Success',
-              message: 'Item removed successfully',
-              type: 'success',
-              confirmText: 'OK',
-            });
+            setSuccess(isLastItem ? 'Last item removed. You can now add new items to the order.' : 'Item removed');
+            // Don't show success alert for last item removal, just show the success message
+            if (!isLastItem) {
+              showAlert({
+                title: 'Success',
+                message: 'Item removed successfully',
+                type: 'success',
+                confirmText: 'OK',
+              });
+            }
           } else {
-            setError(response.message || 'Failed to remove item');
+            const errorMsg = response.message || response.error || 'Failed to remove item';
+            setError(errorMsg);
             showAlert({
               title: 'Error',
-              message: response.message || 'Failed to remove item',
+              message: errorMsg,
               type: 'error',
               confirmText: 'OK',
             });
           }
         } catch (err) {
-          const errorMsg = err.response?.data?.message || err.message || 'Failed to remove item';
+          // Handle different error formats
+          let errorMsg = 'Failed to remove item';
+          
+          if (err.response?.data?.error) {
+            errorMsg = err.response.data.error;
+          } else if (err.response?.data?.message) {
+            errorMsg = err.response.data.message;
+          } else if (err.message) {
+            errorMsg = err.message;
+          } else if (err.error) {
+            errorMsg = err.error;
+          }
+          
           setError(errorMsg);
           showAlert({
             title: 'Error',
