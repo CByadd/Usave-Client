@@ -1,13 +1,17 @@
 "use client";
 import React from 'react';
+import { useAnimationStore } from '../../stores/useAnimationStore';
 
 // Base skeleton component
-const Skeleton = ({ className = "", ...props }) => (
-  <div
-    className={`animate-pulse bg-gray-200 rounded ${className}`}
-    {...props}
-  />
-);
+const Skeleton = ({ className = "", ...props }) => {
+  const isMobile = useAnimationStore((state) => state.isMobile);
+  return (
+    <div
+      className={`${isMobile ? '' : 'animate-pulse'} bg-gray-200 rounded ${className}`}
+      {...props}
+    />
+  );
+};
 
 // Product card skeleton - Grid variant
 export const ProductCardSkeleton = () => (

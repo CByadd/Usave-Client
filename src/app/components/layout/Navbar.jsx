@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { UserRound, LogOut } from 'lucide-react';
-import { LOGO_WHITE_BG } from '../../lib/constants';
+import { LOGO_NONE_BG, LOGO_WHITE_BG } from '../../lib/constants';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { logout as logoutUser } from '../../lib/auth';
 import { useCart } from '../../stores/useCartStore';
@@ -220,6 +220,28 @@ const Navbar = () => {
           height={48}
           priority
         />
+        {/* <Image
+          src={LOGO_NONE_BG}
+          alt="Logo"
+          width={160}
+          height={48}
+          priority
+        /> */}
+
+      </Link>
+    </div>
+  );
+
+  const renderLogoMobile = () => (
+    <div className="flex items-center gap-2 h-10 overflow-hidden">
+      <Link href="/" className="flex items-center gap-2" onClick={closeMobile}>
+        <Image
+          src={LOGO_NONE_BG}
+          alt="Logo"
+          width={160}
+          height={48}
+          priority
+        />
       </Link>
     </div>
   );
@@ -393,7 +415,7 @@ const Navbar = () => {
       <NavbarMobile
         mainNavLinks={mainNavLinks}
         categoryLinks={categoryLinks}
-        renderLogo={renderLogo}
+        renderLogo={renderLogoMobile}
         isMobileOpen={isMobileOpen}
         toggleMobile={toggleMobile}
         closeMobileMenu={closeMobile}

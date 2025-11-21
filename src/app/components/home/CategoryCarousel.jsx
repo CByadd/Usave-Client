@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import productService from "../../services/api/productService";
+import { useAnimationStore } from "../../stores/useAnimationStore";
 
 const FALLBACK_IMAGE =
   "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264135/Usave/unsplash_p3UWyaujtQo_gor2oz.jpg";
@@ -13,6 +14,7 @@ const CategoryCarousel = () => {
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useAnimationStore((state) => state.isMobile);
 
   const checkScrollPosition = () => {
     const el = scrollRef.current;
@@ -71,7 +73,7 @@ const CategoryCarousel = () => {
 
   // Category Card Skeleton Component
   const CategoryCardSkeleton = () => (
-    <div className="snap-center flex-shrink-0 w-[220px] md:w-[260px] lg:w-[280px] relative overflow-hidden rounded-2xl shadow-md animate-pulse">
+    <div className={`snap-center flex-shrink-0 w-[220px] md:w-[260px] lg:w-[280px] relative overflow-hidden rounded-2xl shadow-md ${isMobile ? '' : 'animate-pulse'}`}>
       <div className="relative h-[280px] md:h-[320px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-[60%] h-[70%] bg-gray-300 rounded-lg"></div>

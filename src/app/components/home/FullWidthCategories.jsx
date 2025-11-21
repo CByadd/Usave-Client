@@ -1,7 +1,9 @@
+"use client";
 import React from "react";
 // import categories from '../../data/placeCategories.json';
 import Link from "next/link";
 import { ArrowRight } from 'lucide-react';
+import { useAnimationStore } from "../../stores/useAnimationStore";
 
 
 
@@ -35,6 +37,8 @@ const categories = [
 
 
 const FullWCategory = () => {
+  const isMobile = useAnimationStore((state) => state.isMobile);
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 w-full">
       {categories.map((cat, index) => (
@@ -45,17 +49,39 @@ const FullWCategory = () => {
             backgroundImage: `url(${cat.bgImg})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
+            ...(isMobile ? { transition: 'none', animation: 'none' } : {}),
           }}
         >
           {/* Black gradient overlay for text visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/30 to-transparent pointer-events-none" />
+          <div 
+            className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/30 to-transparent pointer-events-none"
+            style={isMobile ? { transition: 'none', animation: 'none' } : {}}
+          />
           
-          <Link href={cat.link}>
-            <span className="absolute inset-0 flex flex-col justify-end p-7 text-white">
-              <h2 className="text-3xl font-bold underline">{cat.title}</h2>
-              <p className="text-[18px]">{cat.para}</p>
-              <ArrowRight size={40} />
-
+          <Link 
+            href={cat.link}
+            style={isMobile ? { transition: 'none', animation: 'none' } : {}}
+          >
+            <span 
+              className="absolute inset-0 flex flex-col justify-end p-7 text-white"
+              style={isMobile ? { transition: 'none', animation: 'none' } : {}}
+            >
+              <h2 
+                className="text-3xl font-bold underline"
+                style={isMobile ? { transition: 'none', animation: 'none' } : {}}
+              >
+                {cat.title}
+              </h2>
+              <p 
+                className="text-[18px]"
+                style={isMobile ? { transition: 'none', animation: 'none' } : {}}
+              >
+                {cat.para}
+              </p>
+              <ArrowRight 
+                size={40} 
+                style={isMobile ? { transition: 'none', animation: 'none' } : {}}
+              />
             </span>
           </Link>
         </div>

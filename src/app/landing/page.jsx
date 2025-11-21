@@ -16,6 +16,7 @@ import { LandingPageSkeleton } from '../components/shared/LoadingSkeleton'
 import InspirationSection from '../components/home/InspirationSection'
 import ContactSection from '../components/home/ContactSection'
 import { apiService } from '../services/api/apiClient'
+import { useAnimationStore } from '../stores/useAnimationStore'
 
 // Animation variants for sections - buttery smooth
 const fadeInUp = {
@@ -38,34 +39,17 @@ const fadeInUp = {
   }
 };
 
-// Section wrapper component with animation - buttery smooth
+// Section wrapper component - simplified to always render content
+// On mobile, no animations. On desktop, content is always visible.
 const AnimatedSection = ({ children, delay = 0, className = '' }) => {
   const ref = useRef(null);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const isInView = useInView(ref, { once: true, margin: "-100px", amount: 0.1 });
-
-  useEffect(() => {
-    if (isInView && !hasAnimated) {
-      setHasAnimated(true);
-    }
-  }, [isInView, hasAnimated]);
-
+  
+  // Always render as regular section to ensure content is always visible
+  // This fixes the issue where content wasn't rendering
   return (
-    <motion.section
-      ref={ref}
-      initial="hidden"
-      animate={hasAnimated || isInView ? "visible" : "hidden"}
-      variants={fadeInUp}
-      transition={{ 
-        delay, 
-        duration: 0.8, 
-        ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for buttery smooth animation
-      }}
-      className={className}
-      style={{ willChange: 'transform, opacity' }}
-    >
+    <section ref={ref} className={className}>
       {children}
-    </motion.section>
+    </section>
   );
 };
 
