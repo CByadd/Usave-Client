@@ -108,7 +108,7 @@ const CartDrawer = () => {
       {isCartDrawerOpen && (
         <motion.div
           key="cart-drawer"
-          className="fixed inset-0 z-50 overflow-hidden"
+          className="fixed inset-0 z-[150] overflow-hidden"
           initial="closed"
           animate="open"
           exit="closed"
