@@ -229,7 +229,73 @@ const CartDrawer = () => {
               </div>
             ) : (
               <div className="space-y-4">
-              {cartItems.map((item) => (
+              {cartItems.map((item) => {
+                const product = item.product || item;
+                
+                // Helper function to get readable size value
+                const getReadableSize = () => {
+                  const sizeValue = item.size || item.options?.size;
+                  if (!sizeValue) return null;
+                  
+                  // If it's "base-variant-1", try to get actual size from product
+                  if (sizeValue === 'base-variant-1' || sizeValue.startsWith('base-variant')) {
+                    // Check if product has size variants
+                    if (product.sizeVariants && Array.isArray(product.sizeVariants)) {
+                      const baseVariant = product.sizeVariants.find(v => v.id === 'base-variant-1');
+                      if (baseVariant && baseVariant.size) return baseVariant.size;
+                    }
+                    // Fallback to product dimensions or standard
+                    if (product.dimensions?.width && product.dimensions?.height) {
+                      return `${product.dimensions.width}x${product.dimensions.height}`;
+                    }
+                    if (product.dimensions?.width) {
+                      return `${product.dimensions.width}`;
+                    }
+                    // Don't show if it's just the base variant ID
+                    return null;
+                  }
+                  
+                  // If it looks like an ID (long alphanumeric), try to find the variant
+                  if (sizeValue.length > 20 && product.sizeVariants && Array.isArray(product.sizeVariants)) {
+                    const variant = product.sizeVariants.find(v => v.id === sizeValue);
+                    if (variant && variant.size) return variant.size;
+                  }
+                  
+                  // Return the value as-is if it looks like a readable size
+                  return sizeValue;
+                };
+                
+                // Helper function to get readable color value
+                const getReadableColor = () => {
+                  const colorValue = item.color || item.options?.color;
+                  if (!colorValue) return null;
+                  
+                  // If it looks like an ID (long alphanumeric string), try to find the variant
+                  if (colorValue.length > 20 && product.colorVariants && Array.isArray(product.colorVariants)) {
+                    const variant = product.colorVariants.find(v => v.id === colorValue);
+                    if (variant && variant.color) return variant.color;
+                  }
+                  
+                  // Check if it's a valid color name (not unknown, n/a, or empty)
+                  const trimmedColor = colorValue.trim();
+                  if (trimmedColor === '' || 
+                      trimmedColor.toLowerCase() === 'unknown' || 
+                      trimmedColor.toLowerCase() === 'n/a') {
+                    return null;
+                  }
+                  
+                  // Return the value as-is if it looks like a readable color
+                  return colorValue;
+                };
+                
+                const displaySize = getReadableSize();
+                const displayColor = getReadableColor();
+                const colorVariantsCount = Array.isArray(product.colorVariants) ? product.colorVariants.length : 0;
+                const hasBaseColor = product.color ? 1 : 0;
+                const totalColorOptions = colorVariantsCount + hasBaseColor;
+                const shouldShowColor = displayColor && totalColorOptions > 1;
+                
+                return (
                 <div key={item.id} className="flex gap-4 p-4 border border-gray-200 rounded-lg">
                   {/* Product Image */}
                   <div className="flex-shrink-0">
@@ -265,17 +331,12 @@ const CartDrawer = () => {
                     </Link>
                     
                     <div className="mt-1 text-sm text-gray-500 space-y-1">
-                      {(() => {
-                        // Only show color if product has multiple color options (more than 1)
-                        const product = item.product || item;
-                        const colorVariantsCount = Array.isArray(product.colorVariants) ? product.colorVariants.length : 0;
-                        const hasBaseColor = product.color ? 1 : 0;
-                        const totalColorOptions = colorVariantsCount + hasBaseColor;
-                        const shouldShowColor = item.color && totalColorOptions > 1;
-                        return shouldShowColor ? (
-                          <div>Color: <span className="font-medium">{item.color}</span></div>
-                        ) : null;
-                      })()}
+                      {displaySize && (
+                        <div>Size: <span className="font-medium">{displaySize}</span></div>
+                      )}
+                      {shouldShowColor && (
+                        <div>Color: <span className="font-medium">{displayColor}</span></div>
+                      )}
                       {(item.includeInstallation || item.options?.includeInstallation) && (
                         <div className="flex items-center gap-1 text-[#0B4866] bg-blue-50 px-2 py-0.5 rounded mt-1 inline-flex text-xs">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,7 +404,8 @@ const CartDrawer = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
               </div>
             )}
           </div>
