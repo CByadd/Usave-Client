@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ProductDetailSkeleton } from '../../components/shared/LoadingSkeleton';
 import { Heart, ShoppingCart, ShoppingBag, ChevronLeft, ChevronRight, ChevronDown, ArrowRight, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -15,6 +15,11 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const productId = params.id;
+  
+  // State for collapsible filter sections
+  const [isColorOpen, setIsColorOpen] = useState(true);
+  const [isSizeOpen, setIsSizeOpen] = useState(true);
+  const [isInstallationOpen, setIsInstallationOpen] = useState(true);
 
   // Product Store
   const {
@@ -624,9 +629,20 @@ export default function ProductDetailPage() {
 
             {/* Choose Color */}
             {hasColorVariants && (
-              <div className="w-full overflow-hidden">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Choose Color</label>
-                <div className="flex gap-2 sm:gap-3 flex-wrap">
+              <div className="w-full overflow-hidden border border-gray-200 rounded-lg">
+                <button
+                  onClick={() => setIsColorOpen(!isColorOpen)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <label className="block text-sm font-medium text-gray-700">Choose Color</label>
+                  <ChevronDown 
+                    size={20} 
+                    className={`text-gray-500 transition-transform ${isColorOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {isColorOpen && (
+                  <div className="px-4 pb-4">
+                    <div className="flex gap-2 sm:gap-3 flex-wrap">
                   {allColorOptions.map((variant) => {
                     const variantId = variant.id || variant.color;
                     const isSelected = selectedColor === variantId || selectedColor === variant.color;
@@ -705,17 +721,19 @@ export default function ProductDetailPage() {
                       </button>
                     );
                   })}
-                </div>
-                {selectedColorVariant && hasColorVariants && allColorOptions.length > 1 && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      Selected Color:
-                    </span>
-                    <span className="text-sm text-gray-700">
-                      {selectedColorVariant.color || selectedColorVariant.title}
-                    </span>
-                    {!selectedColorVariant.inStock && (
-                      <span className="text-xs text-red-600 font-medium">(Out of Stock)</span>
+                    </div>
+                    {selectedColorVariant && hasColorVariants && allColorOptions.length > 1 && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          Selected Color:
+                        </span>
+                        <span className="text-sm text-gray-700">
+                          {selectedColorVariant.color || selectedColorVariant.title}
+                        </span>
+                        {!selectedColorVariant.inStock && (
+                          <span className="text-xs text-red-600 font-medium">(Out of Stock)</span>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
@@ -724,9 +742,20 @@ export default function ProductDetailPage() {
 
             {/* Choose Size */}
             {hasSizeVariants && (
-              <div className="w-full overflow-hidden">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Choose Size</label>
-                <div className="flex gap-2 flex-wrap">
+              <div className="w-full overflow-hidden border border-gray-200 rounded-lg">
+                <button
+                  onClick={() => setIsSizeOpen(!isSizeOpen)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <label className="block text-sm font-medium text-gray-700">Choose Size</label>
+                  <ChevronDown 
+                    size={20} 
+                    className={`text-gray-500 transition-transform ${isSizeOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {isSizeOpen && (
+                  <div className="px-4 pb-4">
+                    <div className="flex gap-2 flex-wrap">
                   {allSizeOptions.map((variant) => {
                     const variantId = variant.id || variant.size;
                     const isSelected = selectedSize === variantId || selectedSize === variant.size;
@@ -750,14 +779,19 @@ export default function ProductDetailPage() {
                       </button>
                     );
                   })}
-                </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Installation Option */}
             {hasInstallation && (
-              <div className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setIsInstallationOpen(!isInstallationOpen)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                >
                   <div>
                     <h4 className="font-medium text-gray-900">Installation Service</h4>
                     <p className="text-sm text-gray-600">
@@ -769,19 +803,42 @@ export default function ProductDetailPage() {
                       )}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setIncludeInstallation(!includeInstallation)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                      includeInstallation ? 'bg-[#0B4866]' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 rounded-full bg-white ${
-                        includeInstallation ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
+                  <ChevronDown 
+                    size={20} 
+                    className={`text-gray-500 transition-transform ${isInstallationOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {isInstallationOpen && (
+                  <div className="px-4 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          Add professional installation service
+                          {product.installationPrice && (
+                            <span className="font-semibold text-[#0B4866] ml-1">
+                              (+${product.installationPrice.toFixed(2)})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIncludeInstallation(!includeInstallation);
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full ${
+                          includeInstallation ? 'bg-[#0B4866]' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                            includeInstallation ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

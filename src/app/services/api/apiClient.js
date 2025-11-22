@@ -109,6 +109,7 @@ export const apiEndpoints = {
     getAll: '/products',
     getById: (id) => `/products/${id}`,
     search: '/products/search',
+    filter: '/products/filter',
     getSuggestions: '/products/suggestions',
     getReviews: (id) => `/products/${id}/reviews`,
     getNavCategories: '/products/categories/nav',
@@ -387,6 +388,19 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('API: Search products error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+    
+    async filter(filters = {}) {
+      try {
+        const response = await axios.post(
+          `${api.defaults.baseURL}${apiEndpoints.products.filter}`,
+          filters
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Filter products error:', error.response?.data || error.message);
         throw error;
       }
     },

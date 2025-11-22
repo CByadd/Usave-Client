@@ -1,15 +1,16 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { useSearch } from '../../stores/useSearchStore';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 import productService from '../../services/api/productService';
+import { apiService } from '../../services/api/apiClient';
 import ItemCard from './ProductCard';
 
 const ProductListingPage = ({ title, subtitle, contextType }) => {
-  const { isSearching, toggleActiveFilter } = useSearch();
+  const { isSearching, toggleActiveFilter, activeFilters, updateAdvancedFilter, advancedFilters } = useSearch();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [page, setPage] = useState(1);
@@ -169,13 +170,78 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         if (place) {
           filters.place = place;
         }
+
+        // Check if we need to use POST /filter endpoint (for price filters)
+        const hasPriceFilters = (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') ||
+                                (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null');
         
-        // Debug logging
-        if (process.env.NODE_ENV === 'development') {
-          console.log('ProductList: Fetching products with filters:', filters);
+        // Map sortBy to sort parameter (server expects 'sort' not 'sortBy')
+        const sortMap = {
+          'price_asc': 'price-low',
+          'price_desc': 'price-high',
+          'rating': 'rating',
+          'newest': 'name', // Server doesn't have newest, use name as fallback
+          'oldest': 'name',
+          'relevance': null, // No sort parameter for relevance
+        };
+        
+        let response;
+        
+        if (hasPriceFilters) {
+          // Use POST /filter endpoint for price filtering
+          const filterParams = {
+            limit: filters.limit || 12,
+            offset: (filters.page - 1) * (filters.limit || 12),
+          };
+          
+          if (filters.category) {
+            filterParams.category = filters.category;
+          }
+          
+          // Map sortBy to sort
+          if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
+            filterParams.sort = sortMap[advancedFilters.sortBy] || null;
+          }
+          
+          // Add price filters
+          if (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') {
+            const minPriceNum = Number(advancedFilters.minPrice);
+            if (!isNaN(minPriceNum) && minPriceNum >= 0) {
+              filterParams.minPrice = minPriceNum;
+            }
+          }
+          if (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null') {
+            const maxPriceNum = Number(advancedFilters.maxPrice);
+            if (!isNaN(maxPriceNum) && maxPriceNum >= 0) {
+              filterParams.maxPrice = maxPriceNum;
+            }
+          }
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('ProductList: Using POST /filter with params:', filterParams);
+          }
+          
+          response = await apiService.products.filter(filterParams);
+        } else {
+          // Use GET /products endpoint for regular filtering
+          // Map sortBy to sort
+          if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
+            filters.sort = sortMap[advancedFilters.sortBy] || null;
+          }
+          
+          if (advancedFilters.color && advancedFilters.color.trim() !== '') {
+            filters.color = advancedFilters.color.trim();
+          }
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('ProductList: Using GET /products with filters:', filters);
+            console.log('ProductList: Advanced filters state:', advancedFilters);
+          }
+          
+          response = await productService.getAllProducts(filters);
         }
-        
-        const response = await productService.getAllProducts(filters);
         
         // Debug logging
         if (process.env.NODE_ENV === 'development') {
@@ -188,15 +254,26 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         
         if (response.success) {
           // API response format: { success: true, data: { products: [...], pagination: {...} } }
+          // POST /filter returns: { success: true, data: { products: [...], total: number } }
           const fetchedProducts = response.data?.products || [];
           setProducts(fetchedProducts);
           
           // Handle pagination from API response
           if (response.data?.pagination) {
+            // GET endpoint format
             const pagination = response.data.pagination;
             setTotalPages(pagination.totalPages || 1);
-            setTotalCount(pagination.total || fetchedProducts.length); // Store total count from API
+            setTotalCount(pagination.total || fetchedProducts.length);
             setHasMore(pagination.page < pagination.totalPages);
+          } else if (response.data?.total !== undefined) {
+            // POST /filter endpoint format
+            const total = response.data.total;
+            const limit = filters.limit || 12;
+            const currentPage = filters.page || 1;
+            const totalPages = Math.ceil(total / limit);
+            setTotalPages(totalPages);
+            setTotalCount(total);
+            setHasMore(currentPage < totalPages);
           } else {
             // Fallback: determine if there's more based on items returned
             setTotalPages(1);
@@ -220,7 +297,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams?.toString(), pathname]);
+  }, [searchParams?.toString(), pathname, advancedFilters.sortBy, advancedFilters.minPrice, advancedFilters.maxPrice, advancedFilters.color, advancedFilters.category]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore || page >= totalPages) return;
@@ -260,11 +337,71 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
       if (place) {
         filters.place = place;
       }
+
+      // Check if we need to use POST /filter endpoint (for price filters)
+      const hasPriceFilters = (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') ||
+                              (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null');
       
-      const response = await productService.getAllProducts(filters);
+      // Map sortBy to sort parameter (server expects 'sort' not 'sortBy')
+      const sortMap = {
+        'price_asc': 'price-low',
+        'price_desc': 'price-high',
+        'rating': 'rating',
+        'newest': 'name',
+        'oldest': 'name',
+        'relevance': null,
+      };
+      
+      let response;
+      
+      if (hasPriceFilters) {
+        // Use POST /filter endpoint for price filtering
+        const filterParams = {
+          limit: filters.limit || 12,
+          offset: (nextPage - 1) * (filters.limit || 12),
+        };
+        
+        if (filters.category) {
+          filterParams.category = filters.category;
+        }
+        
+        // Map sortBy to sort
+        if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
+          filterParams.sort = sortMap[advancedFilters.sortBy] || null;
+        }
+        
+        // Add price filters
+        if (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') {
+          const minPriceNum = Number(advancedFilters.minPrice);
+          if (!isNaN(minPriceNum) && minPriceNum >= 0) {
+            filterParams.minPrice = minPriceNum;
+          }
+        }
+        if (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null') {
+          const maxPriceNum = Number(advancedFilters.maxPrice);
+          if (!isNaN(maxPriceNum) && maxPriceNum >= 0) {
+            filterParams.maxPrice = maxPriceNum;
+          }
+        }
+        
+        response = await apiService.products.filter(filterParams);
+      } else {
+        // Use GET /products endpoint for regular filtering
+        // Map sortBy to sort
+        if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
+          filters.sort = sortMap[advancedFilters.sortBy] || null;
+        }
+        
+        if (advancedFilters.color && advancedFilters.color.trim() !== '') {
+          filters.color = advancedFilters.color.trim();
+        }
+        
+        response = await productService.getAllProducts(filters);
+      }
       
       if (response.success) {
         // API response format: { success: true, data: { products: [...], pagination: {...} } }
+        // POST /filter returns: { success: true, data: { products: [...], total: number } }
         const newItems = response.data?.products || [];
         if (newItems.length > 0) {
           setProducts(prev => [...prev, ...newItems]);
@@ -272,9 +409,17 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           
           // Handle pagination from API response
           if (response.data?.pagination) {
+            // GET endpoint format
             const pagination = response.data.pagination;
             setTotalPages(pagination.totalPages || nextPage);
             setHasMore(pagination.page < pagination.totalPages);
+          } else if (response.data?.total !== undefined) {
+            // POST /filter endpoint format
+            const total = response.data.total;
+            const limit = filters.limit || 12;
+            const totalPages = Math.ceil(total / limit);
+            setTotalPages(totalPages);
+            setHasMore(nextPage < totalPages);
           } else {
             // Fallback: determine if there's more based on items returned
             setHasMore(newItems.length === 12);
@@ -317,9 +462,23 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
     };
   }, [hasMore, isLoadingMore, isLoading, loadMore]);
 
-  const toggleFilter = (filterName) => {
-    toggleActiveFilter(filterName);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [advancedFilters.sortBy, advancedFilters.minPrice, advancedFilters.maxPrice, advancedFilters.color, advancedFilters.category]);
+
+  // Count active filters for badge
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') count++;
+    if (advancedFilters.minPrice || advancedFilters.maxPrice) count++;
+    if (advancedFilters.color) count++;
+    if (advancedFilters.category) count++;
+    return count;
   };
+
+  const activeFilterCount = getActiveFilterCount();
 
   // Show loading skeleton while searching or initial load
   if (isSearching || isLoading) {
@@ -371,46 +530,19 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 md:gap-3 mb-6 md:mb-8 items-center overflow-x-auto pb-2 scrollbar-hide">
+        {/* All Filters Button */}
+        <div className="mb-6 md:mb-8">
           <button
-            onClick={() => toggleFilter('sort')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
+            onClick={() => toggleActiveFilter('all')}
+            className="relative px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-[#0B4866] hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
           >
-            Sort <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('price')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Price <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('color')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Color <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('size')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Size <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('collection')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Collection <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button
-            onClick={() => toggleFilter('category')}
-            className="px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
-          >
-            Category <ChevronDown size={14} className="md:w-4 md:h-4" />
-          </button>
-          <button className="ml-auto px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-[#0B4866] hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap">
             <SlidersHorizontal size={14} className="md:w-4 md:h-4" />
-            <span className="hidden sm:inline">All Filters</span>
+            <span>All Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#0B4866] text-xs font-semibold text-white">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
         </div>
 

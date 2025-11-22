@@ -384,30 +384,35 @@ export default function OrderDetailsPage() {
         </div>
 
         {/* Delivery Schedule */}
-        {order.deliveryDate && order.deliveryTime && (
-          <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#0B4866]" />
-              Delivery Schedule
-            </h2>
+        <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-[#0B4866]" />
+            Delivery Schedule
+          </h2>
+          {order.deliveryDate || order.deliveryTime ? (
             <div className="space-y-2">
               <div className="flex items-center text-sm">
                 <span className="text-gray-600 w-24 font-medium">Date:</span>
                 <span className="text-gray-900">
-                  {new Date(order.deliveryDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {order.deliveryDate 
+                    ? new Date(order.deliveryDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
+                    : 'TBD'
+                  }
                 </span>
               </div>
               <div className="flex items-center text-sm">
                 <span className="text-gray-600 w-24 font-medium">Time:</span>
-                <span className="text-gray-900">{order.deliveryTime}</span>
+                <span className="text-gray-900">{order.deliveryTime || 'TBD'}</span>
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-gray-600">TBD</p>
+          )}
+        </div>
 
         {/* Order Summary */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">

@@ -599,7 +599,15 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
 
               {/* Delivery Date */}
               <p className="text-sm text-gray-600 mb-2">
-                <span className="font-medium">Delivery Date:</span> TBD
+                <span className="font-medium">Delivery Date:</span>{' '}
+                {order.deliveryDate 
+                  ? `${new Date(order.deliveryDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}${order.deliveryTime ? ` at ${order.deliveryTime}` : ''}`
+                  : 'TBD'
+                }
               </p>
 
               {/* Rejection Reason (for rejected orders) */}

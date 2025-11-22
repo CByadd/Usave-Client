@@ -1,10 +1,47 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { LOGO_NONE_BG } from './../../lib/constants.js';
+import productService from '../../services/api/productService';
 
 const Footer = () => {
+  const [categoryLinks, setCategoryLinks] = useState([]);
+
+  useEffect(() => {
+    // Fetch categories from API (same as navbar)
+    const fetchCategories = async () => {
+      try {
+        const response = await productService.getNavCategories();
+        if (response?.success && response?.data?.categories) {
+          setCategoryLinks(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Failed to load footer categories:', error);
+        setCategoryLinks([]);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  // Find categories for footer sections
+  const loungesCategory = categoryLinks.find(cat => 
+    cat.name.toUpperCase().includes('LOUNGES') || 
+    cat.name.toUpperCase().includes('LIVING ROOM') ||
+    cat.name.toUpperCase().includes('LIVING-ROOM')
+  );
+  const diningCategory = categoryLinks.find(cat => 
+    cat.name.toUpperCase().includes('DINING')
+  );
+  const bedroomCategory = categoryLinks.find(cat => 
+    cat.name.toUpperCase().includes('BEDROOM')
+  );
+  const outdoorCategory = categoryLinks.find(cat => 
+    cat.name.toUpperCase().includes('OUTDOOR')
+  );
   return (
     <footer className="bg-[#e7eff3] text-gray-800 pt-10 pb-4">
       <div className="max-w-[95dvw] mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
@@ -38,42 +75,94 @@ const Footer = () => {
 
         {/* Shop by Places */}
         <div>
-          <h3 className="font-semibold text-[#00688B] mb-2">SHOP BY PLACES</h3>
+          <Link href="/places" className="font-semibold text-[#00688B] mb-2 block hover:underline">
+            SHOP BY PLACES
+          </Link>
           <ul className="space-y-1 text-sm">
-            <li>Airbnb</li>
-            <li>Luxury</li>
-            <li>Resorts</li>
+            <li>
+              <Link href="/places?place=airbnb" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Airbnb/Rentals
+              </Link>
+            </li>
+            <li>
+              <Link href="/places?place=luxury" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Luxury
+              </Link>
+            </li>
+            <li>
+              <Link href="/places?place=resorts" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Resorts
+              </Link>
+            </li>
+            <li>
+              <Link href="/places?place=resorts" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                All
+              </Link>
+            </li>
           </ul>
         </div>
 
         {/* Lounges */}
 <div>
-  <h3 className="font-semibold text-[#00688B] mb-2">LOUNGES</h3>
-  <ul className="space-y-1 text-sm">
-    <li>Corner Recliner</li>
-    <li>Corner Sofabed</li>
-    <li>Fabric 3 + 2 / Chaise</li>
-    <li>Fabric Recliner Lounge</li>
-    <li>Leather 3 + 2 / Chaise</li>
-    <li>Leather Recliner Lounge</li>
-    <li>Modular Lounge</li>
-    <li>Occasional Armchairs</li>
-    <li>Sofabed</li>
-  </ul>
+  {loungesCategory ? (
+    <>
+      <Link href={loungesCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+        LOUNGES
+      </Link>
+      <ul className="space-y-1 text-sm">
+        {loungesCategory.subcategories && loungesCategory.subcategories.length > 0 ? (
+          loungesCategory.subcategories.map((sub) => (
+            <li key={sub.name}>
+              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                {sub.name}
+              </Link>
+            </li>
+          ))
+        ) : (
+          <li className="text-gray-500 text-xs">No subcategories available</li>
+        )}
+      </ul>
+    </>
+  ) : (
+    <>
+      <div className="font-semibold text-[#00688B] mb-2">LOUNGES</div>
+      <ul className="space-y-1 text-sm">
+        <li className="text-gray-500 text-xs">Loading...</li>
+      </ul>
+    </>
+  )}
 </div>
 
 
        {/* Dining */}
 <div>
-  <h3 className="font-semibold text-[#00688B] mb-2">DINING</h3>
-  <ul className="space-y-1 text-sm">
-    <li>Bar Stools</li>
-    <li>Dining Chairs</li>
-    <li>Occasionals</li>
-    <li>Timber Natural</li>
-    <li>Two Tone</li>
-    <li>White/Black</li>
-  </ul>
+  {diningCategory ? (
+    <>
+      <Link href={diningCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+        DINING
+      </Link>
+      <ul className="space-y-1 text-sm">
+        {diningCategory.subcategories && diningCategory.subcategories.length > 0 ? (
+          diningCategory.subcategories.map((sub) => (
+            <li key={sub.name}>
+              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                {sub.name}
+              </Link>
+            </li>
+          ))
+        ) : (
+          <li className="text-gray-500 text-xs">No subcategories available</li>
+        )}
+      </ul>
+    </>
+  ) : (
+    <>
+      <div className="font-semibold text-[#00688B] mb-2">DINING</div>
+      <ul className="space-y-1 text-sm">
+        <li className="text-gray-500 text-xs">Loading...</li>
+      </ul>
+    </>
+  )}
 </div>
 
     
@@ -81,25 +170,64 @@ const Footer = () => {
 
         {/* Bedroom */}
 <div>
-  <h3 className="font-semibold text-[#00688B] mb-2">BEDROOM</h3>
-  <ul className="space-y-1 text-sm">
-    <li>Bedbase</li>
-    <li>Bunk Beds</li>
-    <li>Fabric Bed</li>
-    <li>Mattress</li>
-    <li>Metal</li>
-    <li>Timber Natural</li>
-    <li>Timber - White/Black</li>
-  </ul>
+  {bedroomCategory ? (
+    <>
+      <Link href={bedroomCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+        BEDROOM
+      </Link>
+      <ul className="space-y-1 text-sm">
+        {bedroomCategory.subcategories && bedroomCategory.subcategories.length > 0 ? (
+          bedroomCategory.subcategories.map((sub) => (
+            <li key={sub.name}>
+              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                {sub.name}
+              </Link>
+            </li>
+          ))
+        ) : (
+          <li className="text-gray-500 text-xs">No subcategories available</li>
+        )}
+      </ul>
+    </>
+  ) : (
+    <>
+      <div className="font-semibold text-[#00688B] mb-2">BEDROOM</div>
+      <ul className="space-y-1 text-sm">
+        <li className="text-gray-500 text-xs">Loading...</li>
+      </ul>
+    </>
+  )}
 </div>
 
 {/* Outdoor */}
 <div>
-  <h3 className="font-semibold text-[#00688B] mb-2">OUTDOOR</h3>
-  <ul className="space-y-1 text-sm">
-    <li>Aluminium/Wicker</li>
-    <li>Timber</li>
-  </ul>
+  {outdoorCategory ? (
+    <>
+      <Link href={outdoorCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+        OUTDOOR
+      </Link>
+      <ul className="space-y-1 text-sm">
+        {outdoorCategory.subcategories && outdoorCategory.subcategories.length > 0 ? (
+          outdoorCategory.subcategories.map((sub) => (
+            <li key={sub.name}>
+              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                {sub.name}
+              </Link>
+            </li>
+          ))
+        ) : (
+          <li className="text-gray-500 text-xs">No subcategories available</li>
+        )}
+      </ul>
+    </>
+  ) : (
+    <>
+      <div className="font-semibold text-[#00688B] mb-2">OUTDOOR</div>
+      <ul className="space-y-1 text-sm">
+        <li className="text-gray-500 text-xs">Loading...</li>
+      </ul>
+    </>
+  )}
 </div>
 
 

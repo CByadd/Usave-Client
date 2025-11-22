@@ -5,6 +5,7 @@ import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import AuthDrawer from "./components/auth/AuthDrawer";
 import CartDrawer from "./components/cart/CartDrawer";
+import FilterDrawer from "./components/product/FilterDrawer";
 import CartInitializer from "./components/cart/CartInitializer";
 import WishlistInitializer from "./components/wishlist/WishlistInitializer";
 import AuthInitializer from "./components/auth/AuthInitializer";
@@ -49,6 +50,7 @@ export default function RootLayout({ children }) {
           <Footer />
           <AuthDrawer />
           <CartDrawer />
+          <FilterDrawer />
           <LoggingToggle />
           <ToastContainerWrapper />
           <AlertModalWrapper />
