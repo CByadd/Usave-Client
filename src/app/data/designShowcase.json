@@ -1,7 +1,7 @@
 {
     "left": [
       {
-        "title": "AirBnB",
+        "title": "AirBnB/Rentals",
         "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598205/Gemini_Generated_Image_h8j575h8j575h8j5_x0yoau.png",
         "link": "/search?category=kitchen",
         "class": "md:rounded-tl-[20rem] rounded-tl-[7rem] object-contain"
@@ -21,9 +21,9 @@
         "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
       },
       {
-        "title": "Rentals",
+        "title": "Outdoor",
         "image": "https://homes-and-villas.marriott.com/assets/images/vacation-rental-villa.png",
-        "link": "/search?category=living",
+        "link": "/search?category=outdoor",
         "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
       },
       {
