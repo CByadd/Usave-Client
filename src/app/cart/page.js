@@ -275,9 +275,9 @@ const CartPage = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 flex-wrap">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-wrap">
                           {/* Quantity Controls */}
-                          <div className="flex items-center gap-2 border border-gray-300 rounded-lg">
+                          <div className="flex items-center gap-2 border border-gray-300 rounded-lg w-auto">
                             <button
                               onClick={() => handleUpdateQuantity(itemId, item.quantity - 1)}
                               className="px-3 py-1 hover:bg-gray-100 transition-colors"
