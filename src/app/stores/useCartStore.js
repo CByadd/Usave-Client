@@ -618,26 +618,106 @@ const storeCreator = (set, get) => {
         throw new Error('Item not found in cart');
       }
       
-      // Check stock availability if product data is available
-      const product = itemToUpdate.product || itemToUpdate;
-      if (product.stockQuantity !== undefined || product.stock !== undefined || product.inStock !== undefined) {
-        const stockQuantity = product.stockQuantity ?? product.stock ?? 0;
-        const inStock = product.inStock !== false && product.inStock !== null;
-        const hasStock = inStock && stockQuantity > 0;
+      // Fetch fresh product data from database to get current stock
+      let freshProduct = null;
+      try {
+        const productResponse = await apiService.products.getById(pid);
+        console.log('[Cart] Product API response:', {
+          success: productResponse?.success,
+          hasData: !!productResponse?.data,
+          hasProduct: !!productResponse?.data?.product,
+          dataKeys: productResponse?.data ? Object.keys(productResponse.data) : [],
+          productData: productResponse?.data?.product || productResponse?.data
+        });
         
-        if (!hasStock) {
-          set({ isLoading: false });
-          return { success: false, error: 'This product is out of stock' };
+        if (productResponse?.success && productResponse?.data?.product) {
+          freshProduct = productResponse.data.product;
+        } else if (productResponse?.success && productResponse?.data) {
+          // Sometimes the product is directly in data
+          freshProduct = productResponse.data;
+        }
+      } catch (fetchError) {
+        // If fetch fails, fall back to stored product data
+        console.warn('[Cart] Failed to fetch fresh product data, using stored data:', fetchError.message);
+        freshProduct = itemToUpdate.product || itemToUpdate;
+      }
+      
+      // Use fresh product data if available, otherwise fall back to stored data
+      const product = freshProduct || itemToUpdate.product || itemToUpdate;
+      
+      // Check if we have a color/size variant selected and need to check variant stock
+      let stockToCheck = product;
+      const itemColor = itemToUpdate.color || itemToUpdate.options?.color;
+      const itemSize = itemToUpdate.size || itemToUpdate.options?.size;
+      
+      // If product has variants, check the specific variant stock
+      if (freshProduct && (itemColor || itemSize)) {
+        // Check color variant stock
+        if (itemColor && freshProduct.colorVariants && Array.isArray(freshProduct.colorVariants)) {
+          const colorVariant = freshProduct.colorVariants.find(
+            v => v.color === itemColor || v.id === itemColor
+          );
+          if (colorVariant && (colorVariant.inStock !== undefined || colorVariant.stockQuantity !== undefined)) {
+            stockToCheck = colorVariant;
+            console.log('[Cart] Using color variant stock:', colorVariant);
+          }
         }
         
-        if (quantity > stockQuantity) {
-          set({ isLoading: false });
-          return { 
-            success: false, 
-            error: `Only ${stockQuantity} item(s) available in stock` 
-          };
+        // Check size variant stock (size variants take precedence if both exist)
+        if (itemSize && freshProduct.sizeVariants && Array.isArray(freshProduct.sizeVariants)) {
+          const sizeVariant = freshProduct.sizeVariants.find(
+            v => v.size === itemSize || v.id === itemSize
+          );
+          if (sizeVariant && (sizeVariant.inStock !== undefined || sizeVariant.stockQuantity !== undefined)) {
+            stockToCheck = sizeVariant;
+            console.log('[Cart] Using size variant stock:', sizeVariant);
+          }
         }
       }
+      
+      console.log('[Cart] Stock check for product:', {
+        productId: pid,
+        itemColor,
+        itemSize,
+        baseProduct: {
+          inStock: product.inStock,
+          stockQuantity: product.stockQuantity,
+          stock: product.stock
+        },
+        stockToCheck: {
+          inStock: stockToCheck.inStock,
+          stockQuantity: stockToCheck.stockQuantity,
+          stock: stockToCheck.stock
+        },
+        requestedQuantity: quantity
+      });
+      
+      // Check stock availability - use same logic as server-side validation
+      // If product is explicitly marked as out of stock, reject
+      // Note: inStock can be true, null, or undefined - only reject if explicitly false
+      if (stockToCheck.inStock === false) {
+        console.log('[Cart] Product rejected: inStock is explicitly false');
+        set({ isLoading: false });
+        return { success: false, error: 'This product is out of stock' };
+      }
+      
+      // If stockQuantity is tracked (greater than 0), check if we have enough
+      // If stockQuantity is 0 or null, but inStock is not false, allow the purchase
+      // (some products may not track stock or use a different inventory system)
+      const stockQuantity = stockToCheck.stockQuantity ?? stockToCheck.stock ?? null;
+      if (stockQuantity != null && stockQuantity > 0 && quantity > stockQuantity) {
+        console.log('[Cart] Product rejected: quantity exceeds stockQuantity', {
+          requestedQuantity: quantity,
+          stockQuantity: stockQuantity
+        });
+        set({ isLoading: false });
+        return { 
+          success: false, 
+          error: `Only ${stockQuantity} item(s) available in stock` 
+        };
+      }
+      
+      console.log('[Cart] Stock check passed, updating quantity');
       
       // Update local cart - ensure quantity is a valid number
       const safeQuantity = safeParseNumber(quantity, 1);
@@ -646,10 +726,12 @@ const storeCreator = (set, get) => {
           ? { 
               ...item, 
               quantity: safeQuantity,
-              // Ensure price fields are valid numbers
-              price: safeParseNumber(item.price || item.product?.price),
-              discountedPrice: safeParseNumber(item.discountedPrice || item.product?.discountedPrice),
-              originalPrice: safeParseNumber(item.originalPrice || item.product?.originalPrice),
+              // Update product data with fresh data if available
+              product: freshProduct ? normalizeCartItem({ product: freshProduct }).product : item.product,
+              // Ensure price fields are valid numbers (use fresh data if available)
+              price: safeParseNumber(freshProduct?.discountedPrice || freshProduct?.price || item.price || item.product?.price),
+              discountedPrice: safeParseNumber(freshProduct?.discountedPrice || item.discountedPrice || item.product?.discountedPrice),
+              originalPrice: safeParseNumber(freshProduct?.originalPrice || freshProduct?.price || item.originalPrice || item.product?.originalPrice),
             }
           : item
       );
