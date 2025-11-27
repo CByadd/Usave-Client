@@ -499,7 +499,10 @@ export default function CheckoutPage() {
   };
 
   const handleSaveAddress = async (addressData) => {
-    if (!saveAddress || !isAuthenticated) return;
+    if (!saveAddress || !isAuthenticated) {
+      console.log('Address save skipped:', { saveAddress, isAuthenticated });
+      return;
+    }
     
     try {
       // Check if address already exists to avoid duplicates
@@ -515,15 +518,22 @@ export default function CheckoutPage() {
         return;
       }
       
-      await apiService.user.addAddress({
+      const response = await apiService.user.addAddress({
         ...addressData,
         type: 'shipping',
         isDefault: savedAddresses.length === 0, // Make first address default
       });
-      console.log('Address saved successfully');
+      
+      if (response && response.success) {
+        console.log('Address saved successfully');
+        // Reload addresses to show the newly saved address
+        await loadSavedAddresses();
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Error saving address:', error);
-      // Don't block order placement if address save fails
+      throw error; // Re-throw to let caller handle
     }
   };
 
@@ -584,10 +594,8 @@ export default function CheckoutPage() {
 
       const customerName = `${formData.firstName || ''} ${formData.lastName || ''}`.trim();
 
-      // Save address if requested
-      if (saveAddress && selectedAddressId === 'new') {
-        await handleSaveAddress(shippingAddress);
-      }
+      // Save address if requested (will be saved after order creation to ensure it's saved even if order fails)
+      // Address saving is handled after order creation to avoid blocking order placement
 
       // Calculate totals
       const subtotal = totals.subtotal;
@@ -644,7 +652,7 @@ export default function CheckoutPage() {
 
       if (orderResponse.success) {
         // Save shipping address to user's saved addresses (optional - don't block order creation)
-        if (isAuthenticated && user?.id && saveAddress) {
+        if (isAuthenticated && user?.id && saveAddress && selectedAddressId === 'new') {
           try {
             // Check if address already exists to avoid duplicates
             const addressExists = savedAddresses.some(addr => 
@@ -655,22 +663,32 @@ export default function CheckoutPage() {
             );
             
             if (!addressExists && apiService.user && typeof apiService.user.addAddress === 'function') {
-              await apiService.user.addAddress({
+              const addressResponse = await apiService.user.addAddress({
                 type: 'shipping',
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 address1: formData.address1,
-                address2: formData.address2,
+                address2: formData.address2 || '',
                 city: formData.city,
                 state: formData.state,
                 postalCode: formData.postalCode,
-                country: formData.country,
-                phone: formData.phone,
-                isDefault: false
+                country: formData.country || 'Australia',
+                phone: formData.phone || '',
+                isDefault: savedAddresses.length === 0 // Make first address default
               });
+              
+              if (addressResponse && addressResponse.success) {
+                console.log('Address saved successfully');
+                // Reload addresses to show the newly saved address
+                await loadSavedAddresses();
+                showToast('Address saved successfully', 'success');
+              }
+            } else if (addressExists) {
+              console.log('Address already exists, skipping save');
             }
           } catch (error) {
             console.error('Failed to save address:', error);
+            showToast('Failed to save address, but order was created successfully', 'warning');
             // Don't block order creation if address save fails
           }
         }

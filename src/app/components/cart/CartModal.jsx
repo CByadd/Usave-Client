@@ -159,11 +159,11 @@ const CartModal = memo(({ isOpen, onClose }) => {
                           </p>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-sm font-semibold text-gray-900">
-                              ${((product.discountedPrice || product.price || item.discountedPrice || item.price) * item.quantity).toFixed(2)}
+                              ${((product?.discountedPrice || product?.price || item?.discountedPrice || item?.price || 0) * (item?.quantity || 1)).toFixed(2)}
                             </span>
-                            {(product.originalPrice || item.originalPrice) > (product.discountedPrice || product.price || item.discountedPrice || item.price) && (
+                            {((product?.originalPrice || item?.originalPrice || 0) > (product?.discountedPrice || product?.price || item?.discountedPrice || item?.price || 0)) && (
                               <span className="text-sm text-gray-500 line-through">
-                                ${(product.originalPrice || item.originalPrice).toFixed(2)}
+                                ${(product?.originalPrice || item?.originalPrice || 0).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -191,7 +191,7 @@ const CartModal = memo(({ isOpen, onClose }) => {
 
                         <div className="text-right">
                           <div className="text-sm font-semibold text-gray-900">
-                            ${((product.discountedPrice || product.price || item.discountedPrice || item.price) * item.quantity).toFixed(2)}
+                            ${((product?.discountedPrice || product?.price || item?.discountedPrice || item?.price || 0) * (item?.quantity || 1)).toFixed(2)}
                           </div>
                         </div>
 

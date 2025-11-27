@@ -141,13 +141,13 @@ const WishlistPage = () => {
                           </div>
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
-                          {(product.originalPrice || item.originalPrice) > (product.discountedPrice || product.price || item.discountedPrice || item.price) && (
+                          {((product?.originalPrice || item?.originalPrice || 0) > (product?.discountedPrice || product?.price || item?.discountedPrice || item?.price || 0)) && (
                             <div className="text-xs sm:text-sm text-gray-500 line-through">
-                              ${(product.originalPrice || item.originalPrice).toFixed(2)}
+                              ${(product?.originalPrice || item?.originalPrice || 0).toFixed(2)}
                             </div>
                           )}
                           <div className="text-lg sm:text-xl font-semibold text-[#0B4866]">
-                            ${(product.discountedPrice || product.price || item.discountedPrice || item.price).toFixed(2)}
+                            ${(product?.discountedPrice || product?.price || item?.discountedPrice || item?.price || 0).toFixed(2)}
                           </div>
                         </div>
                       </div>

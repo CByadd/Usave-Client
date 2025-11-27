@@ -17,6 +17,23 @@ function OwnerApproveOrderPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  // Helper function to get production URL, replacing localhost if needed
+  const getProductionUrl = (path = '/') => {
+    if (typeof window === 'undefined') return path;
+    
+    const currentUrl = window.location.href;
+    const currentOrigin = window.location.origin;
+    
+    // If on localhost, replace with production URL
+    if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
+      const productionUrl = config.urls.client || 'https://usave-client.vercel.app';
+      return `${productionUrl}${path}`;
+    }
+    
+    // Otherwise, use current domain
+    return `${currentOrigin}${path}`;
+  };
+
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -292,7 +309,15 @@ function OwnerApproveOrderPageContent() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Error</h2>
           <p className="text-red-600 mb-6">{error}</p>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => {
+              // Redirect to production URL, replacing localhost if needed
+              const url = getProductionUrl('/');
+              if (typeof window !== 'undefined') {
+                window.location.href = url;
+              } else {
+                router.push('/');
+              }
+            }}
             className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
           >
             Go to Homepage
@@ -338,7 +363,14 @@ function OwnerApproveOrderPageContent() {
                 </>
               )}
               <button
-                onClick={() => router.push('/')}
+                onClick={() => {
+                  // Use window.location to ensure we stay on the same domain
+                  if (typeof window !== 'undefined') {
+                    window.location.href = '/';
+                  } else {
+                    router.push('/');
+                  }
+                }}
                 className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
               >
                 Go to Homepage
@@ -358,7 +390,15 @@ function OwnerApproveOrderPageContent() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h2>
           <p className="text-gray-600 mb-6">The order you are looking for could not be found or the link is invalid.</p>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => {
+              // Redirect to production URL, replacing localhost if needed
+              const url = getProductionUrl('/');
+              if (typeof window !== 'undefined') {
+                window.location.href = url;
+              } else {
+                router.push('/');
+              }
+            }}
             className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
           >
             Go to Homepage

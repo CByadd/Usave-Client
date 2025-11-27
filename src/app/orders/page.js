@@ -181,6 +181,7 @@ export default function OrdersPage() {
         // Include orders pending owner approval, pending admin approval, or owner approved waiting for admin
         return orders.filter(o => 
           o.status === 'PENDING_APPROVAL' || 
+          o.status === 'PENDING' ||
           (o.requiresOwnerApproval && !o.ownerApproved && !o.ownerRejected) ||
           (o.ownerApproved && !o.adminApproved)
         );
@@ -199,20 +200,38 @@ export default function OrdersPage() {
           const paymentStatus = normalisePaymentStatus(o.paymentStatus);
           return REVIEWABLE_PAYMENT_STATUSES.has(paymentStatus);
         });
+      case 'completed':
+        // Include orders that are completed, delivered, shipped, or processed
+        return orders.filter(o => 
+          o.status === 'DELIVERED' || 
+          o.status === 'COMPLETED' || 
+          o.status === 'SHIPPED' || 
+          o.status === 'PROCESSING' ||
+          o.status === 'CONFIRMED'
+        );
       default:
+        // 'all' - return all orders without any filtering
         return orders;
     }
   };
 
-  // Group orders by status for display
+  // Group orders by status for display (used for grouped view, but we're using filtered view now)
   const groupedOrders = {
     pending: orders.filter(o => 
       o.status === 'PENDING_APPROVAL' || 
+      o.status === 'PENDING' ||
       (o.requiresOwnerApproval && !o.ownerApproved && !o.ownerRejected) ||
       (o.ownerApproved && !o.adminApproved)
     ),
     approved: orders.filter(o => o.status === 'APPROVED' || o.adminApproved),
     rejected: orders.filter(o => o.status === 'REJECTED' || o.ownerRejected || o.adminRejected),
+    completed: orders.filter(o => 
+      o.status === 'DELIVERED' || 
+      o.status === 'COMPLETED' || 
+      o.status === 'SHIPPED' || 
+      o.status === 'PROCESSING' ||
+      o.status === 'CONFIRMED'
+    ),
   };
 
   // Show loading state on initial mount to prevent hydration mismatch
@@ -407,6 +426,54 @@ export default function OrdersPage() {
                 </div>
               </div>
             )}
+
+            {/* Completed/Other Orders Section - Show orders that don't fit in pending/approved/rejected */}
+            {groupedOrders.completed.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Completed & Other Orders</h2>
+                <div className="space-y-4">
+                  {groupedOrders.completed.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      onProceedToPay={handleProceedToPay}
+                      onEditOrder={handleEditOrder}
+                      onReSendApproval={handleRequestReapproval}
+                      onReviewOrder={handleOpenReviewModal}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Other Orders - Orders that don't fit any category */}
+            {(() => {
+              const otherOrders = orders.filter(o => {
+                const isPending = groupedOrders.pending.includes(o);
+                const isApproved = groupedOrders.approved.includes(o);
+                const isRejected = groupedOrders.rejected.includes(o);
+                const isCompleted = groupedOrders.completed.includes(o);
+                return !isPending && !isApproved && !isRejected && !isCompleted;
+              });
+              
+              return otherOrders.length > 0 ? (
+                <div className="mb-8">
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Other Orders</h2>
+                  <div className="space-y-4">
+                    {otherOrders.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onProceedToPay={handleProceedToPay}
+                        onEditOrder={handleEditOrder}
+                        onReSendApproval={handleRequestReapproval}
+                        onReviewOrder={handleOpenReviewModal}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
 
             {/* No Orders Message */}
             {orders.length === 0 && (
