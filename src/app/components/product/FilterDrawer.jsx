@@ -104,8 +104,8 @@ const FilterDrawer = () => {
     if (isFilterDrawerOpen) {
       setTempFilters({
         sortBy: advancedFilters.sortBy || 'relevance',
-        minPrice: advancedFilters.minPrice || '',
-        maxPrice: advancedFilters.maxPrice || '',
+        minPrice: advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== null ? String(advancedFilters.minPrice) : '',
+        maxPrice: advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== null ? String(advancedFilters.maxPrice) : '',
         color: advancedFilters.color || '',
         category: advancedFilters.category || '',
       });
@@ -134,14 +134,24 @@ const FilterDrawer = () => {
   };
 
   const handlePriceRangeChange = (min, max) => {
-    const newFilters = {
-      minPrice: min !== null && min !== undefined ? String(min) : '', 
-      maxPrice: max !== null && max !== undefined ? String(max) : ''
-    };
-    setTempFilters(prev => ({ 
-      ...prev, 
-      ...newFilters
-    }));
+    // If both min and max are empty/null, clear the price filter
+    if ((min === null || min === undefined || min === '') && 
+        (max === null || max === undefined || max === '')) {
+      setTempFilters(prev => ({ 
+        ...prev, 
+        minPrice: '',
+        maxPrice: ''
+      }));
+    } else {
+      const newFilters = {
+        minPrice: min !== null && min !== undefined && min !== '' ? String(min) : '', 
+        maxPrice: max !== null && max !== undefined && max !== '' ? String(max) : ''
+      };
+      setTempFilters(prev => ({ 
+        ...prev, 
+        ...newFilters
+      }));
+    }
   };
 
   const handleColorChange = (color) => {

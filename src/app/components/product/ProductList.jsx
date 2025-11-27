@@ -8,6 +8,7 @@ import { ProductGridSkeleton } from './LoadingSkeletons';
 import productService from '../../services/api/productService';
 import { apiService } from '../../services/api/apiClient';
 import ItemCard from './ProductCard';
+import FilterDrawer from './FilterDrawer';
 
 const ProductListingPage = ({ title, subtitle, contextType }) => {
   const { isSearching, toggleActiveFilter, activeFilters, updateAdvancedFilter, advancedFilters } = useSearch();
@@ -530,14 +531,14 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           </p>
         </div>
 
-        {/* All Filters Button */}
-        <div className="mb-6 md:mb-8">
+        {/* Filter Button */}
+        <div className="flex justify-end mb-6 md:mb-8">
           <button
             onClick={() => toggleActiveFilter('all')}
-            className="relative px-3 md:px-4 py-2 border border-gray-300 rounded-md text-xs md:text-sm font-medium text-[#0B4866] hover:bg-gray-50 flex items-center gap-1 md:gap-2 whitespace-nowrap"
+            className="relative px-4 md:px-6 py-2 border border-gray-300 rounded-md text-sm md:text-base font-medium text-[#0B4866] hover:bg-gray-50 flex items-center gap-2 whitespace-nowrap transition-colors"
           >
-            <SlidersHorizontal size={14} className="md:w-4 md:h-4" />
-            <span>All Filters</span>
+            <SlidersHorizontal size={18} className="md:w-5 md:h-5" />
+            <span>Filters</span>
             {activeFilterCount > 0 && (
               <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#0B4866] text-xs font-semibold text-white">
                 {activeFilterCount}
@@ -545,6 +546,9 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             )}
           </button>
         </div>
+
+        {/* Filter Drawer */}
+        <FilterDrawer />
 
         {/* Error message if there's an error but products are shown */}
         {error && products.length > 0 && (

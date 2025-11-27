@@ -27,8 +27,13 @@ export const performSearch = async (query, filterOptions = {}, advancedFilters =
     const allFilters = { ...filterOptions };
     
     // Add advanced filter params
-    if (advancedFilters.minPrice) allFilters.minPrice = advancedFilters.minPrice;
-    if (advancedFilters.maxPrice) allFilters.maxPrice = advancedFilters.maxPrice;
+    // Price filters - check for empty strings and null/undefined
+    if (advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== null && advancedFilters.minPrice !== '' && advancedFilters.minPrice !== 'null') {
+      allFilters.minPrice = advancedFilters.minPrice;
+    }
+    if (advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== 'null') {
+      allFilters.maxPrice = advancedFilters.maxPrice;
+    }
     if (advancedFilters.category) allFilters.category = advancedFilters.category;
     if (Array.isArray(advancedFilters.categories) && advancedFilters.categories.length > 0) {
       allFilters.categories = advancedFilters.categories.join(',');
@@ -47,13 +52,57 @@ export const performSearch = async (query, filterOptions = {}, advancedFilters =
     if (advancedFilters.onSale !== null) allFilters.onSale = advancedFilters.onSale;
     if (advancedFilters.topSeller !== null) allFilters.topSeller = advancedFilters.topSeller;
     
-    // Pass query and filters to search API
-    const response = await apiService.products.search(query, {
+    // Map sortBy to API format (price_asc -> price-low, price_desc -> price-high, etc.)
+    const sortMap = {
+      'relevance': null, // No sort parameter for relevance (default server sorting)
+      'price_asc': 'price-low',
+      'price_desc': 'price-high',
+      'rating': 'rating',
+      'newest': 'newest',
+      'oldest': 'oldest',
+    };
+    
+    // Get sortBy from advancedFilters (preferred) or allFilters
+    const sortByValue = advancedFilters.sortBy || allFilters.sortBy;
+    const apiSort = sortByValue ? sortMap[sortByValue] : null;
+    
+    // Build search params
+    const searchParams = {
       category: allFilters.category || undefined,
       subcategory: allFilters.subcategory || undefined,
       limit: allFilters.limit || 100, // Increased default limit to show more products
       offset: allFilters.offset || 0,
-    });
+    };
+    
+    // Add sort if not relevance (relevance uses default server sorting)
+    if (apiSort !== null) {
+      searchParams.sort = apiSort;
+    }
+    
+    // Add price filters if they exist (convert to number for API)
+    if (allFilters.minPrice !== undefined && allFilters.minPrice !== null && allFilters.minPrice !== '' && allFilters.minPrice !== 'null') {
+      const minPriceNum = parseFloat(String(allFilters.minPrice));
+      if (!isNaN(minPriceNum) && minPriceNum >= 0) {
+        searchParams.minPrice = minPriceNum;
+      }
+    }
+    if (allFilters.maxPrice !== undefined && allFilters.maxPrice !== null && allFilters.maxPrice !== '' && allFilters.maxPrice !== 'null') {
+      const maxPriceNum = parseFloat(String(allFilters.maxPrice));
+      if (!isNaN(maxPriceNum) && maxPriceNum >= 0) {
+        searchParams.maxPrice = maxPriceNum;
+      }
+    }
+    
+    // Add other filters
+    if (allFilters.color) {
+      searchParams.color = allFilters.color;
+    }
+    if (allFilters.inStock !== undefined && allFilters.inStock !== null) {
+      searchParams.inStock = allFilters.inStock;
+    }
+    
+    // Pass query and filters to search API
+    const response = await apiService.products.search(query, searchParams);
     
     if (response.success && response.data) {
       searchResults = response.data.products || [];
