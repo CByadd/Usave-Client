@@ -6,6 +6,9 @@ const API_BASE_URL = config.api.baseURL;
 
 export async function requestApproval(ownerEmail, orderDetails, userId) {
   try {
+    // Get client base URL for the approval link
+    const clientBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    
     const response = await fetch(getApiUrl(config.endpoints.orders.requestApproval), {
       method: 'POST',
       headers: {
@@ -14,7 +17,8 @@ export async function requestApproval(ownerEmail, orderDetails, userId) {
       body: JSON.stringify({
         ownerEmail,
         orderDetails,
-        userId
+        userId,
+        clientBaseUrl, // Send client base URL so server can generate correct approval link
       }),
       credentials: 'include' // Important for cookies if using sessions
     });

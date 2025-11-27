@@ -103,6 +103,9 @@ export default function ApprovalModal({
         customerPhone: resolvedCustomerPhone,
       };
 
+      // Get client base URL for the approval link
+      const clientBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      
       // For owner approval flow, only send owner email - admin email comes from backend
       const response = await fetch('/api/orders/request-approval', {
         method: 'POST',
@@ -113,6 +116,7 @@ export default function ApprovalModal({
           orderDetails,
           userId: user?.id || 'guest',
           requiresOwnerApproval: true, // This is owner approval flow
+          clientBaseUrl, // Send client base URL so server can generate correct approval link
         }),
       });
 

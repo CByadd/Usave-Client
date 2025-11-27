@@ -145,9 +145,34 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
     : "relative flex aspect-[4/3] items-center justify-center w-full rounded-[32px] cursor-pointer overflow-hidden bg-gradient-to-br from-white/80 to-white/40 p-6";
 
+  const handleCardClick = (e) => {
+    // Don't navigate if clicking on interactive elements
+    const target = e.target;
+    const isInteractiveElement = 
+      target.closest('button') || 
+      target.closest('a') ||
+      target.closest('[role="button"]');
+    
+    if (!isInteractiveElement) {
+      goToProduct();
+    }
+  };
+
   return (
 
-    <div className={variant === 'grid' ? 'w-full h-full flex flex-col' : 'relative'}>
+    <div 
+      className={variant === 'grid' ? 'w-full h-full flex flex-col' : 'relative'}
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          goToProduct();
+        }
+      }}
+      style={{ cursor: 'pointer' }}
+    >
       <div
 
         className={containerClasses}
@@ -226,8 +251,6 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
         <div
 
-            onClick={goToProduct}
-
             className={imageContainerClasses}
 
             style={productItem.bg ? { backgroundColor: productItem.bg } : {}}
@@ -260,8 +283,6 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
       {variant === 'grid' && (
 
         <div
-
-            onClick={goToProduct}
 
           className={imageContainerClasses}
 
@@ -330,7 +351,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
      <div className={variant === 'grid' ? "flex flex-col flex-1 gap-3" : "p-3 flex flex-col flex-1 gap-3"}>
 
-           <h3 onClick={goToProduct} className={`${variant === 'grid' ? 'text-base mb-0' : 'mt-0'} font-semibold text-gray-900 cursor-pointer line-clamp-2 leading-snug`}>{productItem.title}</h3>
+           <h3 className={`${variant === 'grid' ? 'text-base mb-0' : 'mt-0'} font-semibold text-gray-900 line-clamp-2 leading-snug`}>{productItem.title}</h3>
 
         <div className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 shadow-sm ${variant === 'grid' ? 'mb-0' : 'mt-0'}`}>
           <div>

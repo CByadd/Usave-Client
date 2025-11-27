@@ -14,7 +14,39 @@ export async function POST(request) {
       return 'http://localhost:3001';
     };
     
+    // Get client base URL from request headers or config
+    const getClientBaseUrl = () => {
+      // Try to get from request headers first
+      const origin = request.headers.get('origin');
+      const referer = request.headers.get('referer');
+      
+      if (origin) {
+        return origin;
+      }
+      
+      if (referer) {
+        try {
+          const refererUrl = new URL(referer);
+          return `${refererUrl.protocol}//${refererUrl.host}`;
+        } catch (e) {
+          // Invalid referer, continue to fallback
+        }
+      }
+      
+      // Fallback to config
+      if (typeof window !== 'undefined') {
+        return window.location.origin;
+      }
+      
+      // Server-side fallback
+      return process.env.NEXT_PUBLIC_CLIENT_URL || 
+             (process.env.NODE_ENV === 'production' 
+               ? 'https://usave-client.vercel.app' 
+               : 'http://localhost:3000');
+    };
+    
     const backendUrl = getBackendUrl();
+    const clientBaseUrl = getClientBaseUrl();
     
     // Forward the request to your backend server
     const response = await fetch(`${backendUrl}/api/orders/request-approval`, {
@@ -26,7 +58,8 @@ export async function POST(request) {
         adminEmail,
         orderDetails,
         userId,
-        ownerEmail
+        ownerEmail,
+        clientBaseUrl, // Send client base URL to server
       }),
     });
 
