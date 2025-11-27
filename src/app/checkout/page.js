@@ -379,17 +379,36 @@ export default function CheckoutPage() {
       if (!deliveryDate || !deliveryDate.trim()) {
         newErrors.deliveryDate = 'Please select a delivery date';
       } else {
-        // Check if date is in the future
+        // Check if date is at least 2 days from today
         const selectedDate = new Date(deliveryDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (selectedDate < today) {
-          newErrors.deliveryDate = 'Delivery date must be today or in the future';
+        const minDate = new Date();
+        minDate.setDate(minDate.getDate() + 2);
+        minDate.setHours(0, 0, 0, 0);
+        selectedDate.setHours(0, 0, 0, 0);
+        if (selectedDate < minDate) {
+          newErrors.deliveryDate = 'Delivery date must be at least 2 days from today';
         }
       }
 
       if (!deliveryTime || !deliveryTime.trim()) {
         newErrors.deliveryTime = 'Please select a delivery time';
+      }
+    }
+    
+    // Pickup date validation (only for pickup option)
+    if (shippingOption === 'pickup') {
+      if (!deliveryDate || !deliveryDate.trim()) {
+        newErrors.deliveryDate = 'Please select a pickup date';
+      } else {
+        // Check if date is at least 2 days from today
+        const selectedDate = new Date(deliveryDate);
+        const minDate = new Date();
+        minDate.setDate(minDate.getDate() + 2);
+        minDate.setHours(0, 0, 0, 0);
+        selectedDate.setHours(0, 0, 0, 0);
+        if (selectedDate < minDate) {
+          newErrors.deliveryDate = 'Pickup date must be at least 2 days from today';
+        }
       }
     }
 
@@ -1179,7 +1198,11 @@ export default function CheckoutPage() {
                                   setErrors(newErrors);
                                 }
                               }}
-                              min={new Date().toISOString().split('T')[0]}
+                              min={(() => {
+                                const minDate = new Date();
+                                minDate.setDate(minDate.getDate() + 2); // Minimum 2 days from today
+                                return minDate.toISOString().split('T')[0];
+                              })()}
                               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
                                 errors.deliveryDate ? 'border-red-500' : 'border-gray-300'
                               }`}
@@ -1244,6 +1267,46 @@ export default function CheckoutPage() {
                               <p className="text-red-500 text-xs mt-1">{errors.deliveryTime}</p>
                             )}
                           </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Pickup Schedule - Show when pickup option is selected */}
+                    {option.id === 'pickup' && shippingOption === 'pickup' && (
+                      <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
+                        <h3 className="text-sm font-semibold text-[#0F4C81] mb-2">Pickup Schedule</h3>
+                        <p className="text-xs text-gray-600 mb-3">Choose a date you want to pick up your product</p>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pickup Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={deliveryDate}
+                            onChange={(e) => {
+                              setDeliveryDate(e.target.value);
+                              // Clear error when user selects a date
+                              if (errors.deliveryDate) {
+                                const newErrors = { ...errors };
+                                delete newErrors.deliveryDate;
+                                setErrors(newErrors);
+                              }
+                            }}
+                            min={(() => {
+                              const minDate = new Date();
+                              minDate.setDate(minDate.getDate() + 2); // Minimum 2 days from today
+                              return minDate.toISOString().split('T')[0];
+                            })()}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
+                              errors.deliveryDate ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="Select a date"
+                            required={shippingOption === 'pickup'}
+                          />
+                          {errors.deliveryDate && (
+                            <p className="text-red-500 text-xs mt-1">{errors.deliveryDate}</p>
+                          )}
                         </div>
                       </div>
                     )}
