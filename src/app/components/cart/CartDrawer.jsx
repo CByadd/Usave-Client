@@ -351,18 +351,20 @@ const CartDrawer = () => {
                     <div className="mt-2 space-y-1">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Item Price:</span>
-                        <span className="text-sm font-medium">${item.discountedPrice * item.quantity}.00</span>
+                        <span className="text-sm font-medium">
+                          ${((item.product?.discountedPrice || item.product?.price || item.product?.originalPrice || item.discountedPrice || item.price || item.originalPrice || 0) * (item.quantity || 1)).toFixed(2)}
+                        </span>
                       </div>
                       {item.includeInstallation && (
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Installation ({item.quantity} × ${item.installationFee}):</span>
-                          <span className="text-sm font-medium">${(item.installationFee * item.quantity).toFixed(2)}</span>
+                          <span className="text-sm text-gray-600">Installation ({item.quantity} × ${item.installationFee || 0}):</span>
+                          <span className="text-sm font-medium">${((item.installationFee || 0) * (item.quantity || 1)).toFixed(2)}</span>
                         </div>
                       )}
                       <div className="flex justify-between border-t border-gray-100 pt-1">
                         <span className="text-sm font-semibold">Subtotal:</span>
                         <span className="text-sm font-semibold">
-                          ${(item.discountedPrice * item.quantity + (item.includeInstallation ? item.installationFee * item.quantity : 0)).toFixed(2)}
+                          ${((item.product?.discountedPrice || item.product?.price || item.product?.originalPrice || item.discountedPrice || item.price || item.originalPrice || 0) * (item.quantity || 1) + ((item.includeInstallation && item.installationFee) ? (item.installationFee * (item.quantity || 1)) : 0)).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -432,7 +434,11 @@ const CartDrawer = () => {
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Subtotal:</span>
                   <span className="text-sm">
-                    ${cartItems.reduce((sum, item) => sum + (item.discountedPrice * item.quantity), 0).toFixed(2)}
+                    ${cartItems.reduce((sum, item) => {
+                      const price = item.product?.discountedPrice || item.product?.price || item.product?.originalPrice || item.discountedPrice || item.price || item.originalPrice || 0;
+                      const quantity = item.quantity || 1;
+                      return sum + (price * quantity);
+                    }, 0).toFixed(2)}
                   </span>
                 </div>
                 
@@ -442,7 +448,7 @@ const CartDrawer = () => {
                     <span className="text-sm">
                       ${cartItems
                         .filter(item => item.includeInstallation)
-                        .reduce((sum, item) => sum + (item.installationFee * item.quantity), 0)
+                        .reduce((sum, item) => sum + ((item.installationFee || 0) * (item.quantity || 1)), 0)
                         .toFixed(2)}
                     </span>
                   </div>
