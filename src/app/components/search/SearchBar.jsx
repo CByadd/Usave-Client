@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from 'react-dom';
 import { Search, Loader2, X } from 'lucide-react';
 import { useSearch } from '../../stores/useSearchStore';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, isExpanded = false, onToggle = null }) => {
   const { query, suggestions, isSearching, isFetchingSuggestions, setQuery, clearQuery, fetchSuggestions, setIsSearching, addToHistory, clearSuggestions } = useSearch();
@@ -14,6 +14,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
   const suggestionsRef = useRef(null);
   const [suggestionsPosition, setSuggestionsPosition] = useState({ top: 0, left: 0, width: 0 });
   const router = useRouter();
+  const pathname = usePathname();
 
 
   const handleChange = async (e) => {
@@ -85,6 +86,18 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
       setShowSuggestions(false);
     }, 150);
   };
+
+  // Clear search query when navigating away from search page
+  useEffect(() => {
+    if (pathname && pathname !== '/search') {
+      // Only clear if there's a query to avoid unnecessary operations
+      if (query.trim().length > 0) {
+        clearQuery();
+        clearSuggestions();
+        setShowSuggestions(false);
+      }
+    }
+  }, [pathname]); // Only depend on pathname to avoid clearing when query changes on same page
 
   // Update suggestions visibility when suggestions change
   useEffect(() => {

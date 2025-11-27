@@ -399,11 +399,13 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                 }}
 
-                className="flex-1 rounded-full border border-gray-200 bg-white text-gray-700 h-8 p-0 flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100"
+                className="flex-1 rounded-full border border-gray-200 bg-white text-gray-700 h-8 px-2 flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100 text-xs sm:text-sm"
 
               >
 
                 <Search size={16} />
+
+                <span className="whitespace-nowrap">Quick view</span>
 
               </button>
 
@@ -423,7 +425,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
                 disabled={!hasStock}
 
-                className={`flex-1 rounded-full text-white h-8 p-0 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`flex-1 rounded-full text-white h-8 px-2 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 text-xs sm:text-sm ${
 
                   !hasStock 
 
@@ -440,6 +442,10 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
               >
 
                 <ShoppingCart size={16} />
+
+                <span className="whitespace-nowrap">
+                  {!hasStock ? 'Out of Stock' : isMounted && isInCart(productItem.id) ? 'In Cart' : 'Add to cart'}
+                </span>
 
               </button>
 

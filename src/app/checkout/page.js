@@ -77,17 +77,27 @@ export default function CheckoutPage() {
     try {
       setLoadingAddresses(true);
       const response = await apiService.user.getAddresses();
-      if (response.success && response.data?.addresses) {
-        const addresses = response.data.addresses;
+      if (response.success) {
+        const addresses = response.data?.addresses || [];
         setSavedAddresses(addresses);
         
-        // Always default to "new address" but don't show form
+        // Always default to "new address"
         setSelectedAddressId('new');
         resetAddressForm();
-        setShowAddressForm(false); // Don't show form by default
+        
+        // If no saved addresses, show the form immediately
+        if (addresses.length === 0) {
+          setShowAddressForm(true);
+        } else {
+          setShowAddressForm(false); // Don't show form by default if addresses exist
+        }
       }
     } catch (error) {
       console.error('Error loading addresses:', error);
+      // On error, still allow adding new address
+      setSavedAddresses([]);
+      setSelectedAddressId('new');
+      setShowAddressForm(true);
     } finally {
       setLoadingAddresses(false);
     }
@@ -690,32 +700,33 @@ export default function CheckoutPage() {
               </div>
 
               {/* Saved Addresses Selector */}
-              {savedAddresses.length > 0 && (
-                <div className="mb-6 pb-6 border-b border-gray-200">
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                {savedAddresses.length > 0 && (
                   <p className="text-sm font-medium text-gray-700 mb-3">
                     Saved addresses
                   </p>
-                  {loadingAddresses ? (
-                    <p className="text-sm text-gray-500">Loading saved addresses...</p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <button
-                        type="button"
-                        onClick={() => handleSavedAddressSelect('new')}
-                        className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${
-                          selectedAddressId === 'new'
-                            ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
-                            : 'border-gray-200 hover:border-[#0F4C81]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-[#0F4C81] mb-3">
-                          <Plus size={18} />
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900">Add new address</p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Enter a new shipping address.
-                        </p>
-                      </button>
+                )}
+                {loadingAddresses ? (
+                  <p className="text-sm text-gray-500">Loading saved addresses...</p>
+                ) : (
+                  <div className={`grid grid-cols-1 ${savedAddresses.length > 0 ? 'sm:grid-cols-2' : ''} gap-4`}>
+                    <button
+                      type="button"
+                      onClick={() => handleSavedAddressSelect('new')}
+                      className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${
+                        selectedAddressId === 'new'
+                          ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
+                          : 'border-gray-200 hover:border-[#0F4C81]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-[#0F4C81] mb-3">
+                        <Plus size={18} />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900">Add new address</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Enter a new shipping address.
+                      </p>
+                    </button>
 
                       {savedAddresses.map((addr) => {
                         const isSelected = selectedAddressId === addr.id;
@@ -898,7 +909,6 @@ export default function CheckoutPage() {
                     </div>
                   )}
                 </div>
-              )}
 
               {/* Address Form - Only show when showAddressForm is true */}
               {showAddressForm && (
