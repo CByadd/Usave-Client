@@ -54,7 +54,10 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
   const inStock = productItem.inStock !== false && productItem.inStock !== null;
   const hasStock = inStock && stockQuantity > 0;
 
-  const goToProduct = () => router.push(`/products/${productItem.id}`);
+  const goToProduct = () => {
+    console.log('[ProductCard] Navigating to product:', productItem.id);
+    router.push(`/products/${productItem.id}`);
+  };
 
   
 
@@ -146,39 +149,41 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     : "relative flex aspect-[4/3] items-center justify-center w-full rounded-[32px] cursor-pointer overflow-hidden bg-gradient-to-br from-white/80 to-white/40 p-6";
 
   const handleCardClick = (e) => {
+    console.log('[ProductCard] handleCardClick triggered', e.target);
     // Don't navigate if clicking on interactive elements
     const target = e.target;
     const isInteractiveElement = 
       target.closest('button') || 
       target.closest('a') ||
-      target.closest('[role="button"]');
+      target.closest('[role="button"]') ||
+      target.closest('.quick-view-modal') ||
+      target.closest('[data-no-navigate]');
+    
+    console.log('[ProductCard] isInteractiveElement:', isInteractiveElement);
     
     if (!isInteractiveElement) {
+      console.log('[ProductCard] Navigating to product page');
       goToProduct();
+    } else {
+      console.log('[ProductCard] Click blocked - interactive element');
     }
   };
 
   return (
 
-    <div 
-      className={variant === 'grid' ? 'w-full h-full flex flex-col' : 'relative'}
-      onClick={handleCardClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          goToProduct();
-        }
-      }}
-      style={{ cursor: 'pointer' }}
-    >
+    <div className={variant === 'grid' ? 'w-full h-full flex flex-col' : 'relative'}>
       <div
-
         className={containerClasses}
-
-        style={variant === 'carousel' && productItem.bg ? { backgroundColor: productItem.bg } : {}}
-
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            goToProduct();
+          }
+        }}
+        style={{ cursor: 'pointer' }}
       >
 
         {variant === 'grid' ? (
@@ -346,12 +351,28 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
     </div>
 
       {/* Product Info */}
-
-      <div className={variant === 'grid' ? "p-4 flex flex-col flex-1 bg-white/95" : "w-full bg-white/95 flex flex-col flex-1"}>
+      <div 
+        className={variant === 'grid' ? "p-4 flex flex-col flex-1 bg-white/95" : "w-full bg-white/95 flex flex-col flex-1"}
+        onClick={(e) => {
+          // Allow clicking on product info to navigate
+          if (!e.target.closest('button')) {
+            goToProduct();
+          }
+        }}
+        style={{ cursor: 'pointer' }}
+      >
 
      <div className={variant === 'grid' ? "flex flex-col flex-1 gap-3" : "p-3 flex flex-col flex-1 gap-3"}>
 
-           <h3 className={`${variant === 'grid' ? 'text-base mb-0' : 'mt-0'} font-semibold text-gray-900 line-clamp-2 leading-snug`}>{productItem.title}</h3>
+           <h3 
+             className={`${variant === 'grid' ? 'text-base mb-0' : 'mt-0'} font-semibold text-gray-900 line-clamp-2 leading-snug cursor-pointer`}
+             onClick={(e) => {
+               e.stopPropagation();
+               goToProduct();
+             }}
+           >
+             {productItem.title}
+           </h3>
 
         <div className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-gray-100 bg-gray-50 p-3 shadow-sm ${variant === 'grid' ? 'mb-0' : 'mt-0'}`}>
           <div>
