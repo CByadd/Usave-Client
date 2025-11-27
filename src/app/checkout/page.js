@@ -67,6 +67,14 @@ export default function CheckoutPage() {
       // Load cart and addresses
       await loadCart();
       await loadSavedAddresses();
+      
+      // Initialize delivery date to 2 days from today
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() + 2);
+      const defaultDate = minDate.toISOString().split('T')[0];
+      if (!deliveryDate) {
+        setDeliveryDate(defaultDate);
+      }
     };
     initialize();
   }, [router, isAuthenticated, checkAuth, loadCart]);

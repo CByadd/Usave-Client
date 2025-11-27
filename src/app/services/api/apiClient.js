@@ -625,6 +625,20 @@ export const apiService = {
       // Use api instance (with interceptors) instead of axios directly
       try {
         const response = await api.get(apiEndpoints.orders.getById(id));
+        // Ensure response has success and data structure
+        if (response.data && typeof response.data === 'object') {
+          // If response.data already has the expected structure, return it
+          if (response.data.success !== undefined || response.data.data) {
+            return response.data;
+          }
+          // Otherwise wrap it in the expected structure
+          return {
+            success: true,
+            data: {
+              order: response.data
+            }
+          };
+        }
         return response.data;
       } catch (error) {
         console.error('API: Get order by ID error:', error.response?.data || error.message);
