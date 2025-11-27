@@ -184,7 +184,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
     ) : (
 
-      <div className="w-full flex items-center justify-center flex-col relative" >
+      <div className="w-full flex items-center justify-center flex-col relative " >
         {/* Top seller badge for carousel */}
         {productItem.topSeller && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-pink-600 text-white text-xs font-semibold px-2 py-1 rounded z-10">
@@ -379,7 +379,7 @@ const ItemCard = ({ item, product, variant = 'carousel' }) => {
 
         {/* Buttons */}
 
-        <div className={`flex gap-1.5 mt-auto flex-shrink-0 ${variant === 'grid' ? '' : 'flex-col sm:flex-row'}`}>
+        <div className={`flex gap-1.5 mt-auto flex-shrink-0 pb-4 ${variant === 'grid' ? '' : 'flex-col sm:flex-row'}`}>
 
           {variant === 'grid' ? (
 

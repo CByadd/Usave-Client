@@ -697,10 +697,10 @@ const storeCreator = (set, get) => {
       // Note: inStock can be true, null, or undefined - only reject if explicitly false
       if (stockToCheck.inStock === false) {
         console.log('[Cart] Product rejected: inStock is explicitly false');
-        set({ isLoading: false });
-        return { success: false, error: 'This product is out of stock' };
-      }
-      
+          set({ isLoading: false });
+          return { success: false, error: 'This product is out of stock' };
+        }
+        
       // If stockQuantity is tracked (greater than 0), check if we have enough
       // If stockQuantity is 0 or null, but inStock is not false, allow the purchase
       // (some products may not track stock or use a different inventory system)
@@ -710,11 +710,11 @@ const storeCreator = (set, get) => {
           requestedQuantity: quantity,
           stockQuantity: stockQuantity
         });
-        set({ isLoading: false });
-        return { 
-          success: false, 
-          error: `Only ${stockQuantity} item(s) available in stock` 
-        };
+          set({ isLoading: false });
+          return { 
+            success: false, 
+            error: `Only ${stockQuantity} item(s) available in stock` 
+          };
       }
       
       console.log('[Cart] Stock check passed, updating quantity');

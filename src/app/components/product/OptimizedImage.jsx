@@ -5,9 +5,9 @@ import Image from 'next/image';
 const OptimizedImage = ({
   src,
   alt = '',
-  width = 300,
-  height = 300,
-  className = '',
+  width = 'auto',
+  height = 'auto',
+  className = 'h-full w-auto object-contain',
   ...props
 }) => {
   return (
