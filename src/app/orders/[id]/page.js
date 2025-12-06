@@ -62,29 +62,81 @@ export default function OrderDetailsPage() {
     }
   };
 
-  const getStatusBadge = (status, order) => {
-    // Check owner approval states first
-    if (order?.ownerRejected) {
-      return { label: 'Rejected by Owner', className: 'bg-red-100 text-red-800 border-red-200' };
-    }
-    if (order?.ownerApproved && !order?.adminApproved) {
-      return { label: 'Owner Approved - Waiting for Admin', className: 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30' };
-    }
-    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
-      return { label: 'Pending Owner Approval', className: 'bg-orange-100 text-orange-800 border-orange-200' };
+  // Hierarchical status system
+  const ORDER_STATUS_HIERARCHY = [
+    { value: 'PENDING_CONFIRMED', label: 'Pending Confirmed', description: 'Waiting for Owner Approval (if submitted) and Admin Approval' },
+    { value: 'APPROVED', label: 'Approved', description: 'Waiting for payment process' },
+    { value: 'PAYMENT_CONFIRMED', label: 'Payment Confirmed', description: 'Processing your order for shipping' },
+    { value: 'SHIPPED', label: 'Shipped', description: 'Your order is on the way' },
+    { value: 'DELIVERED', label: 'Delivered', description: 'Your order has been delivered successfully' },
+  ];
+
+  const getStatusInfo = (status, order) => {
+    // Check for exception statuses first
+    if (order?.ownerRejected || status === 'REJECTED') {
+      return {
+        currentIndex: -1,
+        label: 'Rejected by Owner',
+        description: 'This order has been rejected',
+        badgeClass: 'bg-red-100 text-red-800 border-red-200',
+      };
     }
     
-    // Regular status badges
-    switch (status) {
-      case 'PENDING_APPROVAL':
-        return { label: 'Pending Admin Approval', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
-      case 'APPROVED':
-        return { label: 'Approved', className: 'bg-green-100 text-green-800 border-green-200' };
-      case 'REJECTED':
-        return { label: 'Rejected', className: 'bg-red-100 text-red-800 border-red-200' };
-      default:
-        return { label: status || 'Unknown', className: 'bg-gray-100 text-gray-800 border-gray-200' };
+    if (order?.ownerApproved && !order?.adminApproved && status === 'PENDING_CONFIRMED') {
+      return {
+        currentIndex: 0,
+        label: 'Owner Approved - Waiting for Admin',
+        description: 'Waiting for Admin Approval',
+        badgeClass: 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30',
+      };
     }
+    
+    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected && status === 'PENDING_CONFIRMED') {
+      return {
+        currentIndex: 0,
+        label: 'Pending Owner Approval',
+        description: 'Waiting for Owner Approval (if submitted) and Admin Approval',
+        badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
+      };
+    }
+
+    // Map old statuses to new ones for backward compatibility
+    const statusMap = {
+      'PENDING_APPROVAL': 'PENDING_CONFIRMED',
+      'CONFIRMED': 'PAYMENT_CONFIRMED',
+      'PROCESSING': 'PAYMENT_CONFIRMED',
+    };
+    const mappedStatus = statusMap[status] || status;
+    
+    // Find current status in hierarchy
+    const currentIndex = ORDER_STATUS_HIERARCHY.findIndex(s => s.value === mappedStatus);
+    
+    if (currentIndex === -1) {
+      // Status not in hierarchy, return default
+      return {
+        currentIndex: -1,
+        label: status || 'Unknown',
+        description: '',
+        badgeClass: 'bg-gray-100 text-gray-800 border-gray-200',
+      };
+    }
+
+    const currentStatus = ORDER_STATUS_HIERARCHY[currentIndex];
+    
+    return {
+      currentIndex,
+      label: currentStatus.label,
+      description: currentStatus.description,
+      badgeClass: currentIndex === 0 
+        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        : currentIndex === 1
+        ? 'bg-green-100 text-green-800 border-green-200'
+        : currentIndex === 2
+        ? 'bg-blue-100 text-blue-800 border-blue-200'
+        : currentIndex === 3
+        ? 'bg-sky-100 text-sky-800 border-sky-200'
+        : 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    };
   };
 
   const getPaymentStatusBadge = (paymentStatus) => {
@@ -170,7 +222,7 @@ export default function OrderDetailsPage() {
     );
   }
 
-  const statusBadge = getStatusBadge(order.status, order);
+  const statusInfo = getStatusInfo(order.status, order);
   const paymentBadge = getPaymentStatusBadge(order.paymentStatus);
   const items = order.items || [];
   const shippingAddress = order.shippingAddress || {};
@@ -196,13 +248,54 @@ export default function OrderDetailsPage() {
               <p className="text-gray-600">Placed on {formatDate(order.createdAt)}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusBadge.className}`}>
-                {statusBadge.label}
-              </span>
               <span className={`px-3 py-1 rounded-full text-xs font-medium border ${paymentBadge.className}`}>
                 {paymentBadge.label}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Hierarchical Status Display */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Status</h2>
+          <div className="space-y-3">
+            {ORDER_STATUS_HIERARCHY.map((statusItem, index) => {
+              const isCompleted = statusInfo.currentIndex > index;
+              const isCurrent = statusInfo.currentIndex === index;
+              const isPending = statusInfo.currentIndex < index;
+              
+              return (
+                <div key={statusItem.value} className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    isCompleted 
+                      ? 'bg-green-500 text-white' 
+                      : isCurrent 
+                      ? 'bg-[#0B4866] text-white' 
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {isCompleted ? '✓' : index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className={`text-base font-medium ${
+                      isCompleted 
+                        ? 'text-green-700' 
+                        : isCurrent 
+                        ? 'text-[#0B4866]' 
+                        : 'text-gray-500'
+                    }`}>
+                      {statusItem.label}
+                    </div>
+                    {(isCurrent || isCompleted) && (
+                      <div className={`text-sm mt-1 ${
+                        isCompleted ? 'text-green-600' : 'text-[#0B4866]'
+                      }`}>
+                        {statusItem.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

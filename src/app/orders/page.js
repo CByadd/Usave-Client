@@ -531,58 +531,81 @@ export default function OrdersPage() {
 function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onReviewOrder }) {
   const router = useRouter();
 
-  const getStatusBadge = (status, order) => {
-    // Check owner approval states first
-    if (order?.ownerRejected) {
-      return 'bg-red-100 text-red-800 border-red-200';
-    }
-    if (order?.ownerApproved && !order?.adminApproved) {
-      return 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30';
-    }
-    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    }
-    
-    // Regular status badges
-    switch (status) {
-      case 'PENDING_APPROVAL':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'APPROVED':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  // Hierarchical status system
+  const ORDER_STATUS_HIERARCHY = [
+    { value: 'PENDING_CONFIRMED', label: 'Pending Confirmed', description: 'Waiting for Owner Approval (if submitted) and Admin Approval' },
+    { value: 'APPROVED', label: 'Approved', description: 'Waiting for payment process' },
+    { value: 'PAYMENT_CONFIRMED', label: 'Payment Confirmed', description: 'Processing your order for shipping' },
+    { value: 'SHIPPED', label: 'Shipped', description: 'Your order is on the way' },
+    { value: 'DELIVERED', label: 'Delivered', description: 'Your order has been delivered successfully' },
+  ];
 
-  const getStatusLabel = (status, order) => {
-    // Check owner approval states first
-    if (order?.ownerRejected) {
-      return 'Rejected by Owner';
-    }
-    if (order?.ownerApproved && !order?.adminApproved) {
-      return 'Owner Approved - Waiting for Admin';
-    }
-    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
-      return 'Pending Owner Approval';
+  const getStatusInfo = (status, order) => {
+    // Check for exception statuses first
+    if (order?.ownerRejected || status === 'REJECTED') {
+      return {
+        currentIndex: -1,
+        label: 'Rejected by Owner',
+        description: 'This order has been rejected',
+        badgeClass: 'bg-red-100 text-red-800 border-red-200',
+      };
     }
     
-    // Regular status labels
-    switch (status) {
-      case 'PENDING_APPROVAL':
-        // If it requires owner approval but owner hasn't approved yet, show pending owner
-        if (order?.requiresOwnerApproval && !order?.ownerApproved) {
-          return 'Pending Owner Approval';
-        }
-        return 'Pending Admin Approval';
-      case 'APPROVED':
-        return 'Approved';
-      case 'REJECTED':
-        return 'Rejected';
-      default:
-        return status;
+    if (order?.ownerApproved && !order?.adminApproved && status === 'PENDING_CONFIRMED') {
+      return {
+        currentIndex: 0,
+        label: 'Owner Approved - Waiting for Admin',
+        description: 'Waiting for Admin Approval',
+        badgeClass: 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30',
+      };
     }
+    
+    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected && status === 'PENDING_CONFIRMED') {
+      return {
+        currentIndex: 0,
+        label: 'Pending Owner Approval',
+        description: 'Waiting for Owner Approval (if submitted) and Admin Approval',
+        badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
+      };
+    }
+
+    // Map old statuses to new ones for backward compatibility
+    const statusMap = {
+      'PENDING_APPROVAL': 'PENDING_CONFIRMED',
+      'CONFIRMED': 'PAYMENT_CONFIRMED',
+      'PROCESSING': 'PAYMENT_CONFIRMED',
+    };
+    const mappedStatus = statusMap[status] || status;
+    
+    // Find current status in hierarchy
+    const currentIndex = ORDER_STATUS_HIERARCHY.findIndex(s => s.value === mappedStatus);
+    
+    if (currentIndex === -1) {
+      // Status not in hierarchy, return default
+      return {
+        currentIndex: -1,
+        label: status || 'Unknown',
+        description: '',
+        badgeClass: 'bg-gray-100 text-gray-800 border-gray-200',
+      };
+    }
+
+    const currentStatus = ORDER_STATUS_HIERARCHY[currentIndex];
+    
+    return {
+      currentIndex,
+      label: currentStatus.label,
+      description: currentStatus.description,
+      badgeClass: currentIndex === 0 
+        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        : currentIndex === 1
+        ? 'bg-green-100 text-green-800 border-green-200'
+        : currentIndex === 2
+        ? 'bg-blue-100 text-blue-800 border-blue-200'
+        : currentIndex === 3
+        ? 'bg-sky-100 text-sky-800 border-sky-200'
+        : 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    };
   };
 
   const formatItems = (items) => {
@@ -647,11 +670,48 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
         <div className="flex-1 min-w-0 w-full sm:w-auto">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 w-full">
             <div className="flex-1 min-w-0 w-full sm:w-auto">
-              {/* Status Badge */}
-              <div className="mb-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(status, order)}`}>
-                  {getStatusLabel(status, order)}
-                </span>
+              {/* Hierarchical Status Display */}
+              <div className="mb-4">
+                <div className="flex flex-col gap-2">
+                  {ORDER_STATUS_HIERARCHY.map((statusItem, index) => {
+                    const statusInfo = getStatusInfo(status, order);
+                    const isCompleted = statusInfo.currentIndex > index;
+                    const isCurrent = statusInfo.currentIndex === index;
+                    const isPending = statusInfo.currentIndex < index;
+                    
+                    return (
+                      <div key={statusItem.value} className="flex items-start gap-3">
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold mt-0.5 ${
+                          isCompleted 
+                            ? 'bg-green-500 text-white' 
+                            : isCurrent 
+                            ? 'bg-[#0B4866] text-white' 
+                            : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {isCompleted ? '✓' : index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <div className={`text-sm font-medium ${
+                            isCompleted 
+                              ? 'text-green-700' 
+                              : isCurrent 
+                              ? 'text-[#0B4866]' 
+                              : 'text-gray-500'
+                          }`}>
+                            {statusItem.label}
+                          </div>
+                          {(isCurrent || isCompleted) && (
+                            <div className={`text-xs mt-0.5 ${
+                              isCompleted ? 'text-green-600' : 'text-[#0B4866]'
+                            }`}>
+                              {statusItem.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Order Number */}

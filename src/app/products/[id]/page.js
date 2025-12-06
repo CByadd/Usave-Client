@@ -409,6 +409,100 @@ export default function ProductDetailPage() {
     }
   };
 
+
+  const WARRANTY_DATA = {
+  lounge: {
+    title: "Lounge Warranty Year",
+    items: [
+      { label: "Structural Frame", years: "5 Years" },
+      { label: "Seat Foam", years: "3 Years" },
+      { label: "Zig Zag Springs", years: "3 Years" },
+      { label: "Pocket Springs", years: "3 Years" },
+      { label: "Fabric | Synthetic", years: "1 Year" },
+      { label: "Leather", years: "1 Year" },
+      { label: "Stitching", years: "1 Year" },
+      { label: "Recliner Action", years: "1 Year" },
+      { label: "Electrical", years: "1 Year" },
+      { label: "All Other Parts", years: "1 Year" }
+    ]
+  },
+
+  bedroom: {
+    title: "Bedroom Warranty Year",
+    items: [
+      { label: "Mango Wood", years: "1 Year" },
+      { label: "Timber", years: "1 Year" },
+      { label: "Foam", years: "1 Year" },
+      { label: "Fabric | Synthetic | Leather", years: "1 Year" },
+      { label: "Marble | Slate | Travertine", years: "1 Year" },
+      { label: "Concrete", years: "1 Year" },
+      { label: "Stitching", years: "1 Year" },
+      { label: "All Other Parts", years: "1 Year" }
+    ]
+  },
+
+  dining: {
+    title: "Dining Warranty Year",
+    items: [
+      { label: "Mango Wood", years: "1 Year" },
+      { label: "Timber", years: "1 Year" },
+      { label: "Foam", years: "1 Year" },
+      { label: "Fabric | Synthetic | Leather", years: "1 Year" },
+      { label: "Marble | Slate | Travertine", years: "1 Year" },
+      { label: "Concrete", years: "1 Year" },
+      { label: "Stitching", years: "1 Year" },
+      { label: "All Other Parts", years: "1 Year" }
+    ]
+  }
+};
+
+const getWarrantyKey = (product) => {
+  if (!product) return null;
+
+  // ✅ USE title, fallback to name if backend ever changes
+  const name = (product.title || product.name || "").toLowerCase();
+  const category = (product.category || "").toLowerCase();
+
+  // LOUNGE
+  if (
+    name.includes("lounge") ||
+    name.includes("sofa") ||
+    name.includes("set") ||
+    category.includes("lounge")
+  ) {
+    return "lounge";
+  }
+
+  // BEDROOM
+  if (
+    name.includes("bed") ||
+    name.includes("cot") ||
+    category.includes("bedroom")
+  ) {
+    return "bedroom";
+  }
+
+  // DINING
+  if (
+    name.includes("dining") ||
+    name.includes("table") ||
+    name.includes("chair") ||
+    category.includes("dining")
+  ) {
+    return "dining";
+  }
+
+  return null;
+};
+
+
+const warrantyKey = getWarrantyKey(product);
+const warranty = warrantyKey ? WARRANTY_DATA[warrantyKey] : null;
+
+console.log("Product name:", product?.name);
+console.log("Matched warranty:", warrantyKey);
+
+
   const handleWishlistToggle = async () => {
     if (!product) return;
 
@@ -1014,7 +1108,7 @@ export default function ProductDetailPage() {
                         )}
                       </div>
                     )}
-                    {tab.id === 'warranty' && (
+                    {tab.id === 'warranty' && warranty && (
                       <div className="space-y-4">
                         <p className="text-lg font-medium text-gray-900">Warranty Information</p>
                         <p className="text-gray-700">
@@ -1022,14 +1116,61 @@ export default function ProductDetailPage() {
                         </p>
                       </div>
                     )}
-                    {tab.id === 'delivery' && (
-                      <div className="space-y-4">
-                        <p className="text-lg font-medium text-gray-900">Delivery Information</p>
-                        <p className="text-gray-700">
-                          Free shipping on orders over $100. Standard delivery takes 5-7 business days. Express delivery available for an additional fee.
-                        </p>
-                      </div>
-                    )}
+                    {tab.id === "delivery" && (
+  <div className="space-y-6">
+    <p className="text-lg font-semibold text-gray-900">
+      Delivery & Collection Information
+    </p>
+
+    {/* Free Delivery Info */}
+    <p className="text-gray-700">
+      Enjoy free local delivery in <span className="font-medium">Cairns</span> on orders exceeding
+      <span className="font-medium"> $1,000</span>. For customers outside Cairns, please get in touch
+      with us for a personalised freight quote.
+    </p>
+
+    {/* Delivery Section */}
+    <div className="space-y-2">
+      <p className="font-medium text-gray-900">Delivery</p>
+      <ul className="list-disc pl-5 text-gray-700 space-y-1">
+        <li>Delivery includes unloading furniture into the nominated room only (no assembly or unpacking).</li>
+        <li>Redelivery fees may apply if the customer is not present at the time of delivery.</li>
+        <li>Delivery dates can be changed with at least 72 hours prior written notice.</li>
+        <li>
+          Dates and times are subject to change due to unforeseen circumstances. Customers will be
+          notified and delivery rescheduled if required.
+        </li>
+      </ul>
+    </div>
+
+    {/* Warehouse Collection Section */}
+    <div className="space-y-2">
+      <p className="font-medium text-gray-900">Warehouse Collection</p>
+      <ul className="list-disc pl-5 text-gray-700 space-y-1">
+        <li>Customers select a collection day at checkout.</li>
+        <li>
+          Collection can be made on a different day during open hours if required.
+        </li>
+        <li>
+          Printed invoice and collection docket must be obtained from the office/front counter,
+          along with valid photo ID.
+        </li>
+        <li>
+          An Authority to Collect form is required if someone other than the listed customer is
+          collecting the order.
+        </li>
+        <li>
+          Customers are responsible for loading items into their vehicle, with staff assistance
+          only in line with workplace health and safety guidelines.
+        </li>
+        <li>
+          Staff may provide guidance to ensure safe and efficient loading.
+        </li>
+      </ul>
+    </div>
+  </div>
+)}
+
                   </div>
                 )}
               </div>
@@ -1142,23 +1283,83 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {activeTab === 'warranty' && (
-              <div className="space-y-4">
-                <p className="text-lg font-medium text-gray-900">Warranty Information</p>
-                <p className="text-gray-700">
-                  {product.warranty || '1 year warranty included with every purchase. Our commitment to quality ensures your satisfaction.'}
-                </p>
-              </div>
-            )}
+     {activeTab === "warranty" && warranty && (
+  <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
+    {/* Header */}
+    <div className="px-5 py-3 bg-gray-50 border-b">
+      <h3 className="text-base font-semibold text-gray-800">
+        {warranty.title}
+      </h3>
+    </div>
 
-            {activeTab === 'delivery' && (
-              <div className="space-y-4">
-                <p className="text-lg font-medium text-gray-900">Delivery Information</p>
-                <p className="text-gray-700">
-                  Free shipping on orders over $100. Standard delivery takes 5-7 business days. Express delivery available for an additional fee.
-                </p>
-              </div>
-            )}
+    {/* Table */}
+    <div className="divide-y">
+      {warranty.items.map((item, index) => (
+        <div
+          key={index}
+          className="grid grid-cols-2 px-5 py-3 text-sm hover:bg-gray-50 transition"
+        >
+          <span className="text-gray-600">
+            {item.label}
+          </span>
+          <span className="text-right font-medium text-gray-900">
+            {item.years}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
+         {activeTab === "delivery" && (
+  <div className="space-y-6">
+    <p className="text-lg font-medium text-gray-900">
+      Delivery & Collection Information
+    </p>
+
+    <p className="text-gray-700">
+      Enjoy free local delivery in <span className="font-medium">Cairns</span> on
+      orders exceeding <span className="font-medium">$1,000</span>. For customers
+      outside Cairns, please contact us for a personalised freight quote.
+    </p>
+
+    <div className="space-y-2">
+      <p className="font-medium text-gray-900">Delivery</p>
+      <ul className="list-disc pl-5 text-gray-700 space-y-1">
+        <li>Delivery includes unloading furniture in the nominated room only (no assembly or unpacking).</li>
+        <li>Redelivery fees may apply if the customer is not home at the time of delivery.</li>
+        <li>Delivery dates can be changed with at least 72 hours prior written notice.</li>
+        <li>
+          Dates and times are subject to change due to unforeseen circumstances.
+          Customers will be notified and delivery rescheduled if required.
+        </li>
+      </ul>
+    </div>
+
+    <div className="space-y-2">
+      <p className="font-medium text-gray-900">Warehouse Collection</p>
+      <ul className="list-disc pl-5 text-gray-700 space-y-1">
+        <li>Customers select a collection day at checkout.</li>
+        <li>Collection can be made on a different day during open hours if required.</li>
+        <li>
+          Printed invoice and collection docket must be collected from the office/front counter,
+          along with valid photo ID.
+        </li>
+        <li>
+          An Authority to Collect form is required if someone other than the person listed on the
+          invoice is collecting.
+        </li>
+        <li>
+          Customers are responsible for loading items into their vehicle, with staff assistance only,
+          in line with workplace health and safety guidelines.
+        </li>
+        <li>Staff may provide guidance to ensure safe and efficient loading.</li>
+      </ul>
+    </div>
+  </div>
+)}
+
           </div>
         </div>
 
