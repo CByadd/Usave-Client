@@ -30,7 +30,7 @@ git branch refactor-backup
 
 ### Step 2.1: Run the Refactoring Script
 ```powershell
-cd x:\StackXX\Usave\client
+cd x:\StackXX\Duffy's Furniture\client
 .\refactor-script.ps1
 ```
 

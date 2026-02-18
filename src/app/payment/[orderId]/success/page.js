@@ -330,7 +330,7 @@ const PaymentSuccessPage = () => {
             You'll receive another email when your order ships.
           </p>
           <p className="text-xs text-[#0B4866]">
-            Need help? Contact our support team at support@usave.com
+            Need help? Contact our support team at support@duffysfurniture.com
           </p>
         </div>
       </div>

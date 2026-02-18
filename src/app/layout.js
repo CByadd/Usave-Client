@@ -27,10 +27,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Usave - Your Ultimate Online Shopping Destination",
-  description: "Usave - Your One-Stop Shop for Quality Products at Unbeatable Prices",
+  title: "Duffy's Furniture - Your Ultimate Online Shopping Destination",
+  description: "Duffy's Furniture - Your One-Stop Shop for Quality Products at Unbeatable Prices",
   icons: {
-    icon: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762295780/Usave/fav_oexlok.png",
+    icon: "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1762295780/Duffy's Furniture/fav_oexlok.png",
   },
 };
 

@@ -213,7 +213,7 @@ export default function LandingPage() {
       <AnimatedSection className="w-[99dvw] relative overflow-hidden" delay={0.9}>
         <div className="relative w-full">
           <Image
-            src="https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264173/Usave/unsplash_c0JoR_-2x3E_v543gf.jpg"
+            src="https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264173/usave/unsplash_c0JoR_-2x3E_v543gf.jpg"
             alt="Newsletter"
             width={1920}
             height={400}

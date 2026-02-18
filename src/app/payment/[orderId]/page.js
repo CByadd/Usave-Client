@@ -446,11 +446,11 @@ const PaymentPage = () => {
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Bank Name:</span>
-                    <span className="font-medium">Usave Bank</span>
+                    <span className="font-medium">Duffy's Furniture Bank</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Account Name:</span>
-                    <span className="font-medium">Usave Pty Ltd</span>
+                    <span className="font-medium">Duffy's Furniture Pty Ltd</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">BSB:</span>

@@ -1,6 +1,6 @@
 # Authentication, Cart & Checkout Implementation Guide
 
-This document outlines the comprehensive authentication, cart, and checkout functionality implemented for the Usave Commercial application.
+This document outlines the comprehensive authentication, cart, and checkout functionality implemented for the Duffy's Furniture Commercial application.
 
 ## 🚀 Features Implemented
 
@@ -34,7 +34,7 @@ const {
 ```
 
 #### **Demo Credentials**
-- **Email**: `demo@usave.com`
+- **Email**: `demo@Duffy's Furniture.com`
 - **Password**: `password123`
 
 ### 2. **Cart Management System**
@@ -285,7 +285,7 @@ const {
 ### **Authentication**
 ```javascript
 // Login
-const result = await login('demo@usave.com', 'password123');
+const result = await login('demo@Duffy's Furniture.com', 'password123');
 
 // Register
 const result = await register({

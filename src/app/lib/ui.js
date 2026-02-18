@@ -1,4 +1,4 @@
-// Simple UI state management - no context needed
+﻿// Simple UI state management - no context needed
 // Use local state in components instead
 
 // Toast notifications
@@ -59,7 +59,7 @@ export const openAuthDrawer = (tab = 'login', redirectPath = null) => {
   }
   // Also dispatch event for backward compatibility
   if (typeof window !== 'undefined') {
-    const event = new CustomEvent('usave:openAuth', { detail: { tab, redirectPath } });
+    const event = new CustomEvent("usave:openAuth", { detail: { tab, redirectPath } });
     document.body.dispatchEvent(event);
   }
 };
@@ -70,7 +70,7 @@ export const closeAuthDrawer = () => {
     store.getState().closeAuthDrawer();
   }
   if (typeof window !== 'undefined') {
-    const event = new CustomEvent('usave:closeAuth');
+    const event = new CustomEvent("usave:closeAuth");
     document.body.dispatchEvent(event);
   }
 };
@@ -81,7 +81,7 @@ export const openCartDrawer = () => {
     store.getState().openCartDrawer();
   }
   if (typeof window !== 'undefined') {
-    const event = new CustomEvent('usave:openCart');
+    const event = new CustomEvent("usave:openCart");
     document.body.dispatchEvent(event);
   }
 };
@@ -92,7 +92,7 @@ export const closeCartDrawer = () => {
     store.getState().closeCartDrawer();
   }
   if (typeof window !== 'undefined') {
-    const event = new CustomEvent('usave:closeCart');
+    const event = new CustomEvent("usave:closeCart");
     document.body.dispatchEvent(event);
   }
 };
@@ -119,4 +119,5 @@ export const setLoading = (isLoading, message = 'Loading...') => {
     store.getState().setLoading(isLoading, message);
   }
 };
+
 

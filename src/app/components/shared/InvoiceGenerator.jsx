@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useRef } from 'react';
 import jsPDF from 'jspdf';
 import { Download } from 'lucide-react';
@@ -17,7 +17,7 @@ export function generateInvoice(order, onComplete) {
   // Company Logo/Name
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
-  doc.text('Usave', 20, 20);
+  doc.text("Duffy's Furniture", 20, 20);
   
   doc.setFontSize(10);
   doc.text('123 Business Street', 20, 30);
@@ -212,5 +212,6 @@ export default function InvoiceGenerator({ order, className = '' }) {
     </button>
   );
 }
+
 
 

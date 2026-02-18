@@ -46,7 +46,7 @@ export async function POST(request) {
       // Priority 3: Fallback to environment variable or default
       const fallbackUrl = process.env.NEXT_PUBLIC_CLIENT_URL || 
              (process.env.NODE_ENV === 'production' 
-               ? 'https://usave-client.vercel.app' 
+               ? "https://duffys-furniture-client.vercel.app" 
                : 'http://localhost:3000');
       console.warn(`[API Route] No clientBaseUrl found, using fallback: ${fallbackUrl}`);
       return fallbackUrl;
@@ -91,3 +91,4 @@ export async function POST(request) {
     );
   }
 }
+

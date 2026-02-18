@@ -1,7 +1,7 @@
 # Server Setup Guide
 
 ## Overview
-This guide provides a basic server setup for the USave e-commerce application backend using Node.js and Express.
+This guide provides a basic server setup for the Duffy's Furniture e-commerce application backend using Node.js and Express.
 
 ## 🚀 Quick Start
 
@@ -12,8 +12,8 @@ This guide provides a basic server setup for the USave e-commerce application ba
 
 ### 1. Create Server Directory
 ```bash
-mkdir usave-server
-cd usave-server
+mkdir Duffy's Furniture-server
+cd Duffy's Furniture-server
 npm init -y
 ```
 
@@ -25,7 +25,7 @@ npm install -D nodemon
 
 ### 3. Basic Server Structure
 ```
-usave-server/
+Duffy's Furniture-server/
 ├── src/
 │   ├── controllers/
 │   │   ├── authController.js
@@ -104,7 +104,7 @@ app.listen(PORT, () => {
 PORT=3001
 NODE_ENV=development
 JWT_SECRET=your-super-secret-jwt-key
-MONGODB_URI=mongodb://localhost:27017/usave
+MONGODB_URI=mongodb://localhost:27017/Duffy's Furniture
 ```
 
 ### src/routes/auth.js
@@ -118,7 +118,7 @@ const jwt = require('jsonwebtoken');
 const users = [
   {
     id: 1,
-    email: 'demo@usave.com',
+    email: 'demo@Duffy's Furniture.com',
     password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password123
     firstName: 'John',
     lastName: 'Doe',
@@ -723,7 +723,7 @@ curl http://localhost:3001/api/health
 ```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"demo@usave.com","password":"password123"}'
+  -d '{"email":"demo@Duffy's Furniture.com","password":"password123"}'
 ```
 
 ### Get Products
@@ -774,7 +774,7 @@ curl "http://localhost:3001/api/products/search?q=sofa"
 7. **Testing**: Add unit and integration tests
 8. **Documentation**: Add API documentation with Swagger
 
-This basic server setup provides a foundation for the USave e-commerce application backend. You can extend it with additional features as needed.
+This basic server setup provides a foundation for the Duffy's Furniture e-commerce application backend. You can extend it with additional features as needed.
 
 
 

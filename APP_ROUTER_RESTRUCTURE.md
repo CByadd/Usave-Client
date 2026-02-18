@@ -1,6 +1,6 @@
 # Next.js 13+ App Router Restructure
 
-This document outlines the restructuring of the Usave Commercial application to follow proper Next.js 13+ App Router conventions.
+This document outlines the restructuring of the Duffy's Furniture Commercial application to follow proper Next.js 13+ App Router conventions.
 
 ## 🔧 Problem Solved
 

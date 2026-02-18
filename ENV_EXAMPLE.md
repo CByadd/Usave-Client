@@ -6,7 +6,7 @@ Create a file named `.env.local` in the `client` root directory with the followi
 
 ```env
 # ============================================
-# USave Client Environment Variables
+# Duffy's Furniture Client Environment Variables
 # ============================================
 # Copy this content to .env.local file
 # ============================================
@@ -16,7 +16,7 @@ Create a file named `.env.local` in the `client` root directory with the followi
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
 
 # Production: Use HTTPS with your production server
-# NEXT_PUBLIC_API_URL=https://usave-server.vercel.app/api
+# NEXT_PUBLIC_API_URL=https://Duffy's Furniture-server.vercel.app/api
 
 # Client URL (Optional - Auto-detected if not set)
 # NEXT_PUBLIC_CLIENT_URL=http://localhost:3000
@@ -27,10 +27,10 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 
 # Application Settings
 # Support Email Address
-NEXT_PUBLIC_SUPPORT_EMAIL=support@usave.com
+NEXT_PUBLIC_SUPPORT_EMAIL=support@Duffy's Furniture.com
 
 # Admin Email Address (for order approvals, etc.)
-NEXT_PUBLIC_ADMIN_EMAIL=admin@usave.com
+NEXT_PUBLIC_ADMIN_EMAIL=admin@Duffy's Furniture.com
 
 # NextAuth Configuration (if using)
 # NEXTAUTH_SECRET=your-secret-key-here
@@ -47,7 +47,7 @@ Create a file named `.env` in the `Server` root directory with the following con
 
 ```env
 # ============================================
-# USave Server Environment Variables
+# Duffy's Furniture Server Environment Variables
 # ============================================
 # Copy this content to .env file in Server directory
 # ============================================
@@ -57,7 +57,7 @@ PORT=3001
 NODE_ENV=development
 
 # Database Configuration
-DATABASE_URL=postgresql://user:password@localhost:5432/usave_db
+DATABASE_URL=postgresql://user:password@localhost:5432/Duffy's Furniture_db
 
 # JWT & Authentication
 JWT_SECRET=your-jwt-secret-key-here-change-in-production
@@ -65,14 +65,14 @@ JWT_EXPIRATION=604800
 
 # CORS Configuration
 # Allowed Origins (comma-separated)
-# CORS_ORIGIN=http://localhost:3000,https://usave-client.vercel.app
+# CORS_ORIGIN=http://localhost:3000,https://Duffy's Furniture-client.vercel.app
 
 # Email Configuration
 # SMTP_HOST=smtp.gmail.com
 # SMTP_PORT=587
 # SMTP_USER=your-email@gmail.com
 # SMTP_PASSWORD=your-app-password
-# SMTP_FROM=noreply@usave.com
+# SMTP_FROM=noreply@Duffy's Furniture.com
 
 # Resend API (Alternative to SMTP)
 # RESEND_API_KEY=re_your_resend_api_key
@@ -106,15 +106,15 @@ SESSION_SECRET=your-session-secret-change-in-production
 1. **Client**: Create `client/.env.local`:
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
-NEXT_PUBLIC_SUPPORT_EMAIL=support@usave.com
-NEXT_PUBLIC_ADMIN_EMAIL=admin@usave.com
+NEXT_PUBLIC_SUPPORT_EMAIL=support@Duffy's Furniture.com
+NEXT_PUBLIC_ADMIN_EMAIL=admin@Duffy's Furniture.com
 ```
 
 2. **Server**: Create `Server/.env`:
 ```bash
 PORT=3001
 NODE_ENV=development
-DATABASE_URL=postgresql://user:password@localhost:5432/usave_db
+DATABASE_URL=postgresql://user:password@localhost:5432/Duffy's Furniture_db
 JWT_SECRET=dev-secret-key-change-in-production
 FRONTEND_URL=http://localhost:3000
 BACKEND_URL=http://localhost:3001
@@ -124,8 +124,8 @@ BACKEND_URL=http://localhost:3001
 
 1. **Client**: Update `.env.local` or set environment variables:
 ```bash
-NEXT_PUBLIC_API_URL=https://usave-server.vercel.app/api
-NEXT_PUBLIC_CLIENT_URL=https://usave-client.vercel.app
+NEXT_PUBLIC_API_URL=https://Duffy's Furniture-server.vercel.app/api
+NEXT_PUBLIC_CLIENT_URL=https://Duffy's Furniture-client.vercel.app
 ```
 
 2. **Server**: Update environment variables:
@@ -133,8 +133,8 @@ NEXT_PUBLIC_CLIENT_URL=https://usave-client.vercel.app
 NODE_ENV=production
 DATABASE_URL=your-production-database-url
 JWT_SECRET=strong-production-secret
-FRONTEND_URL=https://usave-client.vercel.app
-BACKEND_URL=https://usave-server.vercel.app
+FRONTEND_URL=https://Duffy's Furniture-client.vercel.app
+BACKEND_URL=https://Duffy's Furniture-server.vercel.app
 ```
 
 ## Important Notes

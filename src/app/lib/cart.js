@@ -1,4 +1,4 @@
-// Simple cart module - no context needed
+﻿// Simple cart module - no context needed
 import { apiService } from '../services/api/apiClient';
 import { isAuthenticated } from './auth';
 
@@ -7,7 +7,7 @@ let cartItems = [];
 let totals = { subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 };
 
 // localStorage key
-const CART_STORAGE_KEY = 'usave_cart';
+const CART_STORAGE_KEY = "usave_cart";
 
 // Calculate totals from cart items
 const calculateTotals = (items) => {
@@ -345,4 +345,5 @@ if (typeof window !== 'undefined') {
   cartItems = loadCartFromStorage();
   totals = calculateTotals(cartItems);
 }
+
 

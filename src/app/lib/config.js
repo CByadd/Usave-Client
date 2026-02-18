@@ -21,7 +21,7 @@ const getServerUrl = () => {
   }
   
   // Production: use HTTPS
-  return 'https://usave-server.vercel.app/api';
+  return "https://usave-server.vercel.app/api";
 };
 
 // Application configuration
@@ -45,7 +45,7 @@ export const config = {
   urls: {
     // Base URLs
     client: process.env.NEXT_PUBLIC_CLIENT_URL || 
-            (isDevelopment ? 'http://localhost:3000' : 'https://usave-client.vercel.app'),
+            (isDevelopment ? 'http://localhost:3000' : "https://usave-client.vercel.app"),
     server: getServerUrl().replace('/api', ''),
     
     // Page Routes
@@ -162,10 +162,10 @@ export const config = {
 
   // Application Settings
   app: {
-    name: 'USave',
+    name: "Duffy's Furniture",
     version: '1.0.0',
-    supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@usave.com',
-    adminEmail: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@usave.com',
+    supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@duffysfurniture.com",
+    adminEmail: process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@duffysfurniture.com",
   },
 
   // Feature Flags
@@ -277,3 +277,4 @@ export const getPageUrl = (path) => {
 };
 
 export default config;
+

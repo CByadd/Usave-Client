@@ -38,8 +38,6 @@ const Navbar = () => {
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isCategoryBarCollapsed, setIsCategoryBarCollapsed] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [scrollDirection, setScrollDirection] = useState(null); // 'up' | 'down' | null
   const [categoryLinks, setCategoryLinks] = useState([]);
   const [isMountedClient, setIsMountedClient] = useState(false);
   const accountMenuRef = useRef(null);
@@ -211,13 +209,15 @@ const Navbar = () => {
   // );
 
   const renderLogo = () => (
-    <div className="flex items-center gap-2 h-10 overflow-hidden">
-      <Link href="/" className="flex items-center gap-2" onClick={closeMobile}>
+    <div className="flex h-10 w-[140px] items-center overflow-hidden sm:w-[160px] lg:w-[180px]">
+      <Link href="/" className="flex h-full w-full items-center" onClick={closeMobile}>
         <Image
           src={LOGO_WHITE_BG}
-          alt="Logo"
+          alt="Duffy's Furniture logo"
           width={160}
           height={48}
+          sizes="(max-width: 640px) 140px, (max-width: 1024px) 160px, 180px"
+          className="h-full w-full object-contain object-left"
           priority
         />
         {/* <Image
@@ -233,13 +233,15 @@ const Navbar = () => {
   );
 
   const renderLogoMobile = () => (
-    <div className="flex items-center gap-2 h-10 overflow-hidden">
-      <Link href="/" className="flex items-center gap-2" onClick={closeMobile}>
+    <div className="flex h-9 w-[110px] items-center overflow-hidden">
+      <Link href="/" className="flex h-full w-full items-center" onClick={closeMobile}>
         <Image
           src={LOGO_NONE_BG}
-          alt="Logo"
-          width={160}
+          alt="Duffy's Furniture logo"
+          width={110}
           height={48}
+          sizes="110px"
+          className="h-full w-full object-contain"
           priority
         />
       </Link>

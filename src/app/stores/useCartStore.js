@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { create } from 'zustand';
 import { apiService } from '../services/api/apiClient';
 import { isAuthenticated } from '../lib/auth';
 import { useWishlistStore } from './useWishlistStore';
 
-const CART_STORAGE_KEY = 'usave_cart';
+const CART_STORAGE_KEY = "usave_cart";
 
 // Helper function to safely parse number
 const safeParseNumber = (value, defaultValue = 0) => {
@@ -916,3 +916,4 @@ export const useCart = () => {
     getTotalQuantity,
   };
 };
+

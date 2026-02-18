@@ -87,7 +87,7 @@ Read `REFACTOR_GUIDE.md` for detailed information
 
 ### Step 2: Run the Script
 ```powershell
-cd x:\StackXX\Usave\client
+cd x:\StackXX\Duffy's Furniture\client
 .\refactor-script.ps1
 ```
 

@@ -1,7 +1,7 @@
 # Production-Level Implementation Guide
 
 ## Overview
-This guide documents the production-level implementation of the USave e-commerce application with Axios, Context API, server integration, and optimized performance.
+This guide documents the production-level implementation of the Duffy's Furniture e-commerce application with Axios, Context API, server integration, and optimized performance.
 
 ## 🚀 Key Features Implemented
 
@@ -176,7 +176,7 @@ const api = axios.create({
 - **Logout Handling**: Secure logout with token cleanup
 
 ### Mock Authentication (Development)
-- Email: `demo@usave.com`
+- Email: `demo@Duffy's Furniture.com`
 - Password: `password123`
 
 ### Real API Integration (Production)

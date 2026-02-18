@@ -94,7 +94,7 @@ export default function ContactPage() {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="w-full h-full"
-                title="Usave Commercial Location - Port Douglas & Portsmith, Cairns"
+                title="Duffy's Furniture Commercial Location - Port Douglas & Portsmith, Cairns"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">info@usavecommercial.com.au</p>
+                    <p className="text-gray-600">info@duffysfurniturecommercial.com.au</p>
                     <p className="text-sm text-gray-500">We'll respond within 24 hours</p>
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export default function ContactPage() {
             </div>
 
             <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-4">Why Choose Usave Commercial?</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">Why Choose Duffy's Furniture Commercial?</h3>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center gap-2">
                   <span className="text-green-500">✓</span>

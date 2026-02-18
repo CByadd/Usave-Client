@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { create } from 'zustand';
 import { apiService } from '../services/api/apiClient';
 import { isAuthenticated } from '../lib/auth';
 import { useCartStore } from './useCartStore';
 
-const WISHLIST_STORAGE_KEY = 'usave_wishlist';
+const WISHLIST_STORAGE_KEY = "usave_wishlist";
 
 // Load wishlist from localStorage
 const loadWishlistFromStorage = () => {
@@ -488,4 +488,5 @@ export const useIsInWishlist = (productId) => {
     );
   });
 };
+
 

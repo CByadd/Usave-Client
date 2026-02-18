@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -45,11 +45,11 @@ const CartDrawer = () => {
     const onClose = () => {
       useUIStore.getState().closeCartDrawer();
     };
-    document.body.addEventListener('usave:openCart', onOpen);
-    document.body.addEventListener('usave:closeCart', onClose);
+    document.body.addEventListener("Duffy's Furniture:openCart", onOpen);
+    document.body.addEventListener("Duffy's Furniture:closeCart", onClose);
     return () => {
-      document.body.removeEventListener('usave:openCart', onOpen);
-      document.body.removeEventListener('usave:closeCart', onClose);
+      document.body.removeEventListener("Duffy's Furniture:openCart", onOpen);
+      document.body.removeEventListener("Duffy's Furniture:closeCart", onClose);
     };
   }, []);
 
@@ -139,8 +139,8 @@ const CartDrawer = () => {
               // Fallback: dispatch close event
               if (typeof document !== 'undefined') {
                 try {
-                  document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
-                  console.log('[CartDrawer] Dispatched usave:closeCart event');
+                  document.body.dispatchEvent(new CustomEvent("Duffy's Furniture:closeCart"));
+                  console.log("[CartDrawer] Dispatched Duffy's Furniture:closeCart event");
                 } catch (err) {
                   console.error('[CartDrawer] Error dispatching close event:', err);
                 }
@@ -184,8 +184,8 @@ const CartDrawer = () => {
               // Fallback: dispatch close event
               if (typeof document !== 'undefined') {
                 try {
-                  document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
-                  console.log('[CartDrawer] Dispatched usave:closeCart event');
+                  document.body.dispatchEvent(new CustomEvent("Duffy's Furniture:closeCart"));
+                  console.log("[CartDrawer] Dispatched Duffy's Furniture:closeCart event");
                 } catch (err) {
                   console.error('[CartDrawer] Error dispatching close event:', err);
                 }
@@ -218,7 +218,7 @@ const CartDrawer = () => {
                   }
                   if (typeof document !== 'undefined') {
                     try {
-                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                      document.body.dispatchEvent(new CustomEvent("Duffy's Furniture:closeCart"));
                     } catch {}
                   }
                 }}
@@ -321,7 +321,7 @@ const CartDrawer = () => {
                   }
                   if (typeof document !== 'undefined') {
                     try {
-                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                      document.body.dispatchEvent(new CustomEvent("Duffy's Furniture:closeCart"));
                     } catch {}
                   }
                 }}
@@ -357,7 +357,7 @@ const CartDrawer = () => {
                       </div>
                       {item.includeInstallation && (
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Installation ({item.quantity} × ${item.installationFee || 0}):</span>
+                          <span className="text-sm text-gray-600">Installation ({item.quantity} Ã— ${item.installationFee || 0}):</span>
                           <span className="text-sm font-medium">${((item.installationFee || 0) * (item.quantity || 1)).toFixed(2)}</span>
                         </div>
                       )}
@@ -494,7 +494,7 @@ const CartDrawer = () => {
                   }
                   if (typeof document !== 'undefined') {
                     try {
-                      document.body.dispatchEvent(new CustomEvent('usave:closeCart'));
+                      document.body.dispatchEvent(new CustomEvent("Duffy's Furniture:closeCart"));
                     } catch {}
                   }
                   // Navigate to cart page
@@ -516,3 +516,4 @@ const CartDrawer = () => {
 };
 
 export default CartDrawer;
+

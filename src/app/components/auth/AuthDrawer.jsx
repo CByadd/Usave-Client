@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Eye, EyeOff, Mail, Lock, User, LogOut, ArrowLeft } from 'lucide-react';
@@ -1196,11 +1196,11 @@ const AuthDrawer = () => {
       setForceOpen(false);
       setAuthRedirectPath(null);
     };
-    document.body.addEventListener('usave:openAuth', onOpen);
-    document.body.addEventListener('usave:closeAuth', onClose);
+    document.body.addEventListener("Duffy's Furniture:openAuth", onOpen);
+    document.body.addEventListener("Duffy's Furniture:closeAuth", onClose);
     return () => {
-      document.body.removeEventListener('usave:openAuth', onOpen);
-      document.body.removeEventListener('usave:closeAuth', onClose);
+      document.body.removeEventListener("Duffy's Furniture:openAuth", onOpen);
+      document.body.removeEventListener("Duffy's Furniture:closeAuth", onClose);
     };
   }, [setAuthRedirectPath]);
   
@@ -1238,7 +1238,7 @@ const AuthDrawer = () => {
     // Fallback: dispatch close event
     if (typeof document !== 'undefined') {
       try {
-        document.body.dispatchEvent(new CustomEvent('usave:closeAuth'));
+        document.body.dispatchEvent(new CustomEvent("Duffy's Furniture:closeAuth"));
       } catch (err) {
         console.error('[AuthDrawer] Error dispatching close event:', err);
       }
@@ -1414,3 +1414,4 @@ const AuthDrawer = () => {
 };
 
 export default AuthDrawer;
+

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { LOGO_NONE_BG } from './../../lib/constants.js';
+import { LOGO_NONE_BG } from "../../lib/constants.js";
 import productService from '../../services/api/productService';
 
 const Footer = () => {
@@ -48,28 +48,28 @@ const Footer = () => {
         {/* Left Section */}
         <div className="md:col-span-2">
          <Image
-            src="https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763599313/dowsnload_11_qqd2gv.png"
-            alt="USAVE Logo"
+            src={LOGO_NONE_BG}
+            alt="Duffy's Furniture logo"
             width={125}
             height={50}
             className="mb-4"
          
          />
           <p className="text-sm text-gray-700 mb-4 leading-relaxed">
-            Welcome to USAVE Commercial, a family owned business in Far North
-            Queensland — your go-to for electrical, bedding, and furniture brands
+            Welcome to Duffy's Furniture, a family owned business in Far North
+            Queensland - your go-to for electrical, bedding, and furniture brands
             at competitive commercial prices.
           </p>
 
           <div className="flex items-start gap-2 mb-2">
             <MapPin className="text-gray-700 mt-1" size={18} />
             <p className="text-sm">
-              Portdouglas & Portsmith, Cairns, 4870
+             5 Robert St, Atherton QLD 4883, Australia
             </p>
           </div>
           <div className="flex items-start gap-2">
             <Phone className="text-gray-700 mt-1" size={18} />
-            <p className="text-sm">+61 0427-433-001</p>
+            <p className="text-sm"> +61 7 4091 1854</p>
           </div>
         </div>
 
@@ -270,7 +270,7 @@ const Footer = () => {
 
       {/* Bottom Text */}
       <div className="text-center mt-4 text-sm text-gray-600">
-        © 2025 Cairns Computer Genie. All rights reserved
+        © 2025 Duffy's Furniture. All rights reserved.
       </div>
     </footer>
   );

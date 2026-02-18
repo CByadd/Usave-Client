@@ -41,9 +41,9 @@ export default function InspirationSection() {
         "
       >
         {[
-          "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_DhFHtkECn7Q_lplnxw.jpg",
-          "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_reuIAvaxUMk_faofll.jpg",
-          "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Usave/unsplash_WUC_u5yoD2w_ru05gd.jpg",
+          "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Duffy's Furniture/unsplash_DhFHtkECn7Q_lplnxw.jpg",
+          "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Duffy's Furniture/unsplash_reuIAvaxUMk_faofll.jpg",
+          "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264124/Duffy's Furniture/unsplash_WUC_u5yoD2w_ru05gd.jpg",
         ].map((src, index) => (
           <div
             key={index}

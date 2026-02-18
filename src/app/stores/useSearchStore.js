@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { create } from 'zustand';
 
-const SEARCH_STORAGE_KEY = 'usave_search';
+const SEARCH_STORAGE_KEY = "usave_search";
 
 // Default advanced filter values
 const defaultAdvancedFilters = {
@@ -538,4 +538,5 @@ export const useSearch = () => {
     setResultsPerPage,
   };
 };
+
 

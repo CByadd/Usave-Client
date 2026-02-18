@@ -1,6 +1,6 @@
 # Routing and Search Functionality Guide
 
-This document outlines the implemented routing and search functionality for the Usave Commercial application.
+This document outlines the implemented routing and search functionality for the Duffy's Furniture Commercial application.
 
 ## 🚀 Features Implemented
 

@@ -1,6 +1,6 @@
 # Performance and Functionality Fixes
 
-This document outlines the fixes applied to resolve the reported issues with the Usave Commercial application.
+This document outlines the fixes applied to resolve the reported issues with the Duffy's Furniture Commercial application.
 
 ## 🐛 Issues Fixed
 
@@ -117,8 +117,8 @@ const nextConfig = {
 "img": "/images/armchair.png"
 
 // After (working URLs)
-"img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/EuropeanStyle_LinenBethbed_head_695x695_1_1_ctjlw7.jpg"
-"img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Usave/MelroseChair_2_600x600_1_1_oh7jmb.jpg"
+"img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Duffy's Furniture/EuropeanStyle_LinenBethbed_head_695x695_1_1_ctjlw7.jpg"
+"img": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264114/Duffy's Furniture/MelroseChair_2_600x600_1_1_oh7jmb.jpg"
 ```
 
 ### **Cart Integration**

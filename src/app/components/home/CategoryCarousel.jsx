@@ -6,7 +6,7 @@ import productService from "../../services/api/productService";
 import { useAnimationStore } from "../../stores/useAnimationStore";
 
 const FALLBACK_IMAGE =
-  "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264135/Usave/unsplash_p3UWyaujtQo_gor2oz.jpg";
+  "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264135/Duffy's Furniture/unsplash_p3UWyaujtQo_gor2oz.jpg";
 
 const CategoryCarousel = () => {
   const scrollRef = useRef(null);

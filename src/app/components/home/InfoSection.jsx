@@ -18,10 +18,10 @@ export default function InfoCat() {
       title: "HAVE QUESTIONS?",
       description: (
         <a
-          href="mailto:will@usavecommercial.com"
+          href="mailto:will@duffysfurniturecommercial.com"
           className="text-sky-800 hover:underline"
         >
-          will@usavecommercial.com
+          will@duffysfurniturecommercial.com
         </a>
       ),
     },

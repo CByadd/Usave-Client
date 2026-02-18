@@ -9,7 +9,7 @@ export default function ContactSection() {
       line2: "Cairns, QLD 4870",
       region: "Far North Queensland"
     },
-    email: "info@usavecommercial.com.au",
+    email: "info@duffysfurniturecommercial.com.au",
     phone: "+61 0427-433-001",
     hours: {
       weekdays: "Monday - Friday: 9:00 AM - 6:00 PM",
@@ -111,7 +111,7 @@ export default function ContactSection() {
           <div className="bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden border border-white/20">
             <div className="aspect-video w-full">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3749.1234567890!2d145.7654321!3d-16.8765432!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTbCsDUyJzM1LjYiUyAxNDXCsDQ1JzU1LjYiRQ!5e0!3m2!1sen!2sau!4v1234567890123!5m2!1sen!2sau"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3809.9709607129785!2d145.4753614!3d-17.2686398!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6982757164a89fc7%3A0x725e8f8cd4334acc!2sDuffy&#39;s%20Furniture%20Court%20%26%20Beds%20R%20Us!5e0!3m2!1sen!2sin!4v1771420870513!5m2!1sen!2sin"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -119,7 +119,7 @@ export default function ContactSection() {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="w-full h-full"
-                title="Usave Commercial Location"
+                title="Duffy's Furniture Commercial Location"
               />
             </div>
           </div>

@@ -26,7 +26,7 @@ function OwnerApproveOrderPageContent() {
     
     // If on localhost, replace with production URL
     if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
-      const productionUrl = config.urls.client || 'https://usave-client.vercel.app';
+      const productionUrl = config.urls.client || "https://duffys-furniture-client.vercel.app";
       return `${productionUrl}${path}`;
     }
     

@@ -16,7 +16,7 @@ Create a `.env.local` file in the client root directory:
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
 
 # For Production (uncomment when deploying)
-# NEXT_PUBLIC_API_URL=https://usave-server.vercel.app/api
+# NEXT_PUBLIC_API_URL=https://Duffy's Furniture-server.vercel.app/api
 
 # Client URL (optional, auto-detected)
 # NEXT_PUBLIC_CLIENT_URL=http://localhost:3000
@@ -25,10 +25,10 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 # NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dvmuf6jfj
 
 # Support Email
-# NEXT_PUBLIC_SUPPORT_EMAIL=support@usave.com
+# NEXT_PUBLIC_SUPPORT_EMAIL=support@Duffy's Furniture.com
 
 # Admin Email
-# NEXT_PUBLIC_ADMIN_EMAIL=admin@usave.com
+# NEXT_PUBLIC_ADMIN_EMAIL=admin@Duffy's Furniture.com
 ```
 
 ## Usage in Code
@@ -49,7 +49,7 @@ const apiUrl = config.api.baseURL;
 // Get full API endpoint URL
 const loginUrl = getApiUrl(config.endpoints.auth.login);
 // Returns: http://localhost:3001/api/auth/login (dev)
-// or: https://usave-server.vercel.app/api/auth/login (prod)
+// or: https://Duffy's Furniture-server.vercel.app/api/auth/login (prod)
 ```
 
 ### Using Page URLs
@@ -58,7 +58,7 @@ const loginUrl = getApiUrl(config.endpoints.auth.login);
 // Get page URL
 const checkoutUrl = getPageUrl(config.urls.checkout);
 // Returns: http://localhost:3000/checkout (dev)
-// or: https://usave-client.vercel.app/checkout (prod)
+// or: https://Duffy's Furniture-client.vercel.app/checkout (prod)
 
 // Dynamic URLs
 const productUrl = config.urls.product('123');
@@ -94,7 +94,7 @@ config.cart.taxRate
 
 The server (port 3001) should allow CORS from:
 - Development: `http://localhost:3000`
-- Production: `https://usave-client.vercel.app`
+- Production: `https://Duffy's Furniture-client.vercel.app`
 
 Check `Server/server.js` for CORS configuration.
 
@@ -106,9 +106,9 @@ Check `Server/server.js` for CORS configuration.
 - API Base: `http://localhost:3001/api`
 
 ### Production
-- Client: `https://usave-client.vercel.app`
-- Server: `https://usave-server.vercel.app`
-- API Base: `https://usave-server.vercel.app/api`
+- Client: `https://Duffy's Furniture-client.vercel.app`
+- Server: `https://Duffy's Furniture-server.vercel.app`
+- API Base: `https://Duffy's Furniture-server.vercel.app/api`
 
 ## Important Notes
 
