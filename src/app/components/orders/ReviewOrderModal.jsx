@@ -17,9 +17,8 @@ const buildStarArray = (rating, onSelect, disabled) =>
       <button
         key={starValue}
         type="button"
-        className={`text-xl transition-colors ${active ? 'text-yellow-400' : 'text-gray-300'} ${
-          disabled ? 'cursor-not-allowed opacity-70' : 'hover:text-yellow-400'
-        }`}
+        className={`text-xl transition-colors ${active ? 'text-yellow-400' : 'text-gray-300'} ${disabled ? 'cursor-not-allowed opacity-70' : 'hover:text-yellow-400'
+          }`}
         onClick={() => !disabled && onSelect(starValue)}
         aria-label={`Rate ${starValue} star${starValue > 1 ? 's' : ''}`}
         disabled={disabled}
@@ -148,7 +147,7 @@ export default function ReviewOrderModal({ isOpen, onClose, order, onSubmitted }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
         >
           <motion.div
             key="review-modal"

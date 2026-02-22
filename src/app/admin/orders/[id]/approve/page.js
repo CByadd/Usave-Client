@@ -41,7 +41,7 @@ function ApproveOrderPageContent() {
     const currentUser = getCurrentUser();
     const authenticated = isAuthenticated();
     setUser(currentUser);
-    
+
     if (!orderId) {
       setError('Order ID is missing');
       setLoading(false);
@@ -58,14 +58,14 @@ function ApproveOrderPageContent() {
     // Note: This page can be accessed with just the token (from email link)
     // Admin login is optional but recommended for better security
     validateTokenAndFetchOrder();
-    
+
     // Set up polling for order updates every 5 seconds
     const pollInterval = setInterval(() => {
       if (orderId) {
         validateTokenAndFetchOrder();
       }
     }, 5000);
-    
+
     return () => clearInterval(pollInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, token, router]);
@@ -76,8 +76,8 @@ function ApproveOrderPageContent() {
       // The backend should validate the token
       const authToken = localStorage.getItem('authToken');
       // Use the config's baseURL which already includes /api
-      const baseUrl = config.api.baseURL.endsWith('/api') 
-        ? config.api.baseURL 
+      const baseUrl = config.api.baseURL.endsWith('/api')
+        ? config.api.baseURL
         : `${config.api.baseURL}/api`;
       const response = await fetch(
         `${baseUrl}/orders/${orderId}?token=${token}`,
@@ -88,7 +88,7 @@ function ApproveOrderPageContent() {
           },
         }
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -218,7 +218,7 @@ function ApproveOrderPageContent() {
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             }
           });
-          
+
           if (response.ok) {
             showAlert({
               title: 'Success',
@@ -286,7 +286,7 @@ function ApproveOrderPageContent() {
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Order Review</h1>
-          
+
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               {error}
@@ -300,10 +300,59 @@ function ApproveOrderPageContent() {
                   Order #{order.orderNumber}
                 </h2>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span>Status: <span className="font-semibold capitalize">{order.status}</span></span>
+                  <span>Status: <span className="font-semibold capitalize">{order.status.replace(/_/g, ' ')}</span></span>
                   <span>Total: <span className="font-semibold">${order.total?.toFixed(2)}</span></span>
                 </div>
               </div>
+
+              {/* Owner Approval Feedback */}
+              {order.requiresOwnerApproval && (
+                <div className="mb-8 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-slate-100 px-4 py-3 border-b border-slate-200">
+                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      Owner Approval Feedback
+                    </h3>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-500">Decision:</span>
+                      {order.ownerApproved ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+                          APPROVED
+                        </span>
+                      ) : order.ownerRejected ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 text-xs font-bold border border-red-200">
+                          REJECTED
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200">
+                          PENDING
+                        </span>
+                      )}
+                    </div>
+
+                    {(order.ownerApprovalNotes || order.ownerRejectionNotes) && (
+                      <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Owner Notes</p>
+                        <p className="text-sm text-slate-700 italic">
+                          "{order.ownerApprovalNotes || order.ownerRejectionNotes}"
+                        </p>
+                      </div>
+                    )}
+
+                    {order.ownerApprovedAt && (
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Processed on {new Date(order.ownerApprovedAt).toLocaleString()}
+                      </p>
+                    )}
+                    {order.ownerRejectedAt && (
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Rejected on {new Date(order.ownerRejectedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Admin Order Editor with Add/Edit/Delete functionality */}
               <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} orderId={orderId} />

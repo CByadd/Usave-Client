@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { config } from '../../lib/config';
+import { API_ENDPOINTS, APP_ROUTES, buildApiUrl } from '../../lib/urls';
 
 // Create axios instance
 const api = axios.create({
@@ -14,9 +15,9 @@ const api = axios.create({
 const handleLogout = () => {
   if (typeof window !== 'undefined') {
     // Don't logout if we're on an order approval page (uses token query param, not Bearer token)
-    const isOrderApprovalPage = window.location.pathname.includes('/orders/') && 
-                                window.location.pathname.includes('/owner-approve');
-    
+    const isOrderApprovalPage = window.location.pathname.includes('/orders/') &&
+      window.location.pathname.includes('/owner-approve');
+
     if (isOrderApprovalPage) {
       // For order approval pages, just clear the auth token but don't redirect
       // The page will handle showing the error message
@@ -24,15 +25,15 @@ const handleLogout = () => {
       localStorage.removeItem('userData');
       return;
     }
-    
+
     // Clear auth data
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
-    
+
     // Redirect to home page
     // Use window.location to ensure full page reload and clear any cached state
-    if (window.location.pathname !== '/') {
-      window.location.href = '/';
+    if (window.location.pathname !== APP_ROUTES.home) {
+      window.location.href = APP_ROUTES.home;
     } else {
       // If already on home page, reload to clear any cached state
       window.location.reload();
@@ -45,12 +46,12 @@ api.interceptors.request.use(
   (config) => {
     // Get token from localStorage
     const token = getAuthToken();
-    
+
     // Add Authorization header if token exists
     if (token && !config.headers.Authorization && !config.headers.authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {
@@ -64,18 +65,18 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Check if this is an order approval page (uses token query param, not Bearer token)
-      const isOrderApprovalPage = typeof window !== 'undefined' && 
-                                  window.location.pathname.includes('/orders/') && 
-                                  window.location.pathname.includes('/owner-approve');
-      
+      const isOrderApprovalPage = typeof window !== 'undefined' &&
+        window.location.pathname.includes('/orders/') &&
+        window.location.pathname.includes('/owner-approve');
+
       // Check if request had Authorization header (was an authenticated request)
       const config = error.config || {};
       const headers = config.headers || {};
       const hadAuthHeader = !!(headers.Authorization || headers.authorization);
-      
+
       // Check if there's a token in localStorage (user was logged in)
       const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
-      
+
       // Only auto-logout if:
       // 1. Request had Authorization header OR user has token in localStorage (was authenticated)
       // 2. Not on order approval page (which uses query param tokens)
@@ -91,63 +92,7 @@ api.interceptors.response.use(
 );
 
 // API endpoints
-export const apiEndpoints = {
-  auth: {
-    login: '/auth/login',
-    register: '/auth/register',
-    logout: '/auth/logout',
-    me: '/auth/me',
-    profile: '/auth/profile',
-    refresh: '/auth/refresh',
-    sendRegistrationOTP: '/auth/send-registration-otp',
-    verifyAndRegister: '/auth/verify-and-register',
-    sendPasswordResetOTP: '/auth/send-password-reset-otp',
-    verifyPasswordResetOTP: '/auth/verify-password-reset-otp',
-    resetPassword: '/auth/reset-password',
-  },
-  products: {
-    getAll: '/products',
-    getById: (id) => `/products/${id}`,
-    search: '/products/search',
-    filter: '/products/filter',
-    getSuggestions: '/products/suggestions',
-    getReviews: (id) => `/products/${id}/reviews`,
-    getNavCategories: '/products/categories/nav',
-  },
-  cart: {
-    get: '/cart',
-    add: '/cart/add',
-    update: '/cart/update',
-    save: '/cart/save', // Save entire cart as single object
-    remove: '/cart/remove',
-    clear: '/cart/clear',
-  },
-  orders: {
-    getAll: '/orders',
-    getById: (id) => `/orders/${id}`,
-    create: '/orders',
-    cancel: (id) => `/orders/${id}/cancel`,
-  },
-  wishlist: {
-    get: '/wishlist',
-    add: '/wishlist',
-    remove: (productId) => `/wishlist/${productId}`,
-    clear: '/wishlist',
-  },
-
-  reviews: {
-    submit: '/reviews',
-    mine: '/reviews/mine',
-    eligible: '/reviews/eligible',
-  },
-  user: {
-    profile: '/user/profile',
-    addresses: '/user/addresses',
-    addAddress: '/user/addresses',
-    updateAddress: (id) => `/user/addresses/${id}`,
-    deleteAddress: (id) => `/user/addresses/${id}`,
-  },
-};
+export const apiEndpoints = API_ENDPOINTS;
 
 // Helper to get auth token
 const getAuthToken = () => {
@@ -163,7 +108,7 @@ export const apiService = {
     async login(email, password) {
       console.log('API: Login request to:', `${api.defaults.baseURL}${apiEndpoints.auth.login}`);
       console.log('API: Email:', email);
-      
+
       try {
         const response = await axios.post(
           `${api.defaults.baseURL}${apiEndpoints.auth.login}`,
@@ -174,7 +119,7 @@ export const apiService = {
             },
           }
         );
-        
+
         console.log('API: Login response:', response.data);
         return response.data;
       } catch (error) {
@@ -182,7 +127,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async register(userData) {
       try {
         const response = await axios.post(
@@ -200,7 +145,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async sendRegistrationOTP(email) {
       try {
         const response = await axios.post(
@@ -218,7 +163,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async verifyAndRegister(userData) {
       try {
         const response = await axios.post(
@@ -236,7 +181,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async sendPasswordResetOTP(email) {
       try {
         const response = await axios.post(
@@ -254,7 +199,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async verifyPasswordResetOTP(email, otp) {
       try {
         const response = await axios.post(
@@ -272,7 +217,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async resetPassword(resetToken, newPassword) {
       try {
         const response = await axios.post(
@@ -290,7 +235,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async logout() {
       const token = getAuthToken();
       try {
@@ -310,13 +255,13 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async getCurrentUser() {
       const token = getAuthToken();
       if (!token) {
         throw new Error('No token found');
       }
-      
+
       try {
         const response = await axios.get(
           `${api.defaults.baseURL}${apiEndpoints.auth.me}`,
@@ -333,7 +278,7 @@ export const apiService = {
       }
     },
   },
-  
+
   products: {
     async getAll(params = {}) {
       try {
@@ -347,7 +292,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async getById(id) {
       try {
         const response = await axios.get(
@@ -359,11 +304,11 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async getLandingPageProducts(category) {
       try {
         const response = await axios.get(
-          `${api.defaults.baseURL}/products/landing-page/${category}`
+          buildApiUrl(API_ENDPOINTS.products.getLandingPage(category))
         );
         return response.data;
       } catch (error) {
@@ -372,7 +317,7 @@ export const apiService = {
         return { success: true, data: { products: [] } };
       }
     },
-    
+
     async search(query, params = {}) {
       try {
         // Server expects POST with query in body
@@ -391,7 +336,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async filter(filters = {}) {
       try {
         const response = await axios.post(
@@ -404,7 +349,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async getSuggestions(query, limit = 10) {
       try {
         const response = await axios.get(
@@ -417,7 +362,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async getNavCategories() {
       try {
         const response = await axios.get(
@@ -429,8 +374,20 @@ export const apiService = {
         throw error;
       }
     },
+
+    async getCategoriesSummary() {
+      try {
+        const response = await axios.get(
+          `${api.defaults.baseURL}${apiEndpoints.products.getCategoriesSummary}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error('API: Get categories summary error:', error.response?.data || error.message);
+        throw error;
+      }
+    },
   },
-  
+
   cart: {
     async get() {
       const token = getAuthToken();
@@ -455,18 +412,18 @@ export const apiService = {
         const errorData = error.response?.data;
         const errorMessage = error.message || '';
         const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('timeout');
-        
+
         // Only log if there's actual error content and it's not a network error
-        if (status && status !== 404 && !isNetworkError && errorData && 
-            Object.keys(errorData).length > 0 && 
-            (errorData.error || errorData.message || Object.keys(errorData).some(key => errorData[key]))) {
+        if (status && status !== 404 && !isNetworkError && errorData &&
+          Object.keys(errorData).length > 0 &&
+          (errorData.error || errorData.message || Object.keys(errorData).some(key => errorData[key]))) {
           console.error('API: Get cart error:', errorData);
         }
         // Return empty cart on error instead of throwing - will use localStorage
         return { success: true, data: { items: [] } };
       }
     },
-    
+
     async addItem(productId, quantity = 1) {
       const token = getAuthToken();
       try {
@@ -496,7 +453,7 @@ export const apiService = {
         return { success: false, error: errorData?.error || error.message || 'Failed to add item to cart' };
       }
     },
-    
+
     async removeItem(productId) {
       const token = getAuthToken();
       try {
@@ -516,27 +473,27 @@ export const apiService = {
         if (status === 404 || !error.response) {
           return { success: false, error: 'Cart endpoint not available' };
         }
-        
+
         // Get error data
         const errorData = error.response?.data;
         const errorMessage = errorData?.error || error.message || 'Failed to remove item from cart';
-        
+
         // If item not found error (500), return it without logging
         // This happens when item exists in localStorage but not in API - it's expected
         if (status === 500 && (errorMessage.includes('not found') || errorMessage.includes('Cart item not found'))) {
           return { success: false, error: errorMessage };
         }
-        
+
         // Only log meaningful errors (not empty objects and not "not found" errors)
         if (status && status !== 404 && errorData && Object.keys(errorData).length > 0 && !errorMessage.includes('not found')) {
           console.error('API: Remove from cart error:', errorData);
         }
-        
+
         // Return error response instead of throwing
         return { success: false, error: errorMessage };
       }
     },
-    
+
     // Save entire cart as single object (for authenticated users)
     async save(cartData) {
       const token = getAuthToken();
@@ -581,7 +538,7 @@ export const apiService = {
         return { success: false, error: errorMessage };
       }
     },
-    
+
     async clear() {
       const token = getAuthToken();
       try {
@@ -608,7 +565,7 @@ export const apiService = {
       }
     },
   },
-  
+
   orders: {
     async getAll() {
       // Use api instance (with interceptors) instead of axios directly
@@ -620,7 +577,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async getById(id) {
       // Use api instance (with interceptors) instead of axios directly
       try {
@@ -645,7 +602,7 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async create(orderData) {
       const token = getAuthToken();
       try {
@@ -665,15 +622,15 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async approve(orderId, approvalNotes) {
       const token = getAuthToken();
       try {
         const response = await axios.put(
-          `${api.defaults.baseURL}${apiEndpoints.orders.getById(orderId)}/status`,
-          { 
+          buildApiUrl(API_ENDPOINTS.orders.status(orderId)),
+          {
             status: 'APPROVED',
-            approvalNotes 
+            approvalNotes
           },
           {
             headers: {
@@ -688,15 +645,15 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async reject(orderId, rejectionNotes) {
       const token = getAuthToken();
       try {
         const response = await axios.put(
-          `${api.defaults.baseURL}${apiEndpoints.orders.getById(orderId)}/status`,
-          { 
+          buildApiUrl(API_ENDPOINTS.orders.status(orderId)),
+          {
             status: 'REJECTED',
-            approvalNotes: rejectionNotes 
+            approvalNotes: rejectionNotes
           },
           {
             headers: {
@@ -711,12 +668,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async sendPaymentInfo(orderId, paymentDetails) {
       const token = getAuthToken();
       try {
         const response = await axios.post(
-          `${api.defaults.baseURL}${apiEndpoints.orders.getById(orderId)}/send-payment-info`,
+          buildApiUrl(API_ENDPOINTS.orders.sendPaymentInfo(orderId)),
           { paymentDetails },
           {
             headers: {
@@ -731,14 +688,14 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async requestReapproval(orderId, orderDetails, requiresOwnerApproval = false, ownerEmail = null) {
       // This method is kept for backward compatibility but not used directly
       // The ReApprovalModal handles the request directly
       const token = getAuthToken();
       try {
         const response = await axios.post(
-          `${api.defaults.baseURL}/api/orders/request-approval`,
+          buildApiUrl(API_ENDPOINTS.orders.requestApproval),
           {
             orderDetails,
             requiresOwnerApproval,
@@ -758,12 +715,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async addItemToOrder(orderId, productId, quantity = 1, ownerToken = null) {
       const token = ownerToken || getAuthToken();
       try {
         const response = await axios.post(
-          `${api.defaults.baseURL}/orders/${orderId}/items`,
+          buildApiUrl(API_ENDPOINTS.orders.addItem(orderId)),
           { productId, quantity, ...(ownerToken ? { token: ownerToken } : {}) },
           {
             headers: {
@@ -778,12 +735,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async updateOrderItemQuantity(orderId, itemId, quantity, ownerToken = null) {
       const token = ownerToken || getAuthToken();
       try {
         const response = await axios.put(
-          `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}`,
+          buildApiUrl(API_ENDPOINTS.orders.updateItem(orderId, itemId)),
           { quantity, ...(ownerToken ? { token: ownerToken } : {}) },
           {
             headers: {
@@ -798,12 +755,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async removeItemFromOrder(orderId, itemId, ownerToken = null) {
       const token = ownerToken || getAuthToken();
       try {
         const response = await axios.delete(
-          `${api.defaults.baseURL}/orders/${orderId}/items/${itemId}${ownerToken ? `?token=${ownerToken}` : ''}`,
+          buildApiUrl(API_ENDPOINTS.orders.removeItem(orderId, itemId, ownerToken)),
           {
             headers: {
               ...(token && !ownerToken ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -816,11 +773,11 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async saveOrderNotes(orderId, notes, token) {
       try {
         const response = await axios.post(
-          `${api.defaults.baseURL}/orders/${orderId}/owner-approve`,
+          buildApiUrl(API_ENDPOINTS.orders.ownerApprove(orderId)),
           { token, notes },
           {
             headers: {
@@ -834,11 +791,11 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     async ownerApprove(orderId, token, approved, approvalNotes = null, rejectionNotes = null) {
       try {
         const response = await axios.post(
-          `${api.defaults.baseURL}/orders/${orderId}/owner-approve`,
+          buildApiUrl(API_ENDPOINTS.orders.ownerApprove(orderId)),
           {
             token,
             approved,
@@ -858,7 +815,7 @@ export const apiService = {
       }
     },
   },
-  
+
   reviews: {
     async submit({ orderId, orderItemId, productId, rating, title, comment }) {
       const token = getAuthToken();
@@ -918,10 +875,11 @@ export const apiService = {
       }
     },
 
-    async getProductReviews(productId) {
+    async getProductReviews(productId, sort = 'newest') {
       try {
         const response = await axios.get(
-          `${api.defaults.baseURL}${apiEndpoints.products.getReviews(productId)}`
+          `${api.defaults.baseURL}${apiEndpoints.products.getReviews(productId)}`,
+          { params: { sort } }
         );
         return response.data;
       } catch (error) {
@@ -930,7 +888,7 @@ export const apiService = {
       }
     },
   },
-  
+
   wishlist: {
     async get() {
       const token = getAuthToken();
@@ -959,7 +917,7 @@ export const apiService = {
         return { success: true, data: { items: [] } };
       }
     },
-    
+
     async addItem(productId) {
       const token = getAuthToken();
       try {
@@ -984,7 +942,7 @@ export const apiService = {
         const errorData = error.response?.data;
         const errorMessage = error.message || '';
         const isNetworkError = errorMessage.includes('Network Error') || errorMessage.includes('timeout');
-        
+
         // Log error details for debugging
         if (status && status !== 404 && !isNetworkError) {
           const errorMsg = errorData?.error || errorData?.message || error.message || 'Failed to add item to wishlist';
@@ -1001,7 +959,7 @@ export const apiService = {
         return { success: false, error: errorMsg };
       }
     },
-    
+
     async removeItem(productId) {
       const token = getAuthToken();
       try {
@@ -1037,7 +995,7 @@ export const apiService = {
         return { success: false, error: errorMsg };
       }
     },
-    
+
     async clear() {
       const token = getAuthToken();
       try {
@@ -1066,13 +1024,13 @@ export const apiService = {
       }
     },
   },
-  
+
   user: {
     // Get user profile
     async getProfile() {
       const token = getAuthToken();
       try {
-        const response = await axios.get(
+        const response = await api.get(
           `${api.defaults.baseURL}${apiEndpoints.user.profile}`,
           {
             headers: {
@@ -1086,12 +1044,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     // Update user profile
     async updateProfile(profileData) {
       const token = getAuthToken();
       try {
-        const response = await axios.put(
+        const response = await api.put(
           `${api.defaults.baseURL}${apiEndpoints.user.profile}`,
           profileData,
           {
@@ -1107,12 +1065,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     // Get user addresses
     async getAddresses() {
       const token = getAuthToken();
       try {
-        const response = await axios.get(
+        const response = await api.get(
           `${api.defaults.baseURL}${apiEndpoints.user.addresses}`,
           {
             headers: {
@@ -1126,12 +1084,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     // Add address
     async addAddress(addressData) {
       const token = getAuthToken();
       try {
-        const response = await axios.post(
+        const response = await api.post(
           `${api.defaults.baseURL}${apiEndpoints.user.addAddress}`,
           addressData,
           {
@@ -1147,12 +1105,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     // Update address
     async updateAddress(addressId, addressData) {
       const token = getAuthToken();
       try {
-        const response = await axios.put(
+        const response = await api.put(
           `${api.defaults.baseURL}${apiEndpoints.user.updateAddress(addressId)}`,
           addressData,
           {
@@ -1168,12 +1126,12 @@ export const apiService = {
         throw error;
       }
     },
-    
+
     // Delete address
     async deleteAddress(addressId) {
       const token = getAuthToken();
       try {
-        const response = await axios.delete(
+        const response = await api.delete(
           `${api.defaults.baseURL}${apiEndpoints.user.deleteAddress(addressId)}`,
           {
             headers: {

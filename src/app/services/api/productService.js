@@ -88,18 +88,27 @@ class ProductService {
     return this.getAllProducts({ ...filters, category });
   }
 
-  async getCategories(limit = 200) {
+  async getCategories() {
     try {
-      const response = await apiService.products.getAll({ limit });
-      if (!response?.success) {
+      const response = await apiService.products.getCategoriesSummary();
+      if (response?.success) {
         return response;
       }
 
-      const products = response.data?.products || [];
+      // Fallback to old client-side calculation if summary endpoint fails
+      const fallbackLimit = 200;
+      const resp = await apiService.products.getAll({ limit: fallbackLimit });
+      if (!resp?.success) {
+        return resp;
+      }
+
+      const products = resp.data?.products || [];
       const map = new Map();
 
       products.forEach((product) => {
         const slug = (product.category || "uncategorized").toLowerCase();
+        if (slug === "shop by places" || slug === "places") return;
+
         const entry = map.get(slug) || {
           id: slug,
           name: titleCase(slug),

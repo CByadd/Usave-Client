@@ -20,17 +20,17 @@ import { useAnimationStore } from '../stores/useAnimationStore'
 
 // Animation variants for sections - buttery smooth
 const fadeInUp = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     y: 40,
     scale: 0.98,
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     scale: 1,
-    transition: { 
-      duration: 0.7, 
+    transition: {
+      duration: 0.7,
       ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for ultra-smooth animation
       opacity: { duration: 0.5 },
       y: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
@@ -43,7 +43,7 @@ const fadeInUp = {
 // On mobile, no animations. On desktop, content is always visible.
 const AnimatedSection = ({ children, delay = 0, className = '' }) => {
   const ref = useRef(null);
-  
+
   // Always render as regular section to ensure content is always visible
   // This fixes the issue where content wasn't rendering
   return (
@@ -110,36 +110,27 @@ export default function LandingPage() {
     <div className='flex flex-col items-center justify-center mx-auto gap-16 md:gap-20'>
       {/* Hero section - visible immediately, no animation */}
       <section className="md:w-[95dvw] w-full overflow-hidden">
-        <HeroSection/>
+        <HeroSection />
       </section>
-      
+
       <AnimatedSection className=" w-full flex flex-col items-center justify-center overflow-hidden " delay={0.1}>
         <div className="w-[90%]">
-       <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/products"/>
+          <CategoryHeader title="Explore by Category" buttonText="Explore All" buttonLink="/products" />
         </div>
-         
+
         <div className="md:w-[90dvw] w-[100dvw] overflow-hidden">
-          <CategoryCarousel/>
+          <CategoryCarousel />
         </div>
       </AnimatedSection>
 
 
-      <AnimatedSection className='w-[99dvw] flex flex-col items-center justify-center overflow-hidden' delay={0.3}>
-        <div className="w-[90%]">
-          <CategoryHeader title="Explore Product By Places" buttonText="See All Products" buttonLink="/places"/>
-        </div>
-        <div className="w-[99dvw] overflow-hidden">
-          <FullWidthCategory/>
-          <InfoSection/>
-        </div>
-      </AnimatedSection>
 
       <AnimatedSection className='md:w-[90dvw] w-[100dvw]' delay={0.4}>
-        <CategoryShowcase/>
+        <CategoryShowcase />
       </AnimatedSection>
 
       <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.5}>
-        <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/products?category=living"/>
+        <CategoryHeader title="Living room needs" buttonText="See All Products" buttonLink="/products?category=living" />
         {loading.livingroom ? (
           <div className="flex items-center justify-center py-12">
             <LandingPageSkeleton />
@@ -160,7 +151,7 @@ export default function LandingPage() {
       </AnimatedSection>
 
       <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.6}>
-        <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/products?category=bedroom"/>
+        <CategoryHeader title="Bedroom needs" buttonText="See All Products" buttonLink="/products?category=bedroom" />
         {loading.bedroom ? (
           <div className="flex items-center justify-center py-12">
             <LandingPageSkeleton />
@@ -181,7 +172,7 @@ export default function LandingPage() {
       </AnimatedSection>
 
       <AnimatedSection className='w-[90dvw] overflow-hidden' delay={0.7}>
-        <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/products?category=kitchen"/>
+        <CategoryHeader title="Kitchen needs" buttonText="See All Products" buttonLink="/products?category=kitchen" />
         {loading.kitchen ? (
           <div className="flex items-center justify-center py-12">
             <LandingPageSkeleton />

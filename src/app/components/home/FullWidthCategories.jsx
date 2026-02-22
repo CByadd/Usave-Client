@@ -11,25 +11,25 @@ const categories = [
   {
     "title": "Living Room",
     "para": "Modern furniture for your living room.",
-    "link": "/places/living-room",
+    "link": "/search?category=lounges",
     "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598824/download_7_x7v9kf.png"
   },
   {
     "title": "Dining Room",
     "para": "Elegant dining tables and chairs.",
-    "link": "/places/dining-room",
+    "link": "/search?category=dining",
     "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598965/download_10_xemzob.png"
   },
   {
     "title": "Bedroom",
     "para": "Cozy beds and wardrobes.",
-    "link": "/places/bedroom",
+    "link": "/search?category=bedroom",
     "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598821/download_8_xiby6w.png"
   },
   {
     "title": "Outdoor",
     "para": "Stylish outdoor furniture.",
-    "link": "/places/office",
+    "link": "/search?category=outdoor",
     "bgImg": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598821/download_9_er1z7t.png"
   }
 ]
@@ -38,7 +38,7 @@ const categories = [
 
 const FullWCategory = () => {
   const isMobile = useAnimationStore((state) => state.isMobile);
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 w-full">
       {categories.map((cat, index) => (
@@ -53,33 +53,33 @@ const FullWCategory = () => {
           }}
         >
           {/* Black gradient overlay for text visibility */}
-          <div 
+          <div
             className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/30 to-transparent pointer-events-none"
             style={isMobile ? { transition: 'none', animation: 'none' } : {}}
           />
-          
-          <Link 
+
+          <Link
             href={cat.link}
             style={isMobile ? { transition: 'none', animation: 'none' } : {}}
           >
-            <span 
+            <span
               className="absolute inset-0 flex flex-col justify-end p-7 text-white"
               style={isMobile ? { transition: 'none', animation: 'none' } : {}}
             >
-              <h2 
+              <h2
                 className="text-3xl font-bold underline"
                 style={isMobile ? { transition: 'none', animation: 'none' } : {}}
               >
                 {cat.title}
               </h2>
-              <p 
+              <p
                 className="text-[18px]"
                 style={isMobile ? { transition: 'none', animation: 'none' } : {}}
               >
                 {cat.para}
               </p>
-              <ArrowRight 
-                size={40} 
+              <ArrowRight
+                size={40}
                 style={isMobile ? { transition: 'none', animation: 'none' } : {}}
               />
             </span>

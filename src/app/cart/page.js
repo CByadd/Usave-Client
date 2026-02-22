@@ -11,13 +11,13 @@ import { showToast, openAuthDrawer } from '../lib/ui';
 
 const CartPage = () => {
   const router = useRouter();
-  const { 
-    cartItems, 
-    totals, 
-    isLoading, 
-    error, 
-    updateQuantity, 
-    removeFromCart, 
+  const {
+    cartItems,
+    totals,
+    isLoading,
+    error,
+    updateQuantity,
+    removeFromCart,
     loadCart,
     getCartCount
   } = useCart();
@@ -34,7 +34,7 @@ const CartPage = () => {
     }
     const item = cartItems.find(i => i.id === itemId || i.productId === itemId);
     if (!item) return;
-    
+
     try {
       const result = await updateQuantity(item.productId || item.id, newQuantity);
       if (!result.success) {
@@ -49,7 +49,6 @@ const CartPage = () => {
     try {
       const result = await removeFromCart(itemId);
       if (result.success) {
-        await loadCart();
         showToast('Item removed from cart', 'success');
       } else {
         showToast(result.error || 'Failed to remove item', 'error');
@@ -121,12 +120,12 @@ const CartPage = () => {
               {cartItems.map((item) => {
                 const product = item.product || item;
                 const itemId = item.id || item.productId;
-                
+
                 // Helper function to get readable size value
                 const getReadableSize = () => {
                   const sizeValue = item.size || item.options?.size;
                   if (!sizeValue) return null;
-                  
+
                   // If it's "base-variant-1", try to get actual size from product
                   if (sizeValue === 'base-variant-1' || sizeValue.startsWith('base-variant')) {
                     // Check if product has size variants
@@ -144,43 +143,43 @@ const CartPage = () => {
                     // Don't show if it's just the base variant ID
                     return null;
                   }
-                  
+
                   // If it looks like an ID (long alphanumeric), try to find the variant
                   if (sizeValue.length > 20 && product.sizeVariants && Array.isArray(product.sizeVariants)) {
                     const variant = product.sizeVariants.find(v => v.id === sizeValue);
                     if (variant && variant.size) return variant.size;
                   }
-                  
+
                   // Return the value as-is if it looks like a readable size
                   return sizeValue;
                 };
-                
+
                 // Helper function to get readable color value
                 const getReadableColor = () => {
                   const colorValue = item.color || item.options?.color;
                   if (!colorValue) return null;
-                  
+
                   // If it looks like an ID (long alphanumeric string), try to find the variant
                   if (colorValue.length > 20 && product.colorVariants && Array.isArray(product.colorVariants)) {
                     const variant = product.colorVariants.find(v => v.id === colorValue);
                     if (variant && variant.color) return variant.color;
                   }
-                  
+
                   // Check if it's a valid color name (not unknown, n/a, or empty)
                   const trimmedColor = colorValue.trim();
-                  if (trimmedColor === '' || 
-                      trimmedColor.toLowerCase() === 'unknown' || 
-                      trimmedColor.toLowerCase() === 'n/a') {
+                  if (trimmedColor === '' ||
+                    trimmedColor.toLowerCase() === 'unknown' ||
+                    trimmedColor.toLowerCase() === 'n/a') {
                     return null;
                   }
-                  
+
                   // Return the value as-is if it looks like a readable color
                   return colorValue;
                 };
-                
+
                 const displaySize = getReadableSize();
                 const displayColor = getReadableColor();
-                
+
                 return (
                   <div key={itemId} className="bg-gray-50 rounded-lg p-4 sm:p-6 w-full overflow-hidden">
                     <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full">
@@ -237,9 +236,8 @@ const CartPage = () => {
 
                         {/* Stock Status */}
                         <div className="flex items-center gap-2 mb-3">
-                          <div className={`h-2 w-2 rounded-full ${
-                            (product.inStock !== false && item.inStock !== false) ? "bg-green-500" : "bg-red-500"
-                          }`} />
+                          <div className={`h-2 w-2 rounded-full ${(product.inStock !== false && item.inStock !== false) ? "bg-green-500" : "bg-red-500"
+                            }`} />
                           <span className="text-sm text-gray-600">
                             {(product.inStock !== false && item.inStock !== false) ? "In Stock" : "Out of Stock"}
                           </span>
@@ -324,14 +322,14 @@ const CartPage = () => {
             <div className="lg:col-span-1 w-full">
               <div className="bg-gray-50 rounded-lg p-4 sm:p-6 sticky top-24 w-full overflow-hidden">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
-                
+
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Products</span>
                     <span className="font-medium">${totals.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Excluding TAX</span>
+                    <span className="text-gray-600">GST (10%)</span>
                     <span className="font-medium">${totals.tax.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-gray-300 pt-3">

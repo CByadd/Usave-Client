@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 const createDefaultFormData = () => ({
   firstName: '',
@@ -25,124 +26,19 @@ const createDefaultCheckoutState = () => ({
   formData: createDefaultFormData(),
 });
 
-export const useCheckoutStore = create((set, get) => {
-  const initialCheckout = createDefaultCheckoutState();
+export const useCheckoutStore = create(
+  persist(
+    (set, get) => {
+      const initialCheckout = createDefaultCheckoutState();
 
-  return {
-    // Checkout state
-    shippingOption: initialCheckout.shippingOption,
-    warranty: initialCheckout.warranty,
-    deliveryDate: initialCheckout.deliveryDate,
-    deliveryTime: initialCheckout.deliveryTime,
-    cartExpanded: initialCheckout.cartExpanded,
-    formData: initialCheckout.formData,
-    errors: {},
-    isSubmitting: false,
-    showApprovalModal: false,
-    approvalModalData: null,
-    showErrorModal: false,
-    showSuccessModal: false,
-    errorMessage: '',
-    orderId: null,
-
-    // Set shipping option
-    setShippingOption: (option) => {
-      set({ shippingOption: option });
-    },
-
-    // Set warranty
-    setWarranty: (warranty) => {
-      set({ warranty });
-    },
-
-    // Set delivery date
-    setDeliveryDate: (date) => {
-      set({ deliveryDate: date });
-    },
-
-    // Set delivery time
-    setDeliveryTime: (time) => {
-      set({ deliveryTime: time });
-    },
-
-    // Toggle cart expanded
-    toggleCartExpanded: () => {
-      const { cartExpanded } = get();
-      set({ cartExpanded: !cartExpanded });
-    },
-
-    // Set cart expanded
-    setCartExpanded: (expanded) => {
-      set({ cartExpanded: expanded });
-    },
-
-    // Set form data
-    setFormData: (formData) => {
-      set({ formData });
-    },
-
-    // Update form field
-    updateFormField: (field, value) => {
-      const { formData } = get();
-      const newFormData = { ...formData, [field]: value };
-      set({ formData: newFormData });
-    },
-
-    // Set errors
-    setErrors: (errors) => {
-      set({ errors });
-    },
-
-    // Clear errors
-    clearErrors: () => {
-      set({ errors: {} });
-    },
-
-    // Set error for field
-    setFieldError: (field, error) => {
-      const { errors } = get();
-      set({ errors: { ...errors, [field]: error } });
-    },
-
-    // Set is submitting
-    setIsSubmitting: (isSubmitting) => {
-      set({ isSubmitting });
-    },
-
-    // Show approval modal
-    showApproval: (data = null) => {
-      set({ showApprovalModal: true, approvalModalData: data });
-    },
-
-    // Hide approval modal
-    hideApproval: () => {
-      set({ showApprovalModal: false, approvalModalData: null });
-    },
-
-    // Show error modal
-    showError: (message) => {
-      set({ showErrorModal: true, errorMessage: message });
-    },
-
-    // Hide error modal
-    hideError: () => {
-      set({ showErrorModal: false, errorMessage: '' });
-    },
-
-    // Show success modal
-    showSuccess: (orderId) => {
-      set({ showSuccessModal: true, orderId });
-    },
-
-    // Hide success modal
-    hideSuccess: () => {
-      set({ showSuccessModal: false, orderId: null });
-    },
-
-    // Reset checkout state
-    reset: () => {
-      const defaultState = {
-        ...createDefaultCheckoutState(),
+      return {
+        // Checkout state
+        shippingOption: initialCheckout.shippingOption,
+        warranty: initialCheckout.warranty,
+        deliveryDate: initialCheckout.deliveryDate,
+        deliveryTime: initialCheckout.deliveryTime,
+        cartExpanded: initialCheckout.cartExpanded,
+        formData: initialCheckout.formData,
         errors: {},
         isSubmitting: false,
         showApprovalModal: false,
@@ -151,11 +47,127 @@ export const useCheckoutStore = create((set, get) => {
         showSuccessModal: false,
         errorMessage: '',
         orderId: null,
+
+        // Set shipping option
+        setShippingOption: (option) => {
+          set({ shippingOption: option });
+        },
+
+        // Set warranty
+        setWarranty: (warranty) => {
+          set({ warranty });
+        },
+
+        // Set delivery date
+        setDeliveryDate: (date) => {
+          set({ deliveryDate: date });
+        },
+
+        // Set delivery time
+        setDeliveryTime: (time) => {
+          set({ deliveryTime: time });
+        },
+
+        // Toggle cart expanded
+        toggleCartExpanded: () => {
+          const { cartExpanded } = get();
+          set({ cartExpanded: !cartExpanded });
+        },
+
+        // Set cart expanded
+        setCartExpanded: (expanded) => {
+          set({ cartExpanded: expanded });
+        },
+
+        // Set form data
+        setFormData: (formData) => {
+          set({ formData });
+        },
+
+        // Update form field
+        updateFormField: (field, value) => {
+          const { formData } = get();
+          const newFormData = { ...formData, [field]: value };
+          set({ formData: newFormData });
+        },
+
+        // Set errors
+        setErrors: (errors) => {
+          set({ errors });
+        },
+
+        // Clear errors
+        clearErrors: () => {
+          set({ errors: {} });
+        },
+
+        // Set error for field
+        setFieldError: (field, error) => {
+          const { errors } = get();
+          set({ errors: { ...errors, [field]: error } });
+        },
+
+        // Set is submitting
+        setIsSubmitting: (isSubmitting) => {
+          set({ isSubmitting });
+        },
+
+        // Show approval modal
+        showApproval: (data = null) => {
+          set({ showApprovalModal: true, approvalModalData: data });
+        },
+
+        // Hide approval modal
+        hideApproval: () => {
+          set({ showApprovalModal: false, approvalModalData: null });
+        },
+
+        // Show error modal
+        showError: (message) => {
+          set({ showErrorModal: true, errorMessage: message });
+        },
+
+        // Hide error modal
+        hideError: () => {
+          set({ showErrorModal: false, errorMessage: '' });
+        },
+
+        // Show success modal
+        showSuccess: (orderId) => {
+          set({ showSuccessModal: true, orderId });
+        },
+
+        // Hide success modal
+        hideSuccess: () => {
+          set({ showSuccessModal: false, orderId: null });
+        },
+
+        // Reset checkout state
+        reset: () => {
+          const defaultState = {
+            ...createDefaultCheckoutState(),
+            errors: {},
+            isSubmitting: false,
+            showApprovalModal: false,
+            approvalModalData: null,
+            showErrorModal: false,
+            showSuccessModal: false,
+            errorMessage: '',
+            orderId: null,
+          };
+          set(defaultState);
+        },
       };
-      set(defaultState);
     },
-  };
-});
+    {
+      name: 'checkout-storage',
+      partialize: (state) => ({
+        formData: state.formData,
+        shippingOption: state.shippingOption
+      }),
+    }
+  )
+);
 
 // Export a hook that matches a simple API
 export const useCheckout = () => {

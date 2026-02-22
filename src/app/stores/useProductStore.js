@@ -12,7 +12,7 @@ const useProductStore = create((set, get) => ({
   reviewStats: { averageRating: 0, totalReviews: 0 },
   isLoading: false,
   error: null,
-  
+
   // UI state for product detail page
   selectedImage: 0,
   quantity: 1,
@@ -20,20 +20,20 @@ const useProductStore = create((set, get) => ({
   selectedSize: 'M',
   includeInstallation: false,
   activeTab: 'details',
-  
+
   // Actions
   fetchProduct: async (productId) => {
     if (!productId) return;
-    
+
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await productService.getProductById(productId);
       console.log('ProductService response:', response);
-      
+
       // Handle different response formats
       let product = null;
-      
+
       if (response && response.success) {
         // Standard format: { success: true, data: { product: {...} } } or { success: true, data: {...} }
         product = response.data?.product || response.data;
@@ -44,10 +44,10 @@ const useProductStore = create((set, get) => ({
         // Direct product object
         product = response;
       }
-      
+
       if (product && product.id) {
         const productColors = product?.colors || ['Beige', 'Brown'];
-        
+
         // Parse description if it's a JSON string with "text" field
         if (product.description) {
           try {
@@ -64,16 +64,16 @@ const useProductStore = create((set, get) => ({
             console.warn('Failed to parse description JSON:', e);
           }
         }
-        
+
         console.log('Setting product:', product);
-        
+
         set({
           product,
           selectedColor: productColors[0] || null,
           isLoading: false,
           error: null,
         });
-        
+
         // Fetch related products if category exists
         if (product?.category) {
           get().fetchRelatedProducts(productId);
@@ -97,7 +97,7 @@ const useProductStore = create((set, get) => ({
       });
     }
   },
-  
+
   fetchRelatedProducts: async (productId, limit = 4) => {
     const { product } = get();
     if (!product?.category || !productId) return;
@@ -112,50 +112,51 @@ const useProductStore = create((set, get) => ({
     }
   },
 
-  loadProductReviews: async (productId) => {
+  loadProductReviews: async (productId, sort = 'newest') => {
     if (!productId) return;
 
     try {
-      const response = await apiService.reviews.getProductReviews(productId);
+      const response = await apiService.reviews.getProductReviews(productId, sort);
       const reviewsData = response?.data || {};
       set({
         productReviews: reviewsData.reviews || [],
         reviewStats: {
           averageRating: Number(reviewsData.averageRating) || 0,
           totalReviews: reviewsData.totalReviews || (reviewsData.reviews?.length || 0),
+          ratingBreakdown: reviewsData.ratingBreakdown || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
         },
       });
     } catch (error) {
       console.error('Error fetching product reviews:', error);
       set({
         productReviews: [],
-        reviewStats: { averageRating: 0, totalReviews: 0 },
+        reviewStats: { averageRating: 0, totalReviews: 0, ratingBreakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
       });
     }
   },
-  
+
   setSelectedImage: (index) => set({ selectedImage: index }),
-  
+
   setQuantity: (quantity) => set({ quantity: Math.max(1, quantity) }),
-  
+
   incrementQuantity: () => {
     const { quantity } = get();
     set({ quantity: quantity + 1 });
   },
-  
+
   decrementQuantity: () => {
     const { quantity } = get();
     set({ quantity: Math.max(1, quantity - 1) });
   },
-  
+
   setSelectedColor: (color) => set({ selectedColor: color }),
-  
+
   setSelectedSize: (size) => set({ selectedSize: size }),
-  
+
   setIncludeInstallation: (include) => set({ includeInstallation: include }),
-  
+
   setActiveTab: (tab) => set({ activeTab: tab }),
-  
+
   resetProduct: () => set({
     product: null,
     relatedProducts: [],
@@ -169,7 +170,7 @@ const useProductStore = create((set, get) => ({
     activeTab: 'details',
     error: null,
   }),
-  
+
   nextImage: () => {
     const { product, selectedImage } = get();
     if (product?.images) {
@@ -177,7 +178,7 @@ const useProductStore = create((set, get) => ({
       set({ selectedImage: nextIndex });
     }
   },
-  
+
   prevImage: () => {
     const { product, selectedImage } = get();
     if (product?.images) {

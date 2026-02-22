@@ -24,7 +24,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
   // Use propOrderId first, then order.id as fallback - this ensures we always have an orderId
   // even if order.id is lost when all items are deleted
   const orderId = propOrderId || order.id;
-  
+
   // Validate orderId exists before allowing operations
   if (!orderId) {
     return <div className="p-4 text-red-500">Error: Order ID is missing. Please refresh the page.</div>;
@@ -55,7 +55,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
       setError('Order ID is missing. Please refresh the page.');
       return;
     }
-    
+
     setError('');
     setSuccess('');
     setLoading(true, 'Adding item...');
@@ -63,7 +63,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
       const response = await apiService.orders.addItemToOrder(orderId, product.id, 1, ownerToken);
       if (response.success) {
         // Handle different response structures
-        const updatedOrder = response.data?.order || response.data || response;
+        const updatedOrder = response.data?.order || response.data?.data || response.data || response;
         onOrderUpdate(updatedOrder);
         setSuccess(`Added ${product.title} to order`);
         setSearchQuery('');
@@ -77,7 +77,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
     } catch (err) {
       // Handle different error formats
       let errorMessage = 'Failed to add item';
-      
+
       if (err.response?.data?.error) {
         errorMessage = err.response.data.error;
       } else if (err.response?.data?.message) {
@@ -87,7 +87,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
       } else if (err.error) {
         errorMessage = err.error;
       }
-      
+
       setError(errorMessage);
       console.error('Add item error:', err);
     } finally {
@@ -95,48 +95,74 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
     }
   };
 
+  // Use a ref to store debounced quantity updates to prevent rapid API calls
+  const pendingUpdatesRef = React.useRef({});
+
   const handleUpdateQuantity = async (itemId, newQuantity) => {
     if (!orderId) {
       setError('Order ID is missing. Please refresh the page.');
       return;
     }
-    
+
     setError('');
     setSuccess('');
-    
+
     // Validate quantity
     if (!newQuantity || newQuantity < 1) {
       setError('Quantity must be at least 1');
       return;
     }
-    
-    try {
-      const response = await apiService.orders.updateOrderItemQuantity(orderId, itemId, newQuantity, ownerToken);
-      if (response.success) {
-        onOrderUpdate(response.data);
-        setSuccess('Quantity updated successfully');
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError(response.error || response.message || 'Failed to update quantity');
-      }
-    } catch (err) {
-      // Handle different error formats
-      let errorMessage = 'Failed to update quantity';
-      
-      if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      } else if (err.error) {
-        errorMessage = err.error;
-      }
-      
-      setError(errorMessage);
-      console.error('Update quantity error:', err);
+
+    // 1. OPTIMISTIC UPDATE: Update local state immediately
+    const updatedItems = orderItems.map(item =>
+      item.id === itemId ? { ...item, quantity: newQuantity } : item
+    );
+
+    // Also update order totals optimistically
+    const subtotal = updatedItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+    const tax = subtotal * 0.1;
+    const total = subtotal + tax;
+
+    onOrderUpdate({
+      ...order,
+      items: updatedItems,
+      subtotal,
+      tax,
+      total
+    });
+
+    // 2. DEBOUNCED API CALL: Prevent overwhelming the server
+    if (pendingUpdatesRef.current[itemId]) {
+      clearTimeout(pendingUpdatesRef.current[itemId]);
     }
+
+    pendingUpdatesRef.current[itemId] = setTimeout(async () => {
+      try {
+        const response = await apiService.orders.updateOrderItemQuantity(orderId, itemId, newQuantity, ownerToken);
+        if (response.success) {
+          // Handle different response structures from the API
+          const updatedOrder = response.data?.order || response.data?.data || response.data || response;
+          // Reconcile with server response (ensures tax/totals from backend are used)
+          onOrderUpdate(updatedOrder);
+          // Only show success for a brief moment if not clicking rapidly
+          setSuccess('Updated');
+          setTimeout(() => setSuccess(''), 1000);
+        } else {
+          setError(response.error || response.message || 'Failed to update quantity');
+          // Revert on error? Or just let the next sync fix it?
+          // For now, reload the original order to be safe
+          const refreshRes = await apiService.orders.getById(orderId, ownerToken);
+          if (refreshRes.success) onOrderUpdate(refreshRes.data);
+        }
+      } catch (err) {
+        let errorMessage = 'Failed to update quantity';
+        if (err.response?.data?.error) errorMessage = err.response.data.error;
+        setError(errorMessage);
+        console.error('Update quantity error:', err);
+      } finally {
+        delete pendingUpdatesRef.current[itemId];
+      }
+    }, 500); // 500ms debounce
   };
 
   const handleRemoveItem = async (itemId) => {
@@ -144,13 +170,13 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
       setError('Order ID is missing. Please refresh the page.');
       return;
     }
-    
+
     // Check if this is the last item
     const isLastItem = orderItems.length === 1;
-    const warningMessage = isLastItem 
+    const warningMessage = isLastItem
       ? 'This is the last item in the order. Removing it will leave the order empty. You can add new items after removing this one. Are you sure you want to continue?'
       : 'Are you sure you want to remove this item from the order?';
-    
+
     showAlert({
       title: 'Remove Item',
       message: warningMessage,
@@ -164,7 +190,9 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
         try {
           const response = await apiService.orders.removeItemFromOrder(orderId, itemId, ownerToken);
           if (response.success) {
-            onOrderUpdate(response.data);
+            // Handle different response structures
+            const updatedOrder = response.data?.order || response.data?.data || response.data || response;
+            onOrderUpdate(updatedOrder);
             setSuccess(isLastItem ? 'Last item removed. You can now add new items to the order.' : 'Item removed');
             // Don't show success alert for last item removal, just show the success message
             if (!isLastItem) {
@@ -188,7 +216,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
         } catch (err) {
           // Handle different error formats
           let errorMsg = 'Failed to remove item';
-          
+
           if (err.response?.data?.error) {
             errorMsg = err.response.data.error;
           } else if (err.response?.data?.message) {
@@ -198,7 +226,7 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
           } else if (err.error) {
             errorMsg = err.error;
           }
-          
+
           setError(errorMsg);
           showAlert({
             title: 'Error',
@@ -255,80 +283,80 @@ const AdminOrderEditor = ({ order, onOrderUpdate, ownerToken = null, orderId: pr
           <div className="text-center py-4 text-gray-500 text-sm">No items in this order</div>
         ) : (
           orderItems.map((item) => {
-          const product = item.product || {};
-          return (
-            <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
-              {product.image ? (
-                <OptimizedImage
-                  src={product.image}
-                  alt={product.title || 'Product'}
-                  width={60}
-                  height={60}
-                  className="w-15 h-15 object-cover rounded"
-                />
-              ) : (
-                <div className="w-15 h-15 bg-gray-100 rounded" />
-              )}
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h5 className="font-medium text-gray-900">{product.title || 'Item'}</h5>
-                  <button
-                    onClick={() => setQuickViewProduct(product)}
-                    className="p-1 text-gray-400 hover:text-[#0B4866] transition-colors"
-                    title="Quick View"
-                  >
-                    <Eye size={16} />
-                  </button>
+            const product = item.product || {};
+            return (
+              <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
+                {product.image ? (
+                  <OptimizedImage
+                    src={product.image}
+                    alt={product.title || 'Product'}
+                    width={60}
+                    height={60}
+                    className="w-15 h-15 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-15 h-15 bg-gray-100 rounded" />
+                )}
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h5 className="font-medium text-gray-900">{product.title || 'Item'}</h5>
+                    <button
+                      onClick={() => setQuickViewProduct(product)}
+                      className="p-1 text-gray-400 hover:text-[#0B4866] transition-colors"
+                      title="Quick View"
+                    >
+                      <Eye size={16} />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600">${(item.price || 0).toFixed(2)} each</p>
                 </div>
-                <p className="text-sm text-gray-600">${(item.price || 0).toFixed(2)} each</p>
+
+                {isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                      className="p-1 rounded-full border border-gray-300 hover:bg-gray-50"
+                      disabled={item.quantity <= 1}
+                    >
+                      <Minus size={16} />
+                    </button>
+
+                    <span className="text-sm font-medium w-8 text-center">
+                      {item.quantity}
+                    </span>
+
+                    <button
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                      className="p-1 rounded-full border border-gray-300 hover:bg-gray-50"
+                    >
+                      <Plus size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="ml-2 p-1 text-red-500 hover:text-red-700"
+                      title="Remove item"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                    <p className="font-medium text-gray-900">${((item.price || 0) * item.quantity).toFixed(2)}</p>
+                  </div>
+                )}
               </div>
-
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                    className="p-1 rounded-full border border-gray-300 hover:bg-gray-50"
-                    disabled={item.quantity <= 1}
-                  >
-                    <Minus size={16} />
-                  </button>
-                  
-                  <span className="text-sm font-medium w-8 text-center">
-                    {item.quantity}
-                  </span>
-                  
-                  <button
-                    onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                    className="p-1 rounded-full border border-gray-300 hover:bg-gray-50"
-                  >
-                    <Plus size={16} />
-                  </button>
-
-                  <button
-                    onClick={() => handleRemoveItem(item.id)}
-                    className="ml-2 p-1 text-red-500 hover:text-red-700"
-                    title="Remove item"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ) : (
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                  <p className="font-medium text-gray-900">${((item.price || 0) * item.quantity).toFixed(2)}</p>
-                </div>
-              )}
-            </div>
-          );
-        }))}
+            );
+          }))}
       </div>
 
       {/* Add Item Search */}
       {isEditing && (
         <div className="border-t border-gray-200 pt-4">
           <h4 className="text-sm font-medium text-gray-900 mb-3">Add Item to Order</h4>
-          
+
           <div className="relative">
             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
               <Search className="ml-3 text-gray-400" size={20} />

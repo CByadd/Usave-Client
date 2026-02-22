@@ -8,7 +8,7 @@ import InvoiceGenerator from '../../../components/shared/InvoiceGenerator';
 import { apiService as api } from '../../../services/api/apiClient';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
-import ReviewOrderModal from '../../../components/orders/ReviewOrderModal';
+import { useReviewStore } from '../../../stores/useReviewStore';
 import {
   getPendingReviewCount,
   isOrderReviewEligible,
@@ -20,12 +20,12 @@ const PaymentSuccessPage = () => {
   const params = useParams();
   const router = useRouter();
   const [user, setUser] = useState(null);
-  
+
   useEffect(() => {
     const currentUser = getCurrentUser();
     const authenticated = isAuthenticated();
     setUser(currentUser);
-    
+
     if (!authenticated) {
       router.push('/');
     }
@@ -34,7 +34,7 @@ const PaymentSuccessPage = () => {
 
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const { openReviewModal } = useReviewStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -51,7 +51,7 @@ const PaymentSuccessPage = () => {
       return Math.random() * (max - min) + min;
     }
 
-    const interval = setInterval(function() {
+    const interval = setInterval(function () {
       const timeLeft = animationEnd - Date.now();
 
       if (timeLeft <= 0) {
@@ -59,7 +59,7 @@ const PaymentSuccessPage = () => {
       }
 
       const particleCount = 50 * (timeLeft / duration);
-      
+
       confetti({
         ...defaults,
         particleCount,
@@ -83,20 +83,16 @@ const PaymentSuccessPage = () => {
       if (response.success) {
         setOrder(response.data?.order || response.data);
       }
-  const isReviewEligible = useMemo(() => isOrderReviewEligible(order), [order]);
-  const pendingReviewCount = useMemo(() => getPendingReviewCount(order), [order]);
+      const isReviewEligible = useMemo(() => isOrderReviewEligible(order), [order]);
+      const pendingReviewCount = useMemo(() => getPendingReviewCount(order), [order]);
 
-  const handleOpenReviewModal = () => {
-    setReviewModalOpen(true);
-  };
+      const handleOpenReviewModal = () => {
+        openReviewModal(order, handleReviewSubmitted);
+      };
 
-  const handleCloseReviewModal = () => {
-    setReviewModalOpen(false);
-  };
-
-  const handleReviewSubmitted = async () => {
-    await fetchOrder();
-  };
+      const handleReviewSubmitted = () => {
+        fetchOrder();
+      };
     } catch (err) {
       console.error('Failed to load order:', err);
     } finally {
@@ -334,13 +330,6 @@ const PaymentSuccessPage = () => {
           </p>
         </div>
       </div>
-
-      <ReviewOrderModal
-        isOpen={reviewModalOpen}
-        onClose={handleCloseReviewModal}
-        order={order}
-        onSubmitted={handleReviewSubmitted}
-      />
     </div>
   );
 };

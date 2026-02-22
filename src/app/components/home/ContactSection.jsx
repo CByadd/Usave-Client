@@ -12,9 +12,9 @@ export default function ContactSection() {
     email: "info@duffysfurniturecommercial.com.au",
     phone: "+61 0427-433-001",
     hours: {
-      weekdays: "Monday - Friday: 9:00 AM - 6:00 PM",
-      saturday: "Saturday: 9:00 AM - 4:00 PM",
-      sunday: "Sunday: Closed"
+      weekdays: "Monday - Friday: 8:30 AM - 5:00 PM",
+      saturday: "Saturday: 8:30 AM - 1:00 PM",
+      sunday: "Sunday: 10:00 AM - 2:00 PM"
     }
   };
 
@@ -23,9 +23,9 @@ export default function ContactSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Get in Touch</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Contact Duffy's Furniture Commercial</h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Have questions about our products or services? We're here to help you find the perfect furniture for your space.
+            Get in touch with us for expert furniture solutions in Cairns and Far North Queensland.
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg mb-2">Email Us</h3>
-                <a 
+                <a
                   href={`mailto:${contactInfo.email}`}
                   className="text-gray-400 hover:text-[#0B4866] transition-colors text-sm break-all"
                 >
@@ -75,13 +75,13 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg mb-2">Call Us</h3>
-                <a 
+                <a
                   href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}
                   className="text-gray-400 hover:text-[#0B4866] transition-colors text-sm"
                 >
                   {contactInfo.phone}
                 </a>
-                <p className="text-gray-400 text-xs mt-1">Mon-Fri 9AM-6PM</p>
+                <p className="text-gray-400 text-xs mt-1">Mon-Fri 8:30AM-5PM</p>
               </div>
             </div>
           </div>

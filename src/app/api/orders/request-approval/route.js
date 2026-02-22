@@ -1,19 +1,12 @@
 import { NextResponse } from 'next/server';
+import { config } from '../../../lib/config';
+import { API_ENDPOINTS, FALLBACK_URLS } from '../../../lib/urls';
 
 export async function POST(request) {
   try {
     const body = await request.json();
     const { adminEmail, orderDetails, userId, ownerEmail, clientBaseUrl: bodyClientBaseUrl } = body;
 
-    // Get backend URL - use HTTP for localhost, HTTPS for production
-    const getBackendUrl = () => {
-      if (process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.NEXT_PUBLIC_API_URL.replace('/api', '');
-      }
-      // Development: use HTTP (no SSL) for localhost
-      return 'http://localhost:3001';
-    };
-    
     // Get client base URL from request body, headers, or config
     const getClientBaseUrl = () => {
       // Priority 1: Use clientBaseUrl from request body (sent by client)
@@ -21,16 +14,16 @@ export async function POST(request) {
         console.log(`[API Route] Using clientBaseUrl from request body: ${bodyClientBaseUrl}`);
         return bodyClientBaseUrl.trim();
       }
-      
+
       // Priority 2: Try to get from request headers
       const origin = request.headers.get('origin');
       const referer = request.headers.get('referer');
-      
+
       if (origin) {
         console.log(`[API Route] Using clientBaseUrl from Origin header: ${origin}`);
         return origin;
       }
-      
+
       if (referer) {
         try {
           const refererUrl = new URL(referer);
@@ -42,28 +35,36 @@ export async function POST(request) {
           // Invalid referer, continue to fallback
         }
       }
-      
+
       // Priority 3: Fallback to environment variable or default
-      const fallbackUrl = process.env.NEXT_PUBLIC_CLIENT_URL || 
-             (process.env.NODE_ENV === 'production' 
-               ? "https://duffys-furniture-client.vercel.app" 
-               : 'http://localhost:3000');
+      const fallbackUrl = process.env.NEXT_PUBLIC_CLIENT_URL || config.urls.client || FALLBACK_URLS.clientProduction;
       console.warn(`[API Route] No clientBaseUrl found, using fallback: ${fallbackUrl}`);
       return fallbackUrl;
     };
-    
-    const backendUrl = getBackendUrl();
+
+    const backendEndpoint = API_ENDPOINTS.orders.requestApproval;
+    const backendApiUrl = `${config.api.baseURL}${backendEndpoint}`;
     const resolvedClientBaseUrl = getClientBaseUrl();
-    
+
+    // Log received authorization header
+    console.log('[API Route] Received Authorization header:', request.headers.get('authorization') ? 'Yes (hidden)' : 'No');
+
     console.log(`[API Route] Resolved clientBaseUrl: ${resolvedClientBaseUrl}`);
-    console.log(`[API Route] Forwarding request to backend: ${backendUrl}/api/orders/request-approval`);
-    
+    console.log(`[API Route] Forwarding request to backend: ${backendApiUrl}`);
+
     // Forward the request to your backend server
-    const response = await fetch(`${backendUrl}/api/orders/request-approval`, {
+    const forwardHeaders = {
+      'Content-Type': 'application/json',
+      // Forward authentication headers if present
+      ...(request.headers.get('cookie') ? { 'Cookie': request.headers.get('cookie') } : {}),
+      ...(request.headers.get('authorization') ? { 'Authorization': request.headers.get('authorization') } : {}),
+    };
+
+    console.log('[API Route] Forwarding headers:', Object.keys(forwardHeaders));
+
+    const response = await fetch(backendApiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: forwardHeaders,
       body: JSON.stringify({
         adminEmail,
         orderDetails,

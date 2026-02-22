@@ -10,12 +10,12 @@ import { showAlert, setLoading } from '../lib/ui';
 const AdminDashboard = () => {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  
+
   useEffect(() => {
     const currentUser = getCurrentUser();
     const authenticated = isAuthenticated();
     setUser(currentUser);
-    
+
     if (!authenticated || (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'SUPER_ADMIN')) {
       router.push('/admin/login');
     }
@@ -228,7 +228,7 @@ const AdminDashboard = () => {
 
   const handleUpdateProduct = async () => {
     if (!editingProduct) return;
-    
+
     if (!validateProductForm()) {
       return;
     }
@@ -550,9 +550,8 @@ const AdminDashboard = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`px-2 py-1 text-xs rounded-full ${product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
                             {product.inStock ? 'In Stock' : 'Out of Stock'}
                           </span>
                           {product.isFeatured && (
@@ -657,7 +656,7 @@ const AdminDashboard = () => {
                   {/* Basic Information */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Basic Information</h3>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
                       <input
@@ -718,7 +717,7 @@ const AdminDashboard = () => {
                   {/* Pricing & Inventory */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Pricing & Inventory</h3>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Original Price *</label>
                       <input

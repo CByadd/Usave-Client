@@ -1,4 +1,4 @@
-export const REVIEWABLE_ORDER_STATUSES = new Set(['DELIVERED', 'COMPLETED']);
+export const REVIEWABLE_ORDER_STATUSES = new Set(['DELIVERED']);
 export const REVIEWABLE_PAYMENT_STATUSES = new Set(['COMPLETED', 'PAID', 'RECEIVED']);
 
 const normaliseStatus = (value) => (typeof value === 'string' ? value.toUpperCase() : value);
@@ -14,8 +14,7 @@ export const getPendingReviewCount = (order) => {
 export const isOrderReviewEligible = (order) => {
   if (!order) return false;
   const statusEligible = REVIEWABLE_ORDER_STATUSES.has(normaliseStatus(order.status));
-  const paymentEligible = REVIEWABLE_PAYMENT_STATUSES.has(normaliseStatus(order.paymentStatus));
-  if (!statusEligible && !paymentEligible) {
+  if (!statusEligible) {
     return false;
   }
   const pendingCount = getPendingReviewCount(order);

@@ -21,9 +21,9 @@ export default function ContactPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     setLoading(true, 'Sending message...');
-    
+
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -38,14 +38,14 @@ export default function ContactPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to send message');
       }
-      
+
       showAlert({
         title: 'Message Sent!',
         message: data.message || 'Thank you for your message! We will get back to you soon.',
         type: 'success',
         confirmText: 'OK',
       });
-      
+
       // Reset form
       setFormData({
         name: '',
@@ -73,7 +73,7 @@ export default function ContactPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Get in touch with us for any questions about our products or services. 
+            Get in touch with us for any questions about our products or services.
             We're here to help you find the perfect furniture for your space.
           </p>
         </div>
@@ -127,7 +127,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
                     <p className="text-gray-600">+61 0427-433-001</p>
-                    <p className="text-sm text-gray-500">Mon-Fri 9AM-6PM</p>
+                    <p className="text-sm text-gray-500">Mon-Fri 8:30AM-5PM</p>
                   </div>
                 </div>
 
@@ -160,9 +160,9 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Business Hours</h3>
-                    <p className="text-gray-600">Monday - Friday: 9:00 AM - 6:00 PM</p>
-                    <p className="text-gray-600">Saturday: 9:00 AM - 4:00 PM</p>
-                    <p className="text-gray-600">Sunday: Closed</p>
+                    <p className="text-gray-600">Sunday: 10:00 AM - 2:00 PM</p>
+                    <p className="text-gray-600">Monday - Friday: 8:30 AM - 5:00 PM</p>
+                    <p className="text-gray-600">Saturday: 8:30 AM - 1:00 PM</p>
                   </div>
                 </div>
               </div>

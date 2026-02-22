@@ -4,10 +4,11 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { config } from '../../../lib/config';
 import { apiService } from '../../../services/api/apiClient';
+import { API_ENDPOINTS, APP_ROUTES, FALLBACK_URLS, buildApiUrl } from '../../../lib/urls';
 import AdminOrderEditor from '../../../components/admin/AdminOrderEditor';
 import OptimizedImage from '../../../components/shared/OptimizedImage';
 import QuickViewModal from '../../../components/product/QuickViewModal';
-import { CheckCircle2, XCircle, AlertCircle, Loader2, Edit, ThumbsUp, FileText, X as XIcon, Eye } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Loader2, Edit, ThumbsUp, FileText, X as XIcon, Eye, Package } from 'lucide-react';
 import { showAlert, setLoading as setGlobalLoading } from '../../../lib/ui';
 
 export const dynamic = 'force-dynamic';
@@ -20,16 +21,16 @@ function OwnerApproveOrderPageContent() {
   // Helper function to get production URL, replacing localhost if needed
   const getProductionUrl = (path = '/') => {
     if (typeof window === 'undefined') return path;
-    
+
     const currentUrl = window.location.href;
     const currentOrigin = window.location.origin;
-    
+
     // If on localhost, replace with production URL
     if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
-      const productionUrl = config.urls.client || "https://duffys-furniture-client.vercel.app";
+      const productionUrl = config.urls.client || FALLBACK_URLS.clientProduction;
       return `${productionUrl}${path}`;
     }
-    
+
     // Otherwise, use current domain
     return `${currentOrigin}${path}`;
   };
@@ -87,7 +88,7 @@ function OwnerApproveOrderPageContent() {
       // Use fetch with token query parameter for owner approval pages
       // This doesn't require authentication token, uses query param token instead
       // Use config.api.baseURL which correctly handles environment
-      const response = await fetch(`${config.api.baseURL}/orders/${orderId}?token=${token}`, {
+      const response = await fetch(`${buildApiUrl(API_ENDPOINTS.orders.getById(orderId))}?token=${token}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ function OwnerApproveOrderPageContent() {
       if (data.success) {
         const orderData = data.data?.order || data.data;
         setOrder(orderData);
-        
+
         // Check if already processed
         if (orderData.ownerApproved || orderData.ownerRejected) {
           setSuccess(true);
@@ -148,10 +149,10 @@ function OwnerApproveOrderPageContent() {
             const savedNotes = localStorage.getItem(`order_${orderId}_notes`);
             notesToSend = savedNotes || null;
           }
-          
+
           // Use fetch with correct baseURL for owner approval
           // Use config.api.baseURL which correctly handles environment
-          const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
+          const response = await fetch(buildApiUrl(API_ENDPOINTS.orders.ownerApprove(orderId)), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -222,7 +223,7 @@ function OwnerApproveOrderPageContent() {
 
       // Use fetch with correct baseURL for owner approval
       // Use config.api.baseURL which correctly handles environment
-      const response = await fetch(`${config.api.baseURL}/orders/${orderId}/owner-approve`, {
+      const response = await fetch(buildApiUrl(API_ENDPOINTS.orders.ownerApprove(orderId)), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -315,7 +316,7 @@ function OwnerApproveOrderPageContent() {
               if (typeof window !== 'undefined') {
                 window.location.href = url;
               } else {
-                router.push('/');
+                router.push(APP_ROUTES.home);
               }
             }}
             className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
@@ -366,9 +367,9 @@ function OwnerApproveOrderPageContent() {
                 onClick={() => {
                   // Use window.location to ensure we stay on the same domain
                   if (typeof window !== 'undefined') {
-                    window.location.href = '/';
+                    window.location.href = APP_ROUTES.home;
                   } else {
-                    router.push('/');
+                    router.push(APP_ROUTES.home);
                   }
                 }}
                 className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
@@ -396,7 +397,7 @@ function OwnerApproveOrderPageContent() {
               if (typeof window !== 'undefined') {
                 window.location.href = url;
               } else {
-                router.push('/');
+                router.push(APP_ROUTES.home);
               }
             }}
             className="w-full bg-[#0B4866] text-white px-4 py-2 rounded-lg hover:bg-[#0a3d55]"
@@ -411,211 +412,271 @@ function OwnerApproveOrderPageContent() {
   const items = order.items || [];
   const orderTotal = calculateTotal();
 
+  // Status hierarchy for owner view
+  const STATUS_FLOW = [
+    { label: 'Submitted', active: true },
+    { label: 'Owner Approval', active: !order.ownerApproved && !order.ownerRejected, current: !order.ownerApproved && !order.ownerRejected },
+    { label: 'Admin Review', active: order.ownerApproved && !order.adminApproved, current: order.ownerApproved && !order.adminApproved },
+    { label: 'Processing', active: order.adminApproved },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Page Title */}
-        <h1 className="text-3xl font-bold text-[#0B4866] mb-6">Order Approval</h1>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
-
-        {/* Order Card */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 hover:shadow-md transition-shadow">
-          <div className="flex items-start gap-4">
-            {/* Product Images */}
-            <div className="flex gap-2 flex-shrink-0">
-              {items.slice(0, 4).map((item, index) => (
-                <div key={index} className="relative group w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                  {item.product?.image ? (
-                    <>
-                      <OptimizedImage
-                        src={item.product.image}
-                        alt={item.product.title || 'Product'}
-                        width={64}
-                        height={64}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() => setQuickViewProduct(item.product)}
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                        title="Quick View"
-                      >
-                        <Eye size={20} className="text-white" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-gray-200" />
-                  )}
-                </div>
-              ))}
-              {items.length > 4 && (
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-600 font-medium">
-                  +{items.length - 4}
-                </div>
-              )}
+    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header with Glassmorphism Effect */}
+        <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/20 shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-[#0F172A] tracking-tight">Order Approval</h1>
+              <p className="text-slate-500 mt-1">Review and manage this order for your organization</p>
             </div>
+            <div className="flex items-center gap-3">
+              <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border shadow-sm ${getStatusBadge(order.status)}`}>
+                {getStatusLabel()}
+              </span>
+            </div>
+          </div>
 
-            {/* Order Details */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  {/* Status Badge */}
-                  <div className="mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(order.status)}`}>
-                      {getStatusLabel()}
-                    </span>
+          {/* Status Flow Visualizer */}
+          <div className="mt-8 flex items-center justify-between relative">
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -translate-y-1/2 z-0"></div>
+            {STATUS_FLOW.map((step, idx) => (
+              <div key={idx} className="relative z-10 flex flex-col items-center group">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${step.active
+                  ? step.current ? 'bg-[#0B4866] text-white ring-4 ring-[#0B4866]/10 lg:scale-110 shadow-lg' : 'bg-emerald-500 text-white shadow-md'
+                  : 'bg-white text-slate-300 border border-slate-200 shadow-sm'
+                  }`}>
+                  {step.active && !step.current ? (
+                    <CheckCircle2 size={20} />
+                  ) : (
+                    <span className="text-sm font-bold">{idx + 1}</span>
+                  )}
+                </div>
+                <span className={`text-[11px] font-bold uppercase tracking-wider mt-3 transition-colors duration-300 ${step.active ? step.current ? 'text-[#0B4866]' : 'text-emerald-600' : 'text-slate-400'
+                  }`}>
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Action Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-[#0B4866]/5 px-6 py-4 border-b border-slate-200">
+                <h2 className="text-lg font-bold text-[#0B4866] flex items-center gap-2">
+                  <Package size={20} />
+                  Order Summary
+                </h2>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-col sm:flex-row gap-6 mb-8">
+                  {/* Product Images Stack */}
+                  <div className="flex -space-x-4">
+                    {items.slice(0, 3).map((item, index) => (
+                      <div key={index} className="relative w-20 h-20 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ring-4 ring-white">
+                        {item.product?.image ? (
+                          <OptimizedImage
+                            src={item.product.image}
+                            alt={item.product.title || 'Product'}
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
+                            <Package size={24} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {items.length > 3 && (
+                      <div className="w-20 h-20 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 font-bold ring-4 ring-white">
+                        +{items.length - 3}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Order Number */}
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Order #{order.orderNumber}
-                  </h3>
-
-                  {/* Items */}
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium">Items:</span> {formatItems(items)}
-                  </p>
-
-                  {/* Delivery Date */}
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-medium">Delivery Date:</span>{' '}
-                    {order.deliveryDate 
-                      ? `${new Date(order.deliveryDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}${order.deliveryTime ? ` at ${order.deliveryTime}` : ''}`
-                      : 'TBD'
-                    }
-                  </p>
-
-                  {/* Rejection Reason (if rejected) */}
-                  {order.ownerRejected && order.ownerRejectionNotes && (
-                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-xs font-medium text-red-800 mb-1">Rejected Reason:</p>
-                      <p className="text-sm text-red-700">{order.ownerRejectionNotes}</p>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-slate-900 mb-1">Order #{order.orderNumber}</h3>
+                    <p className="text-slate-500 text-sm mb-4">{items.length} items in this order</p>
+                    <div className="flex items-center gap-6">
+                      <div className="text-2xl font-black text-[#0B4866] tracking-tight">
+                        ${orderTotal.toFixed(2)}
+                      </div>
+                      <div className="h-8 w-px bg-slate-200"></div>
+                      <div className="text-sm text-slate-500">
+                        <span className="block font-medium text-slate-400 uppercase text-[10px] tracking-widest mb-0.5">Delivery</span>
+                        {order.deliveryDate
+                          ? new Date(order.deliveryDate).toLocaleDateString()
+                          : 'TBD'}
+                      </div>
                     </div>
-                  )}
-
-                  {/* Price */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-gray-900">
-                      Total Order: ${orderTotal.toFixed(2)}
-                    </span>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-2 flex-shrink-0">
+                <div className="flex flex-wrap gap-3 pt-6 border-t border-slate-100">
                   <button
                     onClick={handleApprove}
                     disabled={processing || order.ownerApproved || order.ownerRejected}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                    className="flex-1 min-w-[140px] px-6 py-3 bg-[#0ACF83] hover:bg-[#09B874] text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 disabled:bg-slate-200 disabled:shadow-none transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                   >
-                    <ThumbsUp size={16} />
-                    Approve
+                    <ThumbsUp size={18} />
+                    Approve Order
                   </button>
-
                   <button
                     onClick={() => setShowRejectForm(true)}
                     disabled={processing || order.ownerApproved || order.ownerRejected}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                    className="px-6 py-3 bg-white border-2 border-slate-200 hover:border-red-200 hover:text-red-600 text-slate-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
                   >
-                    <XCircle size={16} />
+                    <XCircle size={18} />
                     Reject
                   </button>
-
                   <button
                     onClick={() => setShowNotesModal(true)}
                     disabled={processing || order.ownerApproved || order.ownerRejected}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                    className="px-6 py-3 bg-white border-2 border-slate-200 hover:border-amber-200 hover:text-amber-600 text-slate-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
                   >
-                    <FileText size={16} />
-                    Add Note
+                    <FileText size={18} />
+                    Notes
                   </button>
-
                   <button
                     onClick={() => setShowEditModal(!showEditModal)}
-                    className="px-4 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#094058] transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
+                    className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2"
                   >
-                    <Edit size={16} />
-                    Edit Order
+                    <Edit size={18} />
+                    Edit Items
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Edit Order Section Overlay */}
+            {showEditModal && (
+              <div className="bg-white rounded-2xl border-2 border-[#0B4866]/20 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-[#0B4866] px-6 py-4 flex items-center justify-between text-white">
+                  <h2 className="text-lg font-bold flex items-center gap-2">
+                    <Edit size={20} />
+                    Edit Order Contents
+                  </h2>
+                  <button onClick={() => setShowEditModal(false)} className="hover:bg-white/20 p-1.5 rounded-lg transition-colors">
+                    <XIcon size={20} />
+                  </button>
+                </div>
+                <div className="p-6">
+                  <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} ownerToken={token} orderId={orderId} />
+                </div>
+              </div>
+            )}
+
+            {/* Content Details */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-4">
+                <Package size={20} className="text-[#0B4866]" />
+                Items Details
+              </h3>
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {items.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 rounded-xl border border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-100 flex-shrink-0">
+                      {item.product?.image ? (
+                        <OptimizedImage src={item.product.image} alt={item.product.title} width={64} height={64} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300"><Package size={20} /></div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-slate-900 text-sm truncate">{item.product?.title || item.name}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900">${(item.quantity * item.price).toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Sidebar Info Cards */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#0B4866]/5 rounded-bl-full -mr-8 -mt-8"></div>
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Organization Details</h3>
+
+              <div className="space-y-6">
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Shipping To</div>
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    {order.shippingAddress && typeof order.shippingAddress === 'object' ? (
+                      <div className="text-sm text-slate-700 leading-relaxed font-medium">
+                        <p className="text-slate-900 font-bold mb-1">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                        <p>{order.shippingAddress.address1}</p>
+                        {order.shippingAddress.address2 && <p>{order.shippingAddress.address2}</p>}
+                        <p>{order.shippingAddress.city}, {order.shippingAddress.postalCode}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 italic">Address details unavailable</p>
+                    )}
+                  </div>
+                </div>
+
+                {order.notes && (
+                  <div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Order Notes</div>
+                    <p className="text-sm text-slate-600 bg-amber-50/50 border border-amber-100 rounded-xl p-4 leading-relaxed">
+                      {order.notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Display saved notes */}
+                {order.ownerApprovalNotes && (
+                  <div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">My Approval Notes</div>
+                    <p className="text-sm text-slate-600 bg-blue-50 border border-blue-100 rounded-xl p-4 leading-relaxed">
+                      {order.ownerApprovalNotes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Instruction Card */}
+            <div className="bg-gradient-to-br from-[#0B4866] to-[#0F4C81] rounded-2xl p-6 text-white shadow-lg shadow-blue-900/10">
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <AlertCircle size={20} className="text-white/80" />
+                Next Steps
+              </h3>
+              <ul className="text-sm space-y-3 font-medium text-white/90">
+                <li className="flex gap-3">
+                  <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-[10px]">1</span>
+                  Review the items and organizational spending guidelines.
+                </li>
+                <li className="flex gap-3">
+                  <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-[10px]">2</span>
+                  Edit items if certain products need modification.
+                </li>
+                <li className="flex gap-3">
+                  <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-[10px]">3</span>
+                  Approved orders proceed to final Admin confirmation.
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
-        {/* Edit Order Modal */}
-        {showEditModal && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Order</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XIcon size={20} />
-              </button>
-            </div>
-            <AdminOrderEditor order={order} onOrderUpdate={handleOrderUpdate} ownerToken={token} orderId={orderId} />
-          </div>
-        )}
-
-        {/* Shipping Address */}
-        {(order.shippingAddress || order.billingAddress) && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Shipping Address</h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              {order.shippingAddress && typeof order.shippingAddress === 'object' ? (
-                <div className="text-sm text-gray-700 space-y-1">
-                  <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
-                  <p>{order.shippingAddress.address1}</p>
-                  {order.shippingAddress.address2 && <p>{order.shippingAddress.address2}</p>}
-                  <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}</p>
-                  <p>{order.shippingAddress.country}</p>
-                  {order.shippingAddress.phone && <p>Phone: {order.shippingAddress.phone}</p>}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-700">{JSON.stringify(order.shippingAddress)}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Customer Notes */}
-        {order.notes && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Customer Notes</h3>
-            <p className="text-gray-700">{order.notes}</p>
-          </div>
-        )}
-
         {/* Notes Modal */}
         {showNotesModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Blur overlay background */}
-            <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => {
-                setShowNotesModal(false);
-              }}
-            />
-            {/* Modal content */}
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Approval Notes</h3>
-                <button
-                  onClick={() => {
-                    setShowNotesModal(false);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowNotesModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900">Approval Notes</h3>
+                <button onClick={() => setShowNotesModal(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-all">
                   <XIcon size={20} />
                 </button>
               </div>
@@ -623,15 +684,13 @@ function OwnerApproveOrderPageContent() {
                 value={approvalNotes}
                 onChange={(e) => setApprovalNotes(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B4866] focus:border-transparent mb-4"
-                placeholder="Add any notes for this approval..."
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B4866] focus:border-transparent mb-6 text-sm placeholder:text-slate-400"
+                placeholder="Include internal context or approval reasons..."
               />
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
-                  onClick={() => {
-                    setShowNotesModal(false);
-                  }}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                  onClick={() => setShowNotesModal(false)}
+                  className="flex-1 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -639,25 +698,12 @@ function OwnerApproveOrderPageContent() {
                   onClick={async () => {
                     try {
                       setProcessing(true);
-                      setError('');
-                      
-                      // Store notes in localStorage as backup, and update local state
-                      // Notes will be sent when approving/rejecting
                       const notesToSave = approvalNotes.trim() || null;
-                      
-                      // Update local order state to show notes immediately
-                      setOrder(prevOrder => ({
-                        ...prevOrder,
-                        ownerApprovalNotes: notesToSave
-                      }));
-                      
-                      // Store in localStorage as backup
+                      setOrder(prevOrder => ({ ...prevOrder, ownerApprovalNotes: notesToSave }));
                       if (typeof window !== 'undefined') {
                         localStorage.setItem(`order_${orderId}_notes`, notesToSave || '');
                       }
-                      
                       setShowNotesModal(false);
-                      setError('');
                     } catch (err) {
                       console.error('Error saving notes:', err);
                       setError(err.message || 'Failed to save notes');
@@ -666,7 +712,7 @@ function OwnerApproveOrderPageContent() {
                     }
                   }}
                   disabled={processing}
-                  className="flex-1 px-4 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#0a3d55] disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-[#0B4866] text-white rounded-xl font-bold hover:bg-[#0a3d55] disabled:bg-slate-300 transition-all shadow-md shadow-blue-900/10"
                 >
                   {processing ? 'Saving...' : 'Save Notes'}
                 </button>
@@ -677,70 +723,40 @@ function OwnerApproveOrderPageContent() {
 
         {/* Quick View Modal */}
         {quickViewProduct && (
-          <QuickViewModal
-            product={quickViewProduct}
-            isOpen={!!quickViewProduct}
-            onClose={() => setQuickViewProduct(null)}
-            previewOnly={true}
-          />
+          <QuickViewModal product={quickViewProduct} isOpen={!!quickViewProduct} onClose={() => setQuickViewProduct(null)} previewOnly={true} />
         )}
 
         {/* Reject Form Modal */}
         {showRejectForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Blur overlay background */}
-            <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => {
-                setShowRejectForm(false);
-                setRejectionNotes('');
-                setError('');
-              }}
-            />
-            {/* Modal content */}
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Reject Order</h3>
-                <button
-                  onClick={() => {
-                    setShowRejectForm(false);
-                    setRejectionNotes('');
-                    setError('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowRejectForm(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900">Reject Order</h3>
+                <button onClick={() => setShowRejectForm(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-all">
                   <XIcon size={20} />
                 </button>
               </div>
-              <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting this order:</p>
+              <p className="text-sm text-slate-500 mb-4">Please provide a reason for rejecting this order:</p>
               <textarea
                 value={rejectionNotes}
                 onChange={(e) => setRejectionNotes(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
-                placeholder="Enter rejection reason..."
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent mb-6 text-sm placeholder:text-slate-400"
+                placeholder="Why is this order being rejected?"
                 required
               />
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                  {error}
-                </div>
-              )}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
-                  onClick={() => {
-                    setShowRejectForm(false);
-                    setRejectionNotes('');
-                    setError('');
-                  }}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                  onClick={() => setShowRejectForm(false)}
+                  className="flex-1 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleReject}
                   disabled={processing || !rejectionNotes.trim()}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 disabled:bg-slate-300 transition-all shadow-md shadow-red-900/10"
                 >
                   {processing ? 'Rejecting...' : 'Confirm Rejection'}
                 </button>
@@ -748,24 +764,6 @@ function OwnerApproveOrderPageContent() {
             </div>
           </div>
         )}
-
-        {/* Display saved notes */}
-        {order?.ownerApprovalNotes && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Saved Notes</h3>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">{order.ownerApprovalNotes}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Info Note */}
-        <div className="bg-[#0B4866]/10 border border-[#0B4866]/30 rounded-lg p-4">
-          <p className="text-sm text-[#0B4866]">
-            <strong>Note:</strong> After approval, this order will be sent to admin for final review. 
-            If you reject this order, it will not proceed to admin.
-          </p>
-        </div>
       </div>
     </div>
   );

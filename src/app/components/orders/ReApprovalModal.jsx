@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, X, Mail } from 'lucide-react';
+import { APP_ROUTES } from '../../lib/urls';
 
 export default function ReApprovalModal({
   isOpen,
@@ -109,7 +110,7 @@ export default function ReApprovalModal({
         customerPhone,
       };
 
-      const response = await fetch('/api/orders/request-approval', {
+      const response = await fetch(APP_ROUTES.orderRequestApprovalApi, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -178,7 +179,7 @@ export default function ReApprovalModal({
         customerPhone,
       };
 
-      const response = await fetch('/api/orders/request-approval', {
+      const response = await fetch(APP_ROUTES.orderRequestApprovalApi, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -362,4 +363,3 @@ export default function ReApprovalModal({
     </AnimatePresence>
   );
 }
-

@@ -141,7 +141,7 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
 
     // Initial position
     updatePosition();
-    
+
     // Update on scroll and resize
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
@@ -156,25 +156,23 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
     <>
       {/* Background blur when suggestions are open */}
       {showSuggestions && suggestions.length > 0 && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm"
           style={{ zIndex: 200 }}
           onClick={() => setShowSuggestions(false)}
         />
       )}
-      
+
       <div
-        className={`relative w-full ${
-          isMobile && !isExpanded ? 'hidden' : ''
-        }`}
+        className={`relative w-full ${isMobile && !isExpanded ? 'hidden' : ''
+          }`}
         style={{ zIndex: 300, position: 'relative' }}
         ref={containerRef}
       >
         <form
           onSubmit={handleSubmit}
-          className={`flex items-center w-full mx-auto bg-white/80 backdrop-blur-md rounded-xl shadow-sm overflow-hidden border border-gray-500 transition-all duration-200 ${
-            isMobile ? 'ml-0 px-0' : 'ml-7'
-          }`}
+          className={`flex items-center w-full mx-auto bg-white/80 backdrop-blur-md rounded-xl shadow-sm overflow-hidden border border-gray-500 transition-all duration-200 ${isMobile ? 'ml-0 px-0' : 'ml-7'
+            }`}
           style={{ position: 'relative', zIndex: 300 }}
         >
           <button
@@ -257,14 +255,14 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
               const labelStr = String(label);
               const queryLower = query.trim().toLowerCase();
               const labelLower = labelStr.toLowerCase();
-              
+
               // Highlight the matching part of the suggestion for word completion
               const highlightText = (text, searchTerm) => {
                 if (!searchTerm) return text;
-                
+
                 const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 const parts = text.split(regex);
-                
+
                 return parts.map((part, i) => {
                   if (part.toLowerCase() === searchTerm.toLowerCase()) {
                     return <mark key={i} className="bg-yellow-200 font-semibold">{part}</mark>;
@@ -272,15 +270,14 @@ const SearchBar = ({ placeholder = "What You looking For..", isMobile = false, i
                   return part;
                 });
               };
-              
+
               return (
                 <li
                   key={`${label}-${idx}`}
                   role="option"
                   aria-selected={idx === highlightedIndex}
-                  className={`px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors break-words ${
-                    idx === highlightedIndex ? 'bg-gray-100' : ''
-                  }`}
+                  className={`px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors break-words ${idx === highlightedIndex ? 'bg-gray-100' : ''
+                    }`}
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   onMouseDown={(e) => {
                     e.preventDefault();

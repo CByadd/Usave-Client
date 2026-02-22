@@ -58,16 +58,16 @@ export default function CheckoutPage() {
   useEffect(() => {
     const initialize = async () => {
       checkAuth();
-      
+
       if (!isAuthenticated) {
         router.push('/');
         return;
       }
-      
+
       // Load cart and addresses
       await loadCart();
       await loadSavedAddresses();
-      
+
       // Initialize delivery date to 2 days from today
       const minDate = new Date();
       minDate.setDate(minDate.getDate() + 2);
@@ -81,18 +81,22 @@ export default function CheckoutPage() {
 
   const loadSavedAddresses = async () => {
     if (!isAuthenticated) return;
-    
+
     try {
       setLoadingAddresses(true);
       const response = await apiService.user.getAddresses();
       if (response.success) {
         const addresses = response.data?.addresses || [];
         setSavedAddresses(addresses);
-        
-        // Always default to "new address"
+
+        // Always default to "new address" selection, but don't wipe out persisted contextual data
         setSelectedAddressId('new');
-        resetAddressForm();
-        
+
+        // Only reset the form if it is completely empty
+        if (!formData?.firstName && !formData?.address1) {
+          resetAddressForm();
+        }
+
         // If no saved addresses, show the form immediately
         if (addresses.length === 0) {
           setShowAddressForm(true);
@@ -197,8 +201,8 @@ export default function CheckoutPage() {
     if (!editAddressForm) return;
 
     // Validate required fields
-    if (!editAddressForm.firstName || !editAddressForm.lastName || !editAddressForm.address1 || 
-        !editAddressForm.city || !editAddressForm.state || !editAddressForm.postalCode) {
+    if (!editAddressForm.firstName || !editAddressForm.lastName || !editAddressForm.address1 ||
+      !editAddressForm.city || !editAddressForm.state || !editAddressForm.postalCode) {
       showToast('Please fill in all required fields', 'error');
       return;
     }
@@ -206,7 +210,7 @@ export default function CheckoutPage() {
     try {
       setLoadingAddresses(true);
       const response = await apiService.user.updateAddress(addressId, editAddressForm);
-      
+
       if (response.success) {
         // Reload addresses
         await loadSavedAddresses();
@@ -228,7 +232,7 @@ export default function CheckoutPage() {
   const handleDeleteAddress = (addressId, e) => {
     e.stopPropagation();
     const address = savedAddresses.find(addr => addr.id === addressId);
-    
+
     showAlert({
       title: 'Delete Address',
       message: `Are you sure you want to delete this address? This action cannot be undone.`,
@@ -239,27 +243,27 @@ export default function CheckoutPage() {
         try {
           setLoadingAddresses(true);
           const response = await apiService.user.deleteAddress(addressId);
-          
+
           if (response.success) {
             // Remove from local state
             setSavedAddresses(prev => prev.filter(addr => addr.id !== addressId));
-            
+
             // If deleted address was selected, switch to new address
             if (selectedAddressId === addressId) {
               setSelectedAddressId('new');
               resetAddressForm();
             }
-            
+
             showToast('Address deleted successfully', 'success');
           } else {
             showToast(response.message || 'Failed to delete address', 'error');
           }
         } catch (error) {
           console.error('Error deleting address:', error);
-          const errorMessage = error.response?.data?.message || 
-                              error.response?.data?.error || 
-                              error.message || 
-                              'Failed to delete address';
+          const errorMessage = error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            'Failed to delete address';
           showToast(errorMessage, 'error');
         } finally {
           setLoadingAddresses(false);
@@ -285,7 +289,7 @@ export default function CheckoutPage() {
       router.push('/');
       return;
     }
-    
+
     if (cartItems.length === 0) {
       router.push('/cart');
       return;
@@ -402,7 +406,7 @@ export default function CheckoutPage() {
         newErrors.deliveryTime = 'Please select a delivery time';
       }
     }
-    
+
     // Pickup date validation (only for pickup option)
     if (shippingOption === 'pickup') {
       if (!deliveryDate || !deliveryDate.trim()) {
@@ -438,7 +442,7 @@ export default function CheckoutPage() {
       const color = item.color || item.options?.color || null;
       const size = item.size || item.options?.size || null;
       const includeInstallation = item.includeInstallation || item.options?.includeInstallation || false;
-      
+
       return {
         id: productId,
         productId: productId,
@@ -494,6 +498,8 @@ export default function CheckoutPage() {
       tax: totals.tax,
       shipping: shippingCost,
       warranty: warrantyCost,
+      saveAddress,
+      selectedAddressId,
       onContinueWithoutApproval: handlePlaceOrder,
     });
   };
@@ -503,27 +509,27 @@ export default function CheckoutPage() {
       console.log('Address save skipped:', { saveAddress, isAuthenticated });
       return;
     }
-    
+
     try {
       // Check if address already exists to avoid duplicates
-      const addressExists = savedAddresses.some(addr => 
+      const addressExists = savedAddresses.some(addr =>
         addr.address1?.toLowerCase().trim() === addressData.address1?.toLowerCase().trim() &&
         addr.city?.toLowerCase().trim() === addressData.city?.toLowerCase().trim() &&
         addr.postalCode?.trim() === addressData.postalCode?.trim() &&
         addr.state?.toLowerCase().trim() === addressData.state?.toLowerCase().trim()
       );
-      
+
       if (addressExists) {
         console.log('Address already exists, skipping save');
         return;
       }
-      
+
       const response = await apiService.user.addAddress({
         ...addressData,
         type: 'shipping',
         isDefault: savedAddresses.length === 0, // Make first address default
       });
-      
+
       if (response && response.success) {
         console.log('Address saved successfully');
         // Reload addresses to show the newly saved address
@@ -554,7 +560,7 @@ export default function CheckoutPage() {
         const color = item.color || item.options?.color || null;
         const size = item.size || item.options?.size || null;
         const includeInstallation = item.includeInstallation || item.options?.includeInstallation || false;
-        
+
         return {
           productId: String(productId),
           quantity: item.quantity || 1,
@@ -607,7 +613,10 @@ export default function CheckoutPage() {
       // Use request-approval endpoint for direct admin submission
       const response = await fetch('/api/orders/request-approval', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+        },
         body: JSON.stringify({
           ownerEmail: null,
           adminEmail: null, // Will be fetched from backend
@@ -655,13 +664,13 @@ export default function CheckoutPage() {
         if (isAuthenticated && user?.id && saveAddress && selectedAddressId === 'new') {
           try {
             // Check if address already exists to avoid duplicates
-            const addressExists = savedAddresses.some(addr => 
+            const addressExists = savedAddresses.some(addr =>
               addr.address1?.toLowerCase().trim() === formData.address1?.toLowerCase().trim() &&
               addr.city?.toLowerCase().trim() === formData.city?.toLowerCase().trim() &&
               addr.postalCode?.trim() === formData.postalCode?.trim() &&
               addr.state?.toLowerCase().trim() === formData.state?.toLowerCase().trim()
             );
-            
+
             if (!addressExists && apiService.user && typeof apiService.user.addAddress === 'function') {
               const addressResponse = await apiService.user.addAddress({
                 type: 'shipping',
@@ -676,7 +685,7 @@ export default function CheckoutPage() {
                 phone: formData.phone || '',
                 isDefault: savedAddresses.length === 0 // Make first address default
               });
-              
+
               if (addressResponse && addressResponse.success) {
                 console.log('Address saved successfully');
                 // Reload addresses to show the newly saved address
@@ -758,11 +767,10 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={() => handleSavedAddressSelect('new')}
-                      className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${
-                        selectedAddressId === 'new'
-                          ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
-                          : 'border-gray-200 hover:border-[#0F4C81]'
-                      }`}
+                      className={`w-full text-left border-2 rounded-lg p-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81] ${selectedAddressId === 'new'
+                        ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-[#0F4C81]'
+                        }`}
                     >
                       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-[#0F4C81] mb-3">
                         <Plus size={18} />
@@ -773,187 +781,186 @@ export default function CheckoutPage() {
                       </p>
                     </button>
 
-                      {savedAddresses.map((addr) => {
-                        const isSelected = selectedAddressId === addr.id;
-                        const isEditing = editingAddressId === addr.id;
-                        
-                        return (
-                          <div
-                            key={addr.id}
-                            className={`w-full border-2 rounded-lg transition-colors ${
-                              isSelected
-                                ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
-                                : 'border-gray-200'
+                    {savedAddresses.map((addr) => {
+                      const isSelected = selectedAddressId === addr.id;
+                      const isEditing = editingAddressId === addr.id;
+
+                      return (
+                        <div
+                          key={addr.id}
+                          className={`w-full border-2 rounded-lg transition-colors ${isSelected
+                            ? 'border-[#0F4C81] bg-blue-50 shadow-sm'
+                            : 'border-gray-200'
                             }`}
-                          >
-                            {isEditing ? (
-                              // Edit Mode
-                              <div className="p-4">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h3 className="text-sm font-semibold text-gray-900">Edit Address</h3>
+                        >
+                          {isEditing ? (
+                            // Edit Mode
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-sm font-semibold text-gray-900">Edit Address</h3>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="text-gray-400 hover:text-gray-600"
+                                  type="button"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.firstName || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, firstName: e.target.value }))}
+                                      placeholder="First Name *"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.lastName || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, lastName: e.target.value }))}
+                                      placeholder="Last Name *"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <input
+                                    type="text"
+                                    value={editAddressForm?.address1 || ''}
+                                    onChange={(e) => setEditAddressForm(prev => ({ ...prev, address1: e.target.value }))}
+                                    placeholder="Street Address *"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                  />
+                                </div>
+                                <div>
+                                  <input
+                                    type="text"
+                                    value={editAddressForm?.address2 || ''}
+                                    onChange={(e) => setEditAddressForm(prev => ({ ...prev, address2: e.target.value }))}
+                                    placeholder="Apartment, Suite, etc."
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.city || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, city: e.target.value }))}
+                                      placeholder="City *"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.state || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, state: e.target.value }))}
+                                      placeholder="State *"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                  <div>
+                                    <input
+                                      type="text"
+                                      value={editAddressForm?.postalCode || ''}
+                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                                      placeholder="Postal Code *"
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <input
+                                    type="tel"
+                                    value={editAddressForm?.phone || ''}
+                                    onChange={(e) => setEditAddressForm(prev => ({ ...prev, phone: e.target.value }))}
+                                    placeholder="Phone Number"
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
+                                  />
+                                </div>
+                                <div className="flex gap-2 pt-2">
                                   <button
-                                    onClick={handleCancelEdit}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    onClick={() => handleSaveEdit(addr.id)}
+                                    className="flex-1 px-4 py-2 bg-[#0F4C81] text-white text-sm font-medium rounded-lg hover:bg-[#0D3F6A] transition-colors"
                                     type="button"
                                   >
-                                    <X size={18} />
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                                    type="button"
+                                  >
+                                    Cancel
                                   </button>
                                 </div>
-                                <div className="space-y-3">
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <input
-                                        type="text"
-                                        value={editAddressForm?.firstName || ''}
-                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, firstName: e.target.value }))}
-                                        placeholder="First Name *"
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                      />
-                                    </div>
-                                    <div>
-                                      <input
-                                        type="text"
-                                        value={editAddressForm?.lastName || ''}
-                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, lastName: e.target.value }))}
-                                        placeholder="Last Name *"
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <input
-                                      type="text"
-                                      value={editAddressForm?.address1 || ''}
-                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, address1: e.target.value }))}
-                                      placeholder="Street Address *"
-                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                    />
-                                  </div>
-                                  <div>
-                                    <input
-                                      type="text"
-                                      value={editAddressForm?.address2 || ''}
-                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, address2: e.target.value }))}
-                                      placeholder="Apartment, Suite, etc."
-                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                    />
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-3">
-                                    <div>
-                                      <input
-                                        type="text"
-                                        value={editAddressForm?.city || ''}
-                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, city: e.target.value }))}
-                                        placeholder="City *"
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                      />
-                                    </div>
-                                    <div>
-                                      <input
-                                        type="text"
-                                        value={editAddressForm?.state || ''}
-                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, state: e.target.value }))}
-                                        placeholder="State *"
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                      />
-                                    </div>
-                                    <div>
-                                      <input
-                                        type="text"
-                                        value={editAddressForm?.postalCode || ''}
-                                        onChange={(e) => setEditAddressForm(prev => ({ ...prev, postalCode: e.target.value }))}
-                                        placeholder="Postal Code *"
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <input
-                                      type="tel"
-                                      value={editAddressForm?.phone || ''}
-                                      onChange={(e) => setEditAddressForm(prev => ({ ...prev, phone: e.target.value }))}
-                                      placeholder="Phone Number"
-                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81]"
-                                    />
-                                  </div>
-                                  <div className="flex gap-2 pt-2">
-                                    <button
-                                      onClick={() => handleSaveEdit(addr.id)}
-                                      className="flex-1 px-4 py-2 bg-[#0F4C81] text-white text-sm font-medium rounded-lg hover:bg-[#0D3F6A] transition-colors"
-                                      type="button"
-                                    >
-                                      Save
-                                    </button>
-                                    <button
-                                      onClick={handleCancelEdit}
-                                      className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
-                                      type="button"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
                               </div>
-                            ) : (
-                              // View Mode
-                              <button
-                                type="button"
-                                onClick={() => handleSavedAddressSelect(addr.id)}
-                                className="w-full text-left p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81]"
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-semibold text-gray-900">
-                                        {addr.firstName} {addr.lastName}
-                                      </p>
-                                      {addr.isDefault && (
-                                        <span className="inline-flex items-center rounded-full bg-[#0F4C81]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0F4C81]">
-                                          Default
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                                      {addr.address1}
-                                      {addr.address2 ? `, ${addr.address2}` : ''}
-                                      <br />
-                                      {addr.city}, {addr.state} {addr.postalCode}
-                                      <br />
-                                      {addr.country}
+                            </div>
+                          ) : (
+                            // View Mode
+                            <button
+                              type="button"
+                              onClick={() => handleSavedAddressSelect(addr.id)}
+                              className="w-full text-left p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81]"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {addr.firstName} {addr.lastName}
                                     </p>
-                                    {addr.phone && (
-                                      <p className="text-xs text-gray-600 mt-2">
-                                        Phone: {addr.phone}
-                                      </p>
+                                    {addr.isDefault && (
+                                      <span className="inline-flex items-center rounded-full bg-[#0F4C81]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#0F4C81]">
+                                        Default
+                                      </span>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      onClick={(e) => handleEditAddress(addr.id, e)}
-                                      className="p-2 text-gray-400 hover:text-[#0F4C81] hover:bg-blue-50 rounded-lg transition-colors"
-                                      type="button"
-                                      title="Edit address"
-                                    >
-                                      <Edit size={16} />
-                                    </button>
-                                    <button
-                                      onClick={(e) => handleDeleteAddress(addr.id, e)}
-                                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      type="button"
-                                      title="Delete address"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
+                                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                                    {addr.address1}
+                                    {addr.address2 ? `, ${addr.address2}` : ''}
+                                    <br />
+                                    {addr.city}, {addr.state} {addr.postalCode}
+                                    <br />
+                                    {addr.country}
+                                  </p>
+                                  {addr.phone && (
+                                    <p className="text-xs text-gray-600 mt-2">
+                                      Phone: {addr.phone}
+                                    </p>
+                                  )}
                                 </div>
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    onClick={(e) => handleEditAddress(addr.id, e)}
+                                    className="p-2 text-gray-400 hover:text-[#0F4C81] hover:bg-blue-50 rounded-lg transition-colors"
+                                    type="button"
+                                    title="Edit address"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteAddress(addr.id, e)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    type="button"
+                                    title="Delete address"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
               {/* Address Form - Only show when showAddressForm is true */}
               {showAddressForm && (
@@ -1002,9 +1009,8 @@ export default function CheckoutPage() {
                           type="text"
                           value={formData.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                            errors.firstName ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.firstName ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           required
                         />
                         {errors.firstName && (
@@ -1019,9 +1025,8 @@ export default function CheckoutPage() {
                           type="text"
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                            errors.lastName ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.lastName ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           required
                         />
                         {errors.lastName && (
@@ -1038,9 +1043,8 @@ export default function CheckoutPage() {
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                          errors.email ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.email ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         required
                       />
                       {errors.email && (
@@ -1056,9 +1060,8 @@ export default function CheckoutPage() {
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                          errors.phone ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         placeholder="+61 XXX XXX XXX"
                         required
                       />
@@ -1088,9 +1091,8 @@ export default function CheckoutPage() {
                         type="text"
                         value={formData.address1}
                         onChange={(e) => handleInputChange('address1', e.target.value)}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                          errors.address1 ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.address1 ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         required
                       />
                       {errors.address1 && (
@@ -1120,9 +1122,8 @@ export default function CheckoutPage() {
                           type="text"
                           value={formData.city}
                           onChange={(e) => handleInputChange('city', e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                            errors.city ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.city ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           required
                         />
                         {errors.city && (
@@ -1137,9 +1138,8 @@ export default function CheckoutPage() {
                           type="text"
                           value={formData.state}
                           onChange={(e) => handleInputChange('state', e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                            errors.state ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.state ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           required
                         />
                         {errors.state && (
@@ -1154,9 +1154,8 @@ export default function CheckoutPage() {
                           type="text"
                           value={formData.postalCode}
                           onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                            errors.postalCode ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.postalCode ? 'border-red-500' : 'border-gray-300'
+                            }`}
                           required
                         />
                         {errors.postalCode && (
@@ -1199,13 +1198,13 @@ export default function CheckoutPage() {
                         {option.price === 0 ? 'Free' : `$${option.price}.00`}
                       </span>
                     </label>
-                    
+
                     {/* Delivery Schedule - Show when delivery option is selected */}
                     {option.id === 'delivery' && shippingOption === 'delivery' && (
                       <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
                         <h3 className="text-sm font-semibold text-[#0F4C81] mb-2">Delivery Schedule</h3>
                         <p className="text-xs text-gray-600 mb-3">Choose a date & time you want your product to be delivered</p>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
                           {/* Date Picker */}
                           <div>
@@ -1229,9 +1228,8 @@ export default function CheckoutPage() {
                                 minDate.setDate(minDate.getDate() + 2); // Minimum 2 days from today
                                 return minDate.toISOString().split('T')[0];
                               })()}
-                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                                errors.deliveryDate ? 'border-red-500' : 'border-gray-300'
-                              }`}
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.deliveryDate ? 'border-red-500' : 'border-gray-300'
+                                }`}
                               placeholder="Select a date"
                               required={shippingOption === 'delivery'}
                             />
@@ -1239,7 +1237,7 @@ export default function CheckoutPage() {
                               <p className="text-red-500 text-xs mt-1">{errors.deliveryDate}</p>
                             )}
                           </div>
-                          
+
                           {/* Time Picker - 15-minute intervals */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1256,9 +1254,8 @@ export default function CheckoutPage() {
                                   setErrors(newErrors);
                                 }
                               }}
-                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                                errors.deliveryTime ? 'border-red-500' : 'border-gray-300'
-                              }`}
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.deliveryTime ? 'border-red-500' : 'border-gray-300'
+                                }`}
                               required={shippingOption === 'delivery'}
                             >
                               <option value="">Select a time</option>
@@ -1276,7 +1273,7 @@ export default function CheckoutPage() {
                                       hour12 = hour - 12; // Afternoon hours
                                     }
                                     // hour 1-12 stays as is
-                                    
+
                                     const time24 = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
                                     const time12 = `${hour12}:${String(minute).padStart(2, '0')} ${ampm}`;
                                     times.push({ value: time24, label: time12 });
@@ -1296,13 +1293,13 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Pickup Schedule - Show when pickup option is selected */}
                     {option.id === 'pickup' && shippingOption === 'pickup' && (
                       <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
                         <h3 className="text-sm font-semibold text-[#0F4C81] mb-2">Pickup Schedule</h3>
                         <p className="text-xs text-gray-600 mb-3">Choose a date you want to pick up your product</p>
-                        
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Pickup Date *
@@ -1324,9 +1321,8 @@ export default function CheckoutPage() {
                               minDate.setDate(minDate.getDate() + 2); // Minimum 2 days from today
                               return minDate.toISOString().split('T')[0];
                             })()}
-                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${
-                              errors.deliveryDate ? 'border-red-500' : 'border-gray-300'
-                            }`}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F4C81] ${errors.deliveryDate ? 'border-red-500' : 'border-gray-300'
+                              }`}
                             placeholder="Select a date"
                             required={shippingOption === 'pickup'}
                           />
@@ -1472,15 +1468,15 @@ export default function CheckoutPage() {
                 <div className="space-y-2 py-4 border-t border-gray-200">
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Subtotal</span>
-                    <span>${totals.subtotal}</span>
+                    <span>${totals.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-700">
-                    <span>Tax</span>
-                    <span>${totals.tax}</span>
+                    <span>GST (10%)</span>
+                    <span>${totals.tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Shipping</span>
-                    <span>${shippingCost}</span>
+                    <span>${shippingCost.toFixed(2)}</span>
                   </div>
                   {/* {warrantyCost > 0 && (
                     <div className="flex justify-between text-sm text-gray-700">
@@ -1492,10 +1488,10 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between text-lg font-bold text-gray-900 py-4 border-t border-gray-200">
                   <span>Total</span>
-                  <span className="text-[#0F4C81]">${finalTotal}</span>
+                  <span className="text-[#0F4C81]">${finalTotal.toFixed(2)}</span>
                 </div>
 
-                <button 
+                <button
                   onClick={() => {
                     if (validateForm()) {
                       handleSubmitForApproval();
@@ -1506,7 +1502,7 @@ export default function CheckoutPage() {
                 >
                   {isSubmitting ? 'Processing...' : 'Submit for Approval'}
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     if (validateForm()) {
                       handlePlaceOrder();

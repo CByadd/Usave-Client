@@ -7,7 +7,7 @@ import { apiService as api } from '../services/api/apiClient';
 import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
 import ReApprovalModal from '../components/orders/ReApprovalModal';
-import ReviewOrderModal from '../components/orders/ReviewOrderModal';
+import { useReviewStore } from '../stores/useReviewStore';
 import { showAlert, setLoading as setGlobalLoading } from '../lib/ui';
 import {
   getPendingReviewCount,
@@ -24,11 +24,10 @@ export default function OrdersPage() {
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [approvalNotes, setApprovalNotes] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isRequestingReapproval, setIsRequestingReapproval] = useState(false);
   const [showReApprovalModal, setShowReApprovalModal] = useState(false);
   const [selectedOrderForReapproval, setSelectedOrderForReapproval] = useState(null);
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [orderForReview, setOrderForReview] = useState(null);
+  const { openReviewModal } = useReviewStore();
   const [mounted, setMounted] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
@@ -40,7 +39,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    
+
     if (!isAuthenticated) {
       router.push('/');
       return;
@@ -64,17 +63,14 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     if (!isAuthenticated) return;
-    
+
     try {
       setLoading(true);
       setError('');
       const response = await api.orders.getAll();
-      
+
       if (response.success) {
         let filteredOrders = response.data?.orders || response.data || [];
-        if (!isAdmin) {
-          filteredOrders = filteredOrders.filter(order => order.userId === user?.id);
-        }
         setOrders(filteredOrders);
       } else {
         setError(response.message || 'Failed to fetch orders');
@@ -90,15 +86,15 @@ export default function OrdersPage() {
   const handleRequestReapproval = async (orderId) => {
     console.log('handleRequestReapproval called with orderId:', orderId);
     try {
-      setIsProcessing(true);
+      setIsRequestingReapproval(true);
       setGlobalLoading(true, 'Loading order details...');
       setError('');
-      
+
       // Fetch full order details including items
       console.log('Fetching order details for:', orderId);
       const orderResponse = await api.orders.getById(orderId);
       console.log('Order response:', orderResponse);
-      
+
       if (orderResponse.success) {
         const order = orderResponse.data?.order || orderResponse.data;
         console.log('Setting order for reapproval:', order);
@@ -127,7 +123,7 @@ export default function OrdersPage() {
         confirmText: 'OK',
       });
     } finally {
-      setIsProcessing(false);
+      setIsRequestingReapproval(false);
       setGlobalLoading(false);
     }
   };
@@ -140,13 +136,7 @@ export default function OrdersPage() {
   };
 
   const handleOpenReviewModal = (order) => {
-    setOrderForReview(order);
-    setReviewModalOpen(true);
-  };
-
-  const handleReviewModalClose = () => {
-    setReviewModalOpen(false);
-    setOrderForReview(null);
+    openReviewModal(order, handleReviewSubmitted);
   };
 
   const handleReviewSubmitted = () => {
@@ -174,64 +164,47 @@ export default function OrdersPage() {
     }
   };
 
+  // Helper functions for mutually exclusive states
+  const isRejected = (o) => o.status === 'REJECTED' || o.status === 'CANCELLED' || o.ownerRejected || o.adminRejected;
+  const isCompleted = (o) => !isRejected(o) && ['DELIVERED', 'COMPLETED'].includes(o.status);
+  const isProcessing = (o) => !isRejected(o) && !isCompleted(o) && ['SHIPPED', 'PROCESSING', 'CONFIRMED', 'PAYMENT_CONFIRMED'].includes(o.status);
+  const isApproved = (o) => !isRejected(o) && !isCompleted(o) && !isProcessing(o) && (o.status === 'APPROVED' || o.adminApproved);
+  const isPending = (o) => !isRejected(o) && !isCompleted(o) && !isProcessing(o) && !isApproved(o) && (o.status === 'PENDING_APPROVAL' || o.status === 'PENDING' || (o.requiresOwnerApproval && !o.ownerApproved) || !o.adminApproved);
+
+  // Group orders by strictly exclusive status for display
+  const groupedOrders = {
+    pending: orders.filter(isPending),
+    approved: orders.filter(isApproved),
+    rejected: orders.filter(isRejected),
+    processing: orders.filter(isProcessing),
+    completed: orders.filter(isCompleted),
+  };
+
   // Filter orders based on active filter
   const getFilteredOrders = () => {
     switch (activeFilter) {
       case 'pending':
-        // Include orders pending owner approval, pending admin approval, or owner approved waiting for admin
-        return orders.filter(o => 
-          o.status === 'PENDING_APPROVAL' || 
-          o.status === 'PENDING' ||
-          (o.requiresOwnerApproval && !o.ownerApproved && !o.ownerRejected) ||
-          (o.ownerApproved && !o.adminApproved)
-        );
+        return groupedOrders.pending;
       case 'approved':
-        return orders.filter(o => o.status === 'APPROVED' || o.adminApproved);
+        return groupedOrders.approved;
       case 'rejected':
-        // Include orders rejected by owner or admin
-        return orders.filter(o => o.status === 'REJECTED' || o.ownerRejected || o.adminRejected);
+        return groupedOrders.rejected;
+      case 'completed':
+        return groupedOrders.completed;
       case 'unpaid':
         return orders.filter(o => {
           const paymentStatus = normalisePaymentStatus(o.paymentStatus);
-          return (o.status === 'APPROVED' || o.adminApproved) && paymentStatus === 'PENDING';
+          return (o.status === 'APPROVED' || isApproved(o)) && paymentStatus === 'PENDING';
         });
       case 'paid':
         return orders.filter(o => {
           const paymentStatus = normalisePaymentStatus(o.paymentStatus);
           return REVIEWABLE_PAYMENT_STATUSES.has(paymentStatus);
         });
-      case 'completed':
-        // Include orders that are completed, delivered, shipped, or processed
-        return orders.filter(o => 
-          o.status === 'DELIVERED' || 
-          o.status === 'COMPLETED' || 
-          o.status === 'SHIPPED' || 
-          o.status === 'PROCESSING' ||
-          o.status === 'CONFIRMED'
-        );
       default:
         // 'all' - return all orders without any filtering
         return orders;
     }
-  };
-
-  // Group orders by status for display (used for grouped view, but we're using filtered view now)
-  const groupedOrders = {
-    pending: orders.filter(o => 
-      o.status === 'PENDING_APPROVAL' || 
-      o.status === 'PENDING' ||
-      (o.requiresOwnerApproval && !o.ownerApproved && !o.ownerRejected) ||
-      (o.ownerApproved && !o.adminApproved)
-    ),
-    approved: orders.filter(o => o.status === 'APPROVED' || o.adminApproved),
-    rejected: orders.filter(o => o.status === 'REJECTED' || o.ownerRejected || o.adminRejected),
-    completed: orders.filter(o => 
-      o.status === 'DELIVERED' || 
-      o.status === 'COMPLETED' || 
-      o.status === 'SHIPPED' || 
-      o.status === 'PROCESSING' ||
-      o.status === 'CONFIRMED'
-    ),
   };
 
   // Show loading state on initial mount to prevent hydration mismatch
@@ -324,11 +297,10 @@ export default function OrdersPage() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap rounded-3xl mb-2 flex-shrink-0 ${
-                  activeFilter === filter
-                    ? 'bg-[#0F4C81] text-white border-b-2 border-[#0F4C81]'
-                    : 'text-gray-600 hover:text-[#0F4C81] hover:bg-gray-100'
-                }`}
+                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap rounded-3xl mb-2 flex-shrink-0 ${activeFilter === filter
+                  ? 'bg-[#0F4C81] text-white border-b-2 border-[#0F4C81]'
+                  : 'text-gray-600 hover:text-[#0F4C81] hover:bg-gray-100'
+                  }`}
               >
                 {filter === 'all' ? 'All Orders' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Orders`}
               </button>
@@ -427,10 +399,29 @@ export default function OrdersPage() {
               </div>
             )}
 
-            {/* Completed/Other Orders Section - Show orders that don't fit in pending/approved/rejected */}
+            {/* Processing Orders Section */}
+            {groupedOrders.processing.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Processing Orders</h2>
+                <div className="space-y-4">
+                  {groupedOrders.processing.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      onProceedToPay={handleProceedToPay}
+                      onEditOrder={handleEditOrder}
+                      onReSendApproval={handleRequestReapproval}
+                      onReviewOrder={handleOpenReviewModal}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Completed Orders Section */}
             {groupedOrders.completed.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Completed & Other Orders</h2>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Completed Orders</h2>
                 <div className="space-y-4">
                   {groupedOrders.completed.map((order) => (
                     <OrderCard
@@ -452,10 +443,11 @@ export default function OrdersPage() {
                 const isPending = groupedOrders.pending.includes(o);
                 const isApproved = groupedOrders.approved.includes(o);
                 const isRejected = groupedOrders.rejected.includes(o);
+                const isProcessing = groupedOrders.processing.includes(o);
                 const isCompleted = groupedOrders.completed.includes(o);
-                return !isPending && !isApproved && !isRejected && !isCompleted;
+                return !isPending && !isApproved && !isRejected && !isProcessing && !isCompleted;
               });
-              
+
               return otherOrders.length > 0 ? (
                 <div className="mb-8">
                   <h2 className="text-2xl font-semibold text-gray-900 mb-4">Other Orders</h2>
@@ -493,14 +485,14 @@ export default function OrdersPage() {
               </div>
             ) : (
               groupedOrders[activeFilter].map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onProceedToPay={handleProceedToPay}
-                onEditOrder={handleEditOrder}
-                onReSendApproval={handleRequestReapproval}
-                onReviewOrder={handleOpenReviewModal}
-              />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onProceedToPay={handleProceedToPay}
+                  onEditOrder={handleEditOrder}
+                  onReSendApproval={handleRequestReapproval}
+                  onReviewOrder={handleOpenReviewModal}
+                />
               ))
             )}
           </div>
@@ -517,12 +509,6 @@ export default function OrdersPage() {
         order={selectedOrderForReapproval}
         onDirectSubmit={handleReApprovalSuccess}
       />
-      <ReviewOrderModal
-        isOpen={reviewModalOpen}
-        onClose={handleReviewModalClose}
-        order={orderForReview}
-        onSubmitted={handleReviewSubmitted}
-      />
     </div>
   );
 }
@@ -533,11 +519,13 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
 
   // Hierarchical status system
   const ORDER_STATUS_HIERARCHY = [
-    { value: 'PENDING_CONFIRMED', label: 'Pending Confirmed', description: 'Waiting for Owner Approval (if submitted) and Admin Approval' },
-    { value: 'APPROVED', label: 'Approved', description: 'Waiting for payment process' },
-    { value: 'PAYMENT_CONFIRMED', label: 'Payment Confirmed', description: 'Processing your order for shipping' },
-    { value: 'SHIPPED', label: 'Shipped', description: 'Your order is on the way' },
-    { value: 'DELIVERED', label: 'Delivered', description: 'Your order has been delivered successfully' },
+    { value: 'SUBMITTED', label: 'Submitted', description: 'Order submitted for approval' },
+    { value: 'OWNER_APPROVAL', label: 'Owner Approval', description: 'Pending approval from your manager/owner' },
+    { value: 'ADMIN_APPROVAL', label: 'Admin Review', description: 'Order is being reviewed by our team' },
+    { value: 'APPROVED', label: 'Approved', description: 'Order approved, waiting for payment' },
+    { value: 'PROCESSING', label: 'Processing', description: 'Being prepared for shipment' },
+    { value: 'SHIPPED', label: 'Shipped', description: 'Order is on its way' },
+    { value: 'DELIVERED', label: 'Delivered', description: 'Order has been delivered' },
   ];
 
   const getStatusInfo = (status, order) => {
@@ -545,66 +533,59 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
     if (order?.ownerRejected || status === 'REJECTED') {
       return {
         currentIndex: -1,
-        label: 'Rejected by Owner',
-        description: 'This order has been rejected',
+        completedIndex: -1,
+        label: 'Rejected',
+        description: order?.ownerRejected ? 'Rejected by Owner' : 'Rejected by Admin',
         badgeClass: 'bg-red-100 text-red-800 border-red-200',
       };
     }
-    
-    if (order?.ownerApproved && !order?.adminApproved && status === 'PENDING_CONFIRMED') {
-      return {
-        currentIndex: 0,
-        label: 'Owner Approved - Waiting for Admin',
-        description: 'Waiting for Admin Approval',
-        badgeClass: 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30',
-      };
-    }
-    
-    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected && status === 'PENDING_CONFIRMED') {
-      return {
-        currentIndex: 0,
-        label: 'Pending Owner Approval',
-        description: 'Waiting for Owner Approval (if submitted) and Admin Approval',
-        badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
-      };
-    }
 
-    // Map old statuses to new ones for backward compatibility
-    const statusMap = {
-      'PENDING_APPROVAL': 'PENDING_CONFIRMED',
-      'CONFIRMED': 'PAYMENT_CONFIRMED',
-      'PROCESSING': 'PAYMENT_CONFIRMED',
-    };
-    const mappedStatus = statusMap[status] || status;
-    
-    // Find current status in hierarchy
-    const currentIndex = ORDER_STATUS_HIERARCHY.findIndex(s => s.value === mappedStatus);
-    
-    if (currentIndex === -1) {
-      // Status not in hierarchy, return default
+    if (status === 'CANCELLED') {
       return {
         currentIndex: -1,
-        label: status || 'Unknown',
-        description: '',
+        completedIndex: -1,
+        label: 'Cancelled',
+        description: 'Order has been cancelled',
         badgeClass: 'bg-gray-100 text-gray-800 border-gray-200',
       };
     }
 
-    const currentStatus = ORDER_STATUS_HIERARCHY[currentIndex];
-    
+    let completedIndex = 0; // SUBMITTED
+    let currentIndex = 1;
+
+    // Check progress based on flags and status
+    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
+      completedIndex = 0;
+      currentIndex = 1; // Owner Approval
+    } else if ((!order?.requiresOwnerApproval || order?.ownerApproved) && !order?.adminApproved && status === 'PENDING_APPROVAL') {
+      completedIndex = 1;
+      currentIndex = 2; // Admin Review
+    } else if (status === 'APPROVED' || (order?.adminApproved && order?.paymentStatus !== 'COMPLETED' && order?.paymentStatus !== 'PAID')) {
+      completedIndex = 2;
+      currentIndex = 3; // Payment
+    } else if (status === 'CONFIRMED' || status === 'PAYMENT_CONFIRMED' || status === 'PROCESSING') {
+      completedIndex = 3;
+      currentIndex = 4; // Processing
+    } else if (status === 'SHIPPED') {
+      completedIndex = 4;
+      currentIndex = 5; // Shipped
+    } else if (status === 'DELIVERED' || status === 'COMPLETED') {
+      completedIndex = 6;
+      currentIndex = null; // Everything complete
+    }
+
+    const currentMeta = currentIndex !== null ? ORDER_STATUS_HIERARCHY[currentIndex] : ORDER_STATUS_HIERARCHY[completedIndex];
+    const displayIndex = currentIndex !== null ? currentIndex : completedIndex;
+
     return {
-      currentIndex,
-      label: currentStatus.label,
-      description: currentStatus.description,
-      badgeClass: currentIndex === 0 
-        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-        : currentIndex === 1
-        ? 'bg-green-100 text-green-800 border-green-200'
-        : currentIndex === 2
-        ? 'bg-blue-100 text-blue-800 border-blue-200'
-        : currentIndex === 3
-        ? 'bg-sky-100 text-sky-800 border-sky-200'
-        : 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      currentIndex: displayIndex,
+      label: currentMeta.label,
+      description: currentMeta.description,
+      badgeClass: displayIndex <= 2
+        ? 'bg-amber-100 text-amber-800 border-amber-200'
+        : displayIndex === 3
+          ? 'bg-blue-100 text-blue-800 border-blue-200'
+          : 'bg-emerald-100 text-emerald-800 border-emerald-200',
     };
   };
 
@@ -636,81 +617,102 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
   const originalTotal = getOriginalTotal(order);
   const items = order.items || [];
   const status = order.status;
+  const statusInfo = getStatusInfo(status, order);
   const pendingReviewCount = getPendingReviewCount(order);
   const canReview = isOrderReviewEligible(order);
 
+  const visibleImages =
+  items.length > 4 ? items.slice(0, 3) : items;
+
+const remainingCount = items.length - 3;
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow w-full overflow-hidden">
+    <div className="bg-white/80 backdrop-blur rounded-2xl border border-gray-100 p-6 shadow-md hover:shadow-xl transition-all duration-300">
       <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
         {/* Product Images */}
-        <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {items.slice(0, 4).map((item, index) => (
-            <div key={index} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-              {item.product?.image ? (
-                <OptimizedImage
-                  src={item.product.image}
-                  alt={item.product.title || item.product.name || 'Product'}
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200" />
-              )}
-            </div>
-          ))}
-          {items.length > 4 && (
-            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-600 font-medium">
-              +{items.length - 4}
-            </div>
-          )}
-        </div>
+      {/* Product Images */}
+<div
+  className={`
+    grid gap-2 flex-shrink-0
+    ${
+      items.length === 1
+        ? "grid-cols-1 w-28 h-28"
+        : items.length === 2
+        ? "grid-cols-2 w-28 h-28"
+        : "grid-cols-2 w-28 h-28"
+    }
+  `}
+>
+  {visibleImages.map((item, index) => (
+    <div
+      key={index}
+      className={`
+        relative rounded-xl overflow-hidden bg-gray-100
+        ring-1 ring-black/5
+        ${
+          items.length === 1
+            ? "col-span-1"
+            : items.length === 3 && index === 0
+            ? "row-span-2"
+            : ""
+        }
+      `}
+    >
+      {item.product?.image ? (
+        <OptimizedImage
+          src={item.product.image}
+          alt={item.product.title || item.product.name || "Product"}
+          fill
+          className="object-cover transition-transform duration-300 hover:scale-105"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200" />
+      )}
+    </div>
+  ))}
+
+  {/* +X stacked image */}
+  {items.length > 4 && (
+    <div className="relative rounded-xl overflow-hidden bg-gray-900 ring-1 ring-black/5">
+      <OptimizedImage
+        src={items[3]?.product?.image}
+        alt="More products"
+        fill
+        className="object-cover opacity-40"
+      />
+      <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-semibold backdrop-blur-sm">
+        +{remainingCount}
+      </div>
+    </div>
+  )}
+</div>
 
         {/* Order Details */}
         <div className="flex-1 min-w-0 w-full sm:w-auto">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 w-full">
             <div className="flex-1 min-w-0 w-full sm:w-auto">
-              {/* Hierarchical Status Display */}
+              {/* Simplified Status Label and Progress */}
               <div className="mb-4">
-                <div className="flex flex-col gap-2">
-                  {ORDER_STATUS_HIERARCHY.map((statusItem, index) => {
-                    const statusInfo = getStatusInfo(status, order);
-                    const isCompleted = statusInfo.currentIndex > index;
-                    const isCurrent = statusInfo.currentIndex === index;
-                    const isPending = statusInfo.currentIndex < index;
-                    
-                    return (
-                      <div key={statusItem.value} className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold mt-0.5 ${
-                          isCompleted 
-                            ? 'bg-green-500 text-white' 
-                            : isCurrent 
-                            ? 'bg-[#0B4866] text-white' 
-                            : 'bg-gray-200 text-gray-600'
-                        }`}>
-                          {isCompleted ? '✓' : index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className={`text-sm font-medium ${
-                            isCompleted 
-                              ? 'text-green-700' 
-                              : isCurrent 
-                              ? 'text-[#0B4866]' 
-                              : 'text-gray-500'
-                          }`}>
-                            {statusItem.label}
-                          </div>
-                          {(isCurrent || isCompleted) && (
-                            <div className={`text-xs mt-0.5 ${
-                              isCompleted ? 'text-green-600' : 'text-[#0B4866]'
-                            }`}>
-                              {statusItem.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm ${statusInfo.badgeClass}`}>
+                      {statusInfo.label.toUpperCase()}
+                    </span>
+                    <span className="text-[10px] font-medium text-slate-400">
+                      Step {statusInfo.currentIndex + 1} of 7
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {statusInfo.description}
+                  </p>
+
+                  {/* Mini Progress Bar */}
+                  <div className="w-full h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                    <div
+                      className="h-full bg-[#0ACF83] transition-all duration-500"
+                      style={{ width: `${((statusInfo.currentIndex + (statusInfo.currentIndex >= 0 ? 1 : 0)) / 7) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -727,12 +729,12 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
               {/* Delivery Date */}
               <p className="text-sm text-gray-600 mb-2">
                 <span className="font-medium">Delivery Date:</span>{' '}
-                {order.deliveryDate 
+                {order.deliveryDate
                   ? `${new Date(order.deliveryDate).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}${order.deliveryTime ? ` at ${order.deliveryTime}` : ''}`
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}${order.deliveryTime ? ` at ${order.deliveryTime}` : ''}`
                   : 'TBD'
                 }
               </p>
@@ -769,17 +771,17 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
                 View Order
               </button>
 
-            {canReview && (
-              <button
-                onClick={() => onReviewOrder?.(order)}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-[#0B4866]/20 text-[#0B4866] rounded-lg font-medium hover:bg-[#0B4866]/10 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Star size={16} />
-                {pendingReviewCount && pendingReviewCount > 1
-                  ? `Review ${pendingReviewCount} items`
-                  : 'Review Items'}
-              </button>
-            )}
+              {canReview && (
+                <button
+                  onClick={() => onReviewOrder?.(order)}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-[#0B4866]/20 text-[#0B4866] rounded-lg font-medium hover:bg-[#0B4866]/10 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+                >
+                  <Star size={16} />
+                  {pendingReviewCount && pendingReviewCount > 1
+                    ? `Review ${pendingReviewCount} items`
+                    : 'Review Items'}
+                </button>
+              )}
 
               {/* Proceed to Pay - for approved orders with pending payment */}
               {/* {status === 'APPROVED' && order.paymentStatus === 'PENDING' && (

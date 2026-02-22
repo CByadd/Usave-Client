@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Eye, EyeOff, Mail, Lock, User, LogOut, ArrowLeft } from 'lucide-react';
+import { showToast } from '../../lib/ui';
 import { login as loginUser } from '../../lib/auth';
 import { apiService } from '../../services/api/apiClient';
 import { useUIStore } from '../../stores/useUIStore';
@@ -36,11 +37,11 @@ const LoginForm = ({ onSwitch, onClose }) => {
       console.log('AuthDrawer: Calling login with:', { email: formData.email });
       const result = await loginUser(formData.email, formData.password);
       console.log('AuthDrawer: Login result:', result);
-      
+
       if (result && result.success) {
         console.log('AuthDrawer: Login successful, closing drawer');
         setFormData({ email: '', password: '' });
-        
+
         // Check if there's a redirect path (e.g., from checkout flow)
         if (authRedirectPath) {
           // Close drawer first
@@ -61,11 +62,28 @@ const LoginForm = ({ onSwitch, onClose }) => {
       } else {
         const errorMsg = result?.error || 'Login failed. Please try again.';
         console.error('AuthDrawer: Login failed:', errorMsg);
-        setError(errorMsg);
+
+        if (errorMsg.toLowerCase().includes('account not found')) {
+          showToast('Account not found. Please sign up to create an account.', 'info');
+          if (onSwitch && typeof onSwitch === 'function') {
+            onSwitch('register');
+          }
+        } else {
+          setError(errorMsg);
+        }
       }
     } catch (err) {
       console.error('AuthDrawer: Login error:', err);
-      setError(err.message || 'Login failed. Please try again.');
+      const errorMsg = err.message || 'Login failed. Please try again.';
+
+      if (errorMsg.toLowerCase().includes('account not found')) {
+        showToast('Account not found. Please sign up to create an account.', 'info');
+        if (onSwitch && typeof onSwitch === 'function') {
+          onSwitch('register');
+        }
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -79,13 +97,13 @@ const LoginForm = ({ onSwitch, onClose }) => {
           <X size={24} />
         </button>
       </div>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
           {error}
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -107,7 +125,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
             />
           </div>
         </div>
-        
+
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
             Password
@@ -139,7 +157,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
             </button>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <input
@@ -152,7 +170,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
               Remember me
             </label>
           </div>
-          
+
           <div className="text-sm">
             <button
               type="button"
@@ -163,7 +181,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
             </button>
           </div>
         </div>
-        
+
         <div>
           <button
             type="submit"
@@ -174,7 +192,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
           </button>
         </div>
       </form>
-      
+
       <div className="mt-6">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -184,7 +202,7 @@ const LoginForm = ({ onSwitch, onClose }) => {
             <span className="px-2 bg-white text-gray-500">Or continue with</span>
           </div>
         </div>
-        
+
         <div className="mt-6">
           <button
             type="button"
@@ -312,18 +330,18 @@ const RegisterForm = ({ onSwitch, onClose }) => {
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
-    
+
     if (!validateRegistrationForm()) {
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
       const response = await apiService.auth.sendRegistrationOTP(formData.email);
-      
+
       if (response && response.success) {
         setStep('otp');
         setSuccess('Verification code sent to your email');
@@ -340,14 +358,14 @@ const RegisterForm = ({ onSwitch, onClose }) => {
 
   const handleResendOTP = async () => {
     if (otpResendTimer > 0) return;
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
       const response = await apiService.auth.sendRegistrationOTP(formData.email);
-      
+
       if (response && response.success) {
         setSuccess('Verification code resent to your email');
         setOtpResendTimer(60);
@@ -363,12 +381,12 @@ const RegisterForm = ({ onSwitch, onClose }) => {
 
   const handleVerifyAndRegister = async (e) => {
     e.preventDefault();
-    
+
     if (otp.length !== 6) {
       setError('Please enter a valid 6-digit code');
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
@@ -382,7 +400,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
         phone: formData.phone || null,
         otp
       });
-      
+
       if (response && response.success) {
         const userData = response.data?.user || response.user || response.data;
         const token = response.data?.token || response.token;
@@ -390,7 +408,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
         if (userData && token) {
           // Login the user
           await login(userData.email, formData.password);
-          
+
           // Check if there's a redirect path
           if (authRedirectPath) {
             if (onClose && typeof onClose === 'function') {
@@ -431,25 +449,25 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             <X size={24} />
           </button>
         </div>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
             {error}
           </div>
         )}
-        
+
         {success && (
           <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md text-sm">
             {success}
           </div>
         )}
-        
+
         <div className="mb-4">
           <p className="text-sm text-gray-600">
             We've sent a 6-digit verification code to <strong>{formData.email}</strong>
           </p>
         </div>
-        
+
         <form onSubmit={handleVerifyAndRegister} className="space-y-4">
           <div>
             <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
@@ -468,7 +486,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
               autoComplete="one-time-code"
             />
           </div>
-          
+
           <div className="text-center">
             <button
               type="button"
@@ -479,7 +497,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
               {otpResendTimer > 0 ? `Resend code in ${otpResendTimer}s` : 'Resend code'}
             </button>
           </div>
-          
+
           <div>
             <button
               type="submit"
@@ -502,13 +520,13 @@ const RegisterForm = ({ onSwitch, onClose }) => {
           <X size={24} />
         </button>
       </div>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
           {error}
         </div>
       )}
-      
+
       <form onSubmit={handleSendOTP} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -547,7 +565,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             />
           </div>
         </div>
-        
+
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email
@@ -568,7 +586,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             />
           </div>
         </div>
-        
+
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
             Phone (Optional)
@@ -583,7 +601,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             placeholder="Enter your phone number"
           />
         </div>
-        
+
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
             Password
@@ -619,7 +637,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             Must be at least 8 characters with uppercase, lowercase, and a number
           </p>
         </div>
-        
+
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
             Confirm Password
@@ -641,7 +659,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             />
           </div>
         </div>
-        
+
         <div className="flex items-center">
           <input
             id="terms"
@@ -655,7 +673,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             <a href="#" className="text-blue-600 hover:text-blue-500">Privacy Policy</a>
           </label>
         </div>
-        
+
         <div>
           <button
             type="submit"
@@ -666,7 +684,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
           </button>
         </div>
       </form>
-      
+
       <div className="mt-6">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -676,7 +694,7 @@ const RegisterForm = ({ onSwitch, onClose }) => {
             <span className="px-2 bg-white text-gray-500">Already have an account?</span>
           </div>
         </div>
-        
+
         <div className="mt-6">
           <button
             type="button"
@@ -731,19 +749,19 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email) {
       setError('Email is required');
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
       const response = await apiService.auth.sendPasswordResetOTP(formData.email);
-      
+
       if (response && response.success) {
         setStep('otp');
         setSuccess('Verification code sent to your email');
@@ -760,14 +778,14 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
 
   const handleResendOTP = async () => {
     if (otpResendTimer > 0) return;
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
       const response = await apiService.auth.sendPasswordResetOTP(formData.email);
-      
+
       if (response && response.success) {
         setSuccess('Verification code resent to your email');
         setOtpResendTimer(60);
@@ -783,19 +801,19 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
-    
+
     if (formData.otp.length !== 6) {
       setError('Please enter a valid 6-digit code');
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
       const response = await apiService.auth.verifyPasswordResetOTP(formData.email, formData.otp);
-      
+
       if (response && response.success) {
         setResetToken(response.data?.resetToken || '');
         setStep('reset');
@@ -812,7 +830,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    
+
     if (formData.newPassword !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -822,14 +840,14 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
       setError('Password must be at least 6 characters');
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
       const response = await apiService.auth.resetPassword(resetToken, formData.newPassword);
-      
+
       if (response && response.success) {
         setSuccess('Password reset successfully! Redirecting to login...');
         setTimeout(() => {
@@ -862,25 +880,25 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
             <X size={24} />
           </button>
         </div>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
             {error}
           </div>
         )}
-        
+
         {success && (
           <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md text-sm">
             {success}
           </div>
         )}
-        
+
         <div className="mb-4">
           <p className="text-sm text-gray-600">
             We've sent a 6-digit verification code to <strong>{formData.email}</strong>
           </p>
         </div>
-        
+
         <form onSubmit={handleVerifyOTP} className="space-y-4">
           <div>
             <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">
@@ -899,7 +917,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
               autoComplete="one-time-code"
             />
           </div>
-          
+
           <div className="text-center">
             <button
               type="button"
@@ -910,7 +928,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
               {otpResendTimer > 0 ? `Resend code in ${otpResendTimer}s` : 'Resend code'}
             </button>
           </div>
-          
+
           <div>
             <button
               type="submit"
@@ -940,19 +958,19 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
             <X size={24} />
           </button>
         </div>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
             {error}
           </div>
         )}
-        
+
         {success && (
           <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md text-sm">
             {success}
           </div>
         )}
-        
+
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
             <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
@@ -986,7 +1004,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
               </button>
             </div>
           </div>
-          
+
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
               Confirm New Password
@@ -1008,7 +1026,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
               />
             </div>
           </div>
-          
+
           <div>
             <button
               type="submit"
@@ -1037,25 +1055,25 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
           <X size={24} />
         </button>
       </div>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
           {error}
         </div>
       )}
-      
+
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md text-sm">
           {success}
         </div>
       )}
-      
+
       <div className="mb-4">
         <p className="text-sm text-gray-600">
           Enter your email address and we'll send you a verification code to reset your password.
         </p>
       </div>
-      
+
       <form onSubmit={handleSendOTP} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -1077,7 +1095,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
             />
           </div>
         </div>
-        
+
         <div>
           <button
             type="submit"
@@ -1088,7 +1106,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
           </button>
         </div>
       </form>
-      
+
       <div className="mt-6 text-center">
         <button
           type="button"
@@ -1104,7 +1122,7 @@ const ForgotPasswordForm = ({ onSwitch, onClose }) => {
 
 const UserDropdown = ({ user, onClose, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   return (
     <div className="relative">
       <button
@@ -1115,7 +1133,7 @@ const UserDropdown = ({ user, onClose, onLogout }) => {
           {user?.name ? user.name.charAt(0).toUpperCase() : <User size={16} />}
         </div>
       </button>
-      
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -1189,7 +1207,7 @@ const AuthDrawer = () => {
         if (redirectPath) {
           setAuthRedirectPath(redirectPath);
         }
-      } catch {}
+      } catch { }
       setForceOpen(true);
     };
     const onClose = () => {
@@ -1203,11 +1221,11 @@ const AuthDrawer = () => {
       document.body.removeEventListener("Duffy's Furniture:closeAuth", onClose);
     };
   }, [setAuthRedirectPath]);
-  
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
-  
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -1226,7 +1244,7 @@ const AuthDrawer = () => {
       }
     }
   };
-  
+
   const safeCloseAuthDrawer = (e) => {
     if (e) {
       e.preventDefault();
@@ -1244,9 +1262,9 @@ const AuthDrawer = () => {
       }
     }
   };
-  
+
   console.log('AuthDrawer render - isAuthDrawerOpen:', isAuthDrawerOpen, 'forceOpen:', forceOpen);
-  
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       {(isAuthDrawerOpen || forceOpen) && (
@@ -1262,23 +1280,23 @@ const AuthDrawer = () => {
           }}
         >
           <div className="absolute inset-0 overflow-hidden">
-            <motion.div 
+            <motion.div
               className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10"
               variants={{
                 open: { opacity: 1 },
                 closed: { opacity: 0 },
               }}
-              transition={{ 
-                duration: drawerConfig.backdrop.duration, 
-                ease: drawerConfig.backdrop.ease 
+              transition={{
+                duration: drawerConfig.backdrop.duration,
+                ease: drawerConfig.backdrop.ease
               }}
               onClick={safeCloseAuthDrawer}
               aria-hidden="true"
               style={{ willChange: 'opacity' }}
             />
-            
+
             <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex z-20">
-              <motion.div 
+              <motion.div
                 className="w-screen max-w-md"
                 variants={{
                   open: { x: 0 },
@@ -1288,122 +1306,120 @@ const AuthDrawer = () => {
                 onClick={(e) => e.stopPropagation()}
                 style={{ willChange: 'transform' }}
               >
-            <div className="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
-              {isAuthenticated ? (
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">My Account</h2>
-                    <button 
-                      onClick={safeCloseAuthDrawer}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X size={24} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl font-bold">
-                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{user?.name || 'User'}</p>
-                      <p className="text-sm text-gray-500">{user?.email || ''}</p>
-                    </div>
-                  </div>
-                  
-                  <nav className="space-y-1">
-                    <a
-                      href="/account"
-                      className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={safeCloseAuthDrawer}
-                    >
-                      <span className="truncate">My Profile</span>
-                    </a>
-                    <a
-                      href="/orders"
-                      className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={safeCloseAuthDrawer}
-                    >
-                      <span className="truncate">My Orders</span>
-                    </a>
-                    <a
-                      href="/wishlist"
-                      className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={safeCloseAuthDrawer}
-                    >
-                      <span className="truncate">My Wishlist</span>
-                    </a>
-                    <a
-                      href="/addresses"
-                      className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                      onClick={safeCloseAuthDrawer}
-                    >
-                      <span className="truncate">Saved Addresses</span>
-                    </a>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        safeCloseAuthDrawer();
-                      }}
-                      className="w-full group flex items-center px-3 py-3 text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
-                    >
-                      <LogOut className="h-5 w-5 mr-2 text-red-500" />
-                      <span>Sign out</span>
-                    </button>
-                  </nav>
-                </div>
-              ) : (
-                <>
-                  {activeTab !== 'forgot-password' && (
-                    <div className="border-b border-gray-200">
-                      <div className="flex">
+                <div className="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
+                  {isAuthenticated ? (
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">My Account</h2>
                         <button
-                          type="button"
-                          className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                            activeTab === 'login'
-                              ? 'border-blue-500 text-blue-600'
-                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                          }`}
-                          onClick={() => handleTabChange('login')}
+                          onClick={safeCloseAuthDrawer}
+                          className="text-gray-500 hover:text-gray-700"
                         >
-                          Sign in
-                        </button>
-                        <button
-                          type="button"
-                          className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                            activeTab === 'register'
-                              ? 'border-blue-500 text-blue-600'
-                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                          }`}
-                          onClick={() => handleTabChange('register')}
-                        >
-                          Create account
+                          <X size={24} />
                         </button>
                       </div>
+
+                      <div className="flex items-center space-x-4 mb-6">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl font-bold">
+                          {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{user?.name || 'User'}</p>
+                          <p className="text-sm text-gray-500">{user?.email || ''}</p>
+                        </div>
+                      </div>
+
+                      <nav className="space-y-1">
+                        <a
+                          href="/account"
+                          className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                          onClick={safeCloseAuthDrawer}
+                        >
+                          <span className="truncate">My Profile</span>
+                        </a>
+                        <a
+                          href="/orders"
+                          className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                          onClick={safeCloseAuthDrawer}
+                        >
+                          <span className="truncate">My Orders</span>
+                        </a>
+                        <a
+                          href="/wishlist"
+                          className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                          onClick={safeCloseAuthDrawer}
+                        >
+                          <span className="truncate">My Wishlist</span>
+                        </a>
+                        <a
+                          href="/addresses"
+                          className="group flex items-center px-3 py-3 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                          onClick={safeCloseAuthDrawer}
+                        >
+                          <span className="truncate">Saved Addresses</span>
+                        </a>
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            safeCloseAuthDrawer();
+                          }}
+                          className="w-full group flex items-center px-3 py-3 text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md"
+                        >
+                          <LogOut className="h-5 w-5 mr-2 text-red-500" />
+                          <span>Sign out</span>
+                        </button>
+                      </nav>
                     </div>
+                  ) : (
+                    <>
+                      {activeTab !== 'forgot-password' && (
+                        <div className="border-b border-gray-200">
+                          <div className="flex">
+                            <button
+                              type="button"
+                              className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm ${activeTab === 'login'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                              onClick={() => handleTabChange('login')}
+                            >
+                              Sign in
+                            </button>
+                            <button
+                              type="button"
+                              className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm ${activeTab === 'register'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                              onClick={() => handleTabChange('register')}
+                            >
+                              Create account
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex-1 overflow-y-auto">
+                        {activeTab === 'login' ? (
+                          <LoginForm
+                            onSwitch={(tab) => handleTabChange(tab)}
+                            onClose={safeCloseAuthDrawer}
+                          />
+                        ) : activeTab === 'register' ? (
+                          <RegisterForm
+                            onSwitch={(tab) => handleTabChange(tab)}
+                            onClose={safeCloseAuthDrawer}
+                          />
+                        ) : activeTab === 'forgot-password' ? (
+                          <ForgotPasswordForm
+                            onSwitch={(tab) => handleTabChange(tab)}
+                            onClose={safeCloseAuthDrawer}
+                          />
+                        ) : null}
+                      </div>
+                    </>
                   )}
-                  
-                  <div className="flex-1 overflow-y-auto">
-                    {activeTab === 'login' ? (
-                      <LoginForm 
-                        onSwitch={(tab) => handleTabChange(tab)} 
-                        onClose={safeCloseAuthDrawer} 
-                      />
-                    ) : activeTab === 'register' ? (
-                      <RegisterForm 
-                        onSwitch={(tab) => handleTabChange(tab)} 
-                        onClose={safeCloseAuthDrawer} 
-                      />
-                    ) : activeTab === 'forgot-password' ? (
-                      <ForgotPasswordForm 
-                        onSwitch={(tab) => handleTabChange(tab)} 
-                        onClose={safeCloseAuthDrawer} 
-                      />
-                    ) : null}
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
               </motion.div>
             </div>
           </div>

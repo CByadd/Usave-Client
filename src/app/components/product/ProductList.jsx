@@ -34,7 +34,6 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
     // Determine context from URL path first (more reliable)
     const isCategoryPage = pathname?.includes('/categories/');
-    const isPlacePage = pathname?.includes('/places/');
     const isSearchPage = pathname?.includes('/search');
     const isProductsPage = pathname === '/products' || pathname?.startsWith('/products');
 
@@ -48,7 +47,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
     if (searchQuery && searchQuery.trim()) {
       return `Search results for "${searchQuery.trim()}"`;
     }
-    
+
     // Check category from URL path (for /categories/dining routes)
     if (isCategoryPage && pathname) {
       const categorySlug = pathname.split('/categories/')[1]?.split('/')[0];
@@ -61,18 +60,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
       }
     }
 
-    // Check place from URL path (for /places/kitchen routes)
-    if (isPlacePage && pathname) {
-      const placeSlug = pathname.split('/places/')[1]?.split('?')[0]?.split('/')[0];
-      if (placeSlug) {
-        const placeLabel = placeSlug
-          .split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        return `Products for ${placeLabel}`;
-      }
-    }
-    
+
     // Check category from query params (for /products?category=dining routes)
     if (category && category.trim()) {
       const categoryLabel = category
@@ -81,7 +69,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         .join(' ');
       return `${categoryLabel} Products`;
     }
-    
+
     // Check subcategory from query params
     if (subcategory && subcategory.trim()) {
       const subcategoryLabel = subcategory
@@ -90,15 +78,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         .join(' ');
       return `${subcategoryLabel} Products`;
     }
-    
-    // Check place from query params
-    if (place && place.trim()) {
-      const placeLabel = place
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      return `Products for ${placeLabel}`;
-    }
+
 
     // Default fallback for /products page
     if (isProductsPage) {
@@ -144,24 +124,13 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         let category = searchParams?.get('category');
         let place = searchParams?.get('place');
         const subcategory = searchParams?.get('subcategory');
-        
+
         // Normalize category to lowercase
         if (category) {
           category = category.toLowerCase().trim();
         }
-        
-        // If on a places route but no place param, extract from pathname
-        if (!place && pathname?.includes('/places/')) {
-          const placeSlug = pathname.split('/places/')[1]?.split('?')[0]?.split('/')[0];
-          if (placeSlug) {
-            // Convert slug to place param (e.g., "living-room" -> "living", "bedroom" -> "bedroom", "office" -> "office")
-            place = placeSlug
-              .replace('-room', '')
-              .replace(/^-+|-+$/g, '')
-              .replace(/-+/g, '');
-          }
-        }
-        
+
+
         if (category) {
           filters.category = category;
         }
@@ -174,8 +143,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
         // Check if we need to use POST /filter endpoint (for price filters)
         const hasPriceFilters = (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') ||
-                                (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null');
-        
+          (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null');
+
         // Map sortBy to sort parameter (server expects 'sort' not 'sortBy')
         const sortMap = {
           'price_asc': 'price-low',
@@ -185,25 +154,25 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           'oldest': 'name',
           'relevance': null, // No sort parameter for relevance
         };
-        
+
         let response;
-        
+
         if (hasPriceFilters) {
           // Use POST /filter endpoint for price filtering
           const filterParams = {
             limit: filters.limit || 12,
             offset: (filters.page - 1) * (filters.limit || 12),
           };
-          
+
           if (filters.category) {
             filterParams.category = filters.category;
           }
-          
+
           // Map sortBy to sort
           if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
             filterParams.sort = sortMap[advancedFilters.sortBy] || null;
           }
-          
+
           // Add price filters
           if (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') {
             const minPriceNum = Number(advancedFilters.minPrice);
@@ -217,12 +186,12 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
               filterParams.maxPrice = maxPriceNum;
             }
           }
-          
+
           // Debug logging
           if (process.env.NODE_ENV === 'development') {
             console.log('ProductList: Using POST /filter with params:', filterParams);
           }
-          
+
           response = await apiService.products.filter(filterParams);
         } else {
           // Use GET /products endpoint for regular filtering
@@ -230,20 +199,20 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
           if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
             filters.sort = sortMap[advancedFilters.sortBy] || null;
           }
-          
+
           if (advancedFilters.color && advancedFilters.color.trim() !== '') {
             filters.color = advancedFilters.color.trim();
           }
-          
+
           // Debug logging
           if (process.env.NODE_ENV === 'development') {
             console.log('ProductList: Using GET /products with filters:', filters);
             console.log('ProductList: Advanced filters state:', advancedFilters);
           }
-          
+
           response = await productService.getAllProducts(filters);
         }
-        
+
         // Debug logging
         if (process.env.NODE_ENV === 'development') {
           console.log('ProductList: API response:', {
@@ -252,13 +221,13 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             error: response.error,
           });
         }
-        
+
         if (response.success) {
           // API response format: { success: true, data: { products: [...], pagination: {...} } }
           // POST /filter returns: { success: true, data: { products: [...], total: number } }
           const fetchedProducts = response.data?.products || [];
           setProducts(fetchedProducts);
-          
+
           // Handle pagination from API response
           if (response.data?.pagination) {
             // GET endpoint format
@@ -306,29 +275,19 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      
+
       // Build filters from URL params to maintain category/place/subcategory filtering
       const filters = { page: nextPage, limit: 12 };
       let category = searchParams?.get('category');
       let place = searchParams?.get('place');
       const subcategory = searchParams?.get('subcategory');
-      
+
       // Normalize category to lowercase
       if (category) {
         category = category.toLowerCase().trim();
       }
-      
-      // If on a places route but no place param, extract from pathname
-      if (!place && pathname?.includes('/places/')) {
-        const placeSlug = pathname.split('/places/')[1]?.split('?')[0]?.split('/')[0];
-        if (placeSlug) {
-          place = placeSlug
-            .replace('-room', '')
-            .replace(/^-+|-+$/g, '')
-            .replace(/-+/g, '');
-        }
-      }
-      
+
+
       if (category) {
         filters.category = category;
       }
@@ -341,8 +300,8 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
 
       // Check if we need to use POST /filter endpoint (for price filters)
       const hasPriceFilters = (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') ||
-                              (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null');
-      
+        (advancedFilters.maxPrice !== '' && advancedFilters.maxPrice !== null && advancedFilters.maxPrice !== undefined && advancedFilters.maxPrice !== 'null');
+
       // Map sortBy to sort parameter (server expects 'sort' not 'sortBy')
       const sortMap = {
         'price_asc': 'price-low',
@@ -352,25 +311,25 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         'oldest': 'name',
         'relevance': null,
       };
-      
+
       let response;
-      
+
       if (hasPriceFilters) {
         // Use POST /filter endpoint for price filtering
         const filterParams = {
           limit: filters.limit || 12,
           offset: (nextPage - 1) * (filters.limit || 12),
         };
-        
+
         if (filters.category) {
           filterParams.category = filters.category;
         }
-        
+
         // Map sortBy to sort
         if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
           filterParams.sort = sortMap[advancedFilters.sortBy] || null;
         }
-        
+
         // Add price filters
         if (advancedFilters.minPrice !== '' && advancedFilters.minPrice !== null && advancedFilters.minPrice !== undefined && advancedFilters.minPrice !== 'null') {
           const minPriceNum = Number(advancedFilters.minPrice);
@@ -384,7 +343,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             filterParams.maxPrice = maxPriceNum;
           }
         }
-        
+
         response = await apiService.products.filter(filterParams);
       } else {
         // Use GET /products endpoint for regular filtering
@@ -392,14 +351,14 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         if (advancedFilters.sortBy && advancedFilters.sortBy !== 'relevance') {
           filters.sort = sortMap[advancedFilters.sortBy] || null;
         }
-        
+
         if (advancedFilters.color && advancedFilters.color.trim() !== '') {
           filters.color = advancedFilters.color.trim();
         }
-        
+
         response = await productService.getAllProducts(filters);
       }
-      
+
       if (response.success) {
         // API response format: { success: true, data: { products: [...], pagination: {...} } }
         // POST /filter returns: { success: true, data: { products: [...], total: number } }
@@ -407,7 +366,7 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         if (newItems.length > 0) {
           setProducts(prev => [...prev, ...newItems]);
           setPage(nextPage);
-          
+
           // Handle pagination from API response
           if (response.data?.pagination) {
             // GET endpoint format
@@ -593,16 +552,16 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
         )}
 
         <div className="mt-12 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 py-8 md:py-12 border-t border-b border-gray-200">
-          <Link href="/places" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=kitchen" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">SHOP BY PLACES</h3>
-            <p className="text-xs md:text-sm text-gray-600">Rentals</p>
+            <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">KITCHEN</h3>
+            <p className="text-xs md:text-sm text-gray-600">Cooking</p>
           </Link>
-          <Link href="/places/living-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=lounges" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h18M9 3v2m6-2v2M5 9h14m-7 4h.01M8 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -611,16 +570,16 @@ const ProductListingPage = ({ title, subtitle, contextType }) => {
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">LIVING</h3>
             <p className="text-xs md:text-sm text-gray-600">Lounges</p>
           </Link>
-          <Link href="/places/dining-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=dining" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">DINING</h3>
-            <p className="text-xs md:text-sm text-gray-600">BBQ</p>
+            <p className="text-xs md:text-sm text-gray-600">Tables</p>
           </Link>
-          <Link href="/places/bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />

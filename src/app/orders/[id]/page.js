@@ -23,12 +23,12 @@ export default function OrderDetailsPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    
+
     if (!isAuthenticated) {
       router.push('/');
       return;
     }
-    
+
     if (orderId) {
       fetchOrderDetails();
     }
@@ -36,12 +36,12 @@ export default function OrderDetailsPage() {
 
   const fetchOrderDetails = async () => {
     if (!orderId) return;
-    
+
     try {
       setLoading(true);
       setError('');
       const response = await api.orders.getById(orderId);
-      
+
       if (response.success) {
         const orderData = response.data?.order || response.data;
         // Check if user has access to this order
@@ -64,11 +64,13 @@ export default function OrderDetailsPage() {
 
   // Hierarchical status system
   const ORDER_STATUS_HIERARCHY = [
-    { value: 'PENDING_CONFIRMED', label: 'Pending Confirmed', description: 'Waiting for Owner Approval (if submitted) and Admin Approval' },
-    { value: 'APPROVED', label: 'Approved', description: 'Waiting for payment process' },
-    { value: 'PAYMENT_CONFIRMED', label: 'Payment Confirmed', description: 'Processing your order for shipping' },
-    { value: 'SHIPPED', label: 'Shipped', description: 'Your order is on the way' },
-    { value: 'DELIVERED', label: 'Delivered', description: 'Your order has been delivered successfully' },
+    { value: 'SUBMITTED', label: 'Submitted', description: 'Order submitted' },
+    { value: 'OWNER_APPROVAL', label: 'Owner Approval', description: 'Pending manager approval' },
+    { value: 'ADMIN_APPROVAL', label: 'Admin Review', description: 'Under review by our team' },
+    { value: 'PAYMENT', label: 'Payment', description: 'Waiting for payment confirmation' },
+    { value: 'PROCESSING', label: 'Processing', description: 'Preparing for shipment' },
+    { value: 'SHIPPED', label: 'Shipped', description: 'Order is on its way' },
+    { value: 'DELIVERED', label: 'Delivered', description: 'Order delivered successfully' },
   ];
 
   const getStatusInfo = (status, order) => {
@@ -76,66 +78,57 @@ export default function OrderDetailsPage() {
     if (order?.ownerRejected || status === 'REJECTED') {
       return {
         currentIndex: -1,
-        label: 'Rejected by Owner',
-        description: 'This order has been rejected',
+        label: 'Rejected',
+        description: order?.ownerRejected ? 'Rejected by Owner' : 'Rejected by Admin',
         badgeClass: 'bg-red-100 text-red-800 border-red-200',
       };
     }
-    
-    if (order?.ownerApproved && !order?.adminApproved && status === 'PENDING_CONFIRMED') {
-      return {
-        currentIndex: 0,
-        label: 'Owner Approved - Waiting for Admin',
-        description: 'Waiting for Admin Approval',
-        badgeClass: 'bg-[#0B4866]/10 text-[#0B4866] border-[#0B4866]/30',
-      };
-    }
-    
-    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected && status === 'PENDING_CONFIRMED') {
-      return {
-        currentIndex: 0,
-        label: 'Pending Owner Approval',
-        description: 'Waiting for Owner Approval (if submitted) and Admin Approval',
-        badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
-      };
-    }
 
-    // Map old statuses to new ones for backward compatibility
-    const statusMap = {
-      'PENDING_APPROVAL': 'PENDING_CONFIRMED',
-      'CONFIRMED': 'PAYMENT_CONFIRMED',
-      'PROCESSING': 'PAYMENT_CONFIRMED',
-    };
-    const mappedStatus = statusMap[status] || status;
-    
-    // Find current status in hierarchy
-    const currentIndex = ORDER_STATUS_HIERARCHY.findIndex(s => s.value === mappedStatus);
-    
-    if (currentIndex === -1) {
-      // Status not in hierarchy, return default
+    if (status === 'CANCELLED') {
       return {
         currentIndex: -1,
-        label: status || 'Unknown',
-        description: '',
+        label: 'Cancelled',
+        description: 'Order has been cancelled',
         badgeClass: 'bg-gray-100 text-gray-800 border-gray-200',
       };
     }
 
-    const currentStatus = ORDER_STATUS_HIERARCHY[currentIndex];
-    
+    let completedIndex = 0; // SUBMITTED
+    let currentIndex = 1;
+
+    // Check progress based on flags and status
+    if (order?.requiresOwnerApproval && !order?.ownerApproved && !order?.ownerRejected) {
+      completedIndex = 0;
+      currentIndex = 1; // Pulsing Owner Approval
+    } else if ((!order?.requiresOwnerApproval || order?.ownerApproved) && !order?.adminApproved && status === 'PENDING_APPROVAL') {
+      completedIndex = 1;
+      currentIndex = 2; // Pulsing Admin Review
+    } else if (status === 'APPROVED' || (order?.adminApproved && order?.paymentStatus !== 'COMPLETED' && order?.paymentStatus !== 'PAID')) {
+      completedIndex = 2;
+      currentIndex = 3; // Pulsing Payment
+    } else if (status === 'CONFIRMED' || status === 'PAYMENT_CONFIRMED' || status === 'PROCESSING') {
+      completedIndex = 3;
+      currentIndex = 4; // Pulsing Processing
+    } else if (status === 'SHIPPED') {
+      completedIndex = 4;
+      currentIndex = 5; // Pulsing Shipped
+    } else if (status === 'DELIVERED' || status === 'COMPLETED') {
+      completedIndex = 6;
+      currentIndex = null; // Everything complete
+    }
+
+    const currentMeta = currentIndex !== null ? ORDER_STATUS_HIERARCHY[currentIndex] : ORDER_STATUS_HIERARCHY[completedIndex];
+
     return {
       currentIndex,
-      label: currentStatus.label,
-      description: currentStatus.description,
-      badgeClass: currentIndex === 0 
-        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-        : currentIndex === 1
-        ? 'bg-green-100 text-green-800 border-green-200'
-        : currentIndex === 2
-        ? 'bg-blue-100 text-blue-800 border-blue-200'
-        : currentIndex === 3
-        ? 'bg-sky-100 text-sky-800 border-sky-200'
-        : 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      completedIndex,
+      label: currentMeta.label,
+      description: currentMeta.description,
+      badgeClass: (currentIndex || completedIndex) <= 2
+        ? 'bg-amber-100 text-amber-800 border-amber-200'
+        : (currentIndex || completedIndex) === 3
+          ? 'bg-blue-100 text-blue-800 border-blue-200'
+          : 'bg-emerald-100 text-emerald-800 border-emerald-200',
     };
   };
 
@@ -255,48 +248,63 @@ export default function OrderDetailsPage() {
           </div>
         </div>
 
-        {/* Hierarchical Status Display */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Status</h2>
-          <div className="space-y-3">
-            {ORDER_STATUS_HIERARCHY.map((statusItem, index) => {
-              const isCompleted = statusInfo.currentIndex > index;
-              const isCurrent = statusInfo.currentIndex === index;
-              const isPending = statusInfo.currentIndex < index;
-              
+        {/* Premium Status Flow Visualizer */}
+        <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/20 shadow-sm p-8 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <h2 className="text-xl font-bold text-[#0F172A]">Track Order</h2>
+            <div className="flex items-center gap-3">
+              <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border shadow-sm ${statusInfo.badgeClass}`}>
+                {statusInfo.label}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative flex items-center justify-between px-2">
+            {/* Progress Bar Background */}
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2 z-0 rounded-full"></div>
+
+            {/* Active Progress Bar */}
+            <div
+              className="absolute top-1/2 left-0 h-1 bg-[#0ACF83] -translate-y-1/2 z-0 transition-all duration-1000 ease-in-out rounded-full"
+              style={{ width: `${((statusInfo.currentIndex !== null ? statusInfo.currentIndex : statusInfo.completedIndex) / (ORDER_STATUS_HIERARCHY.length - 1)) * 100}%` }}
+            ></div>
+
+            {ORDER_STATUS_HIERARCHY.map((step, idx) => {
+              const isCompleted = statusInfo.completedIndex >= idx;
+              const isCurrent = statusInfo.currentIndex === idx;
+              const isPending = statusInfo.currentIndex < idx;
+
               return (
-                <div key={statusItem.value} className="flex items-start gap-3">
-                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                    isCompleted 
-                      ? 'bg-green-500 text-white' 
-                      : isCurrent 
-                      ? 'bg-[#0B4866] text-white' 
-                      : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {isCompleted ? '✓' : index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className={`text-base font-medium ${
-                      isCompleted 
-                        ? 'text-green-700' 
-                        : isCurrent 
-                        ? 'text-[#0B4866]' 
-                        : 'text-gray-500'
+                <div key={idx} className="relative z-10 flex flex-col items-center group">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${isCompleted
+                    ? 'bg-[#0ACF83] text-white shadow-lg shadow-emerald-500/20'
+                    : isCurrent
+                      ? 'bg-[#0B4866] text-white ring-4 ring-[#0B4866]/10 scale-110 shadow-lg'
+                      : 'bg-white text-slate-300 border-2 border-slate-100 shadow-sm'
                     }`}>
-                      {statusItem.label}
-                    </div>
-                    {(isCurrent || isCompleted) && (
-                      <div className={`text-sm mt-1 ${
-                        isCompleted ? 'text-green-600' : 'text-[#0B4866]'
+                    {isCompleted ? (
+                      <CheckCircle size={20} />
+                    ) : (
+                      <span className="text-sm font-bold">{idx + 1}</span>
+                    )}
+                  </div>
+                  <div className="absolute top-12 flex flex-col items-center min-w-[80px]">
+                    <span className={`text-[10px] font-black uppercase tracking-widest text-center whitespace-nowrap ${isCurrent ? 'text-[#0B4866]' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
                       }`}>
-                        {statusItem.description}
-                      </div>
+                      {step.label}
+                    </span>
+                    {isCurrent && (
+                      <span className="text-[9px] text-slate-500 font-medium mt-1 animate-pulse hidden md:block">
+                        Current Stage
+                      </span>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
+          {/* Spacer for label height */}
+          <div className="h-12"></div>
         </div>
 
         {error && (
@@ -325,7 +333,7 @@ export default function OrderDetailsPage() {
               const color = item.color || item.options?.color || null;
               const size = item.size || item.options?.size || null;
               const includeInstallation = item.includeInstallation || item.options?.includeInstallation || false;
-              
+
               return (
                 <div key={item.id || index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -349,7 +357,7 @@ export default function OrderDetailsPage() {
                     {/* Product Details */}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{productName}</h3>
-                      
+
                       {/* Configuration Options */}
                       <div className="flex flex-wrap gap-4 mb-3 text-sm">
                         {(() => {
@@ -487,12 +495,12 @@ export default function OrderDetailsPage() {
               <div className="flex items-center text-sm">
                 <span className="text-gray-600 w-24 font-medium">Date:</span>
                 <span className="text-gray-900">
-                  {order.deliveryDate 
+                  {order.deliveryDate
                     ? new Date(order.deliveryDate).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })
                     : 'TBD'
                   }
                 </span>
@@ -520,7 +528,7 @@ export default function OrderDetailsPage() {
             </div>
             {order.tax > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Tax</span>
+                <span className="text-gray-600">GST (10%)</span>
                 <span className="font-medium text-gray-900">${(order.tax || 0).toFixed(2)}</span>
               </div>
             )}

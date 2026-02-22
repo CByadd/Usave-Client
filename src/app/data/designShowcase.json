@@ -1,36 +1,36 @@
 {
-    "left": [
-      {
-        "title": "AirBnB/Rentals",
-        "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598205/Gemini_Generated_Image_h8j575h8j575h8j5_x0yoau.png",
-        "link": "/search?category=kitchen",
-        "class": "md:rounded-tl-[20rem] rounded-tl-[7rem] object-contain"
-      },
-      {
-        "title": "Luxury",
-        "image": "https://res.cloudinary.com/dvmuf6jfj/image/upload/v1757264120/usave/unsplash_23TiGQ7PgWU_f6n03q.jpg",
-        "link": "/search?category=bedroom",
-        "class": "md:rounded-tr-[20rem] rounded-tr-[7rem]"
-      }
-    ],
-    "right": [
-      {
-        "title": "Resort",
-        "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598335/download_5_wlj46d.png",
-        "link": "/search?category=dining",
-        "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
-      },
-      {
-        "title": "Outdoor",
-        "image": "https://homes-and-villas.marriott.com/assets/images/vacation-rental-villa.png",
-        "link": "/search?category=outdoor",
-        "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
-      },
-      {
-        "title": "Dining",
-        "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598512/download_6_wirf82.png",
-        "link": "/search?category=electronics",
-        "class": "md:rounded-bl-[10rem] rounded-bl-[5rem]"
-      }
-    ]
-  }
+  "left": [
+    {
+      "title": "Kitchen",
+      "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1771731679/Screenshot_2026-02-22_091101_cdsl1f.png",
+      "link": "/search?category=kitchen",
+      "class": "md:rounded-tl-[20rem] rounded-tl-[7rem] object-contain"
+    },
+    {
+      "title": "Bedroom",
+      "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1771731398/Screenshot_2026-02-22_090606_z4a7wi.png",
+      "link": "/search?category=bedroom",
+      "class": "md:rounded-tr-[20rem] rounded-tr-[7rem]"
+    }
+  ],
+  "right": [
+    {
+      "title": "Living Room",
+      "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1771731550/Screenshot_2026-02-22_090854_pudcig.png",
+      "link": "/search?category=lounges",
+      "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
+    },
+    {
+      "title": "Outdoor",
+      "image": "https://homes-and-villas.marriott.com/assets/images/vacation-rental-villa.png",
+      "link": "/search?category=outdoor",
+      "class": "md:rounded-br-[10rem] rounded-br-[5rem]"
+    },
+    {
+      "title": "Dining",
+      "image": "https://res.cloudinary.com/dh0ehlpkp/image/upload/v1763598512/download_6_wirf82.png",
+      "link": "/search?category=dining",
+      "class": "md:rounded-bl-[10rem] rounded-bl-[5rem]"
+    }
+  ]
+}

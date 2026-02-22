@@ -1,10 +1,13 @@
 'use client';
 
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // ✅ import router
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCurrentUser } from '../../lib/auth';
+import { useAuth } from '../../stores/useAuthStore';
+import { useCartStore } from '../../stores/useCartStore';
 import { CheckCircle2, X } from 'lucide-react';
+import { APP_ROUTES } from '../../lib/urls';
 
 export default function ApprovalModal({
   isOpen,
@@ -22,10 +25,14 @@ export default function ApprovalModal({
   tax = 0,
   shipping = 0,
   warranty = 0,
+  saveAddress = false,
+  selectedAddressId = 'new',
 }) {
-  const router = useRouter(); // ✅ initialize router
+  const router = useRouter();
+  const { user: authUser } = useAuth();
+  const { clearCart } = useCartStore();
   const [user, setUser] = useState(null);
-  
+
   useEffect(() => {
     setUser(getCurrentUser());
   }, []);
@@ -35,7 +42,7 @@ export default function ApprovalModal({
   const [step, setStep] = useState('email');
   const [orderNumber, setOrderNumber] = useState('');
   const [currentFlowType, setCurrentFlowType] = useState(flowType); // 'owner' or 'direct'
-  
+
   // Update flow type when prop changes
   useEffect(() => {
     setCurrentFlowType(flowType);
@@ -59,7 +66,7 @@ export default function ApprovalModal({
         (sum, item) => sum + (item.discountedPrice || item.price || item.product?.discountedPrice || item.product?.originalPrice || 0) * (item.quantity || 1),
         0
       );
-      
+
       const calculatedTax = tax || 0;
       const calculatedShipping = shipping || 0;
       const calculatedWarranty = warranty || 0;
@@ -84,6 +91,9 @@ export default function ApprovalModal({
           name: item.name || item.title || item.product?.title,
           price: item.discountedPrice || item.price || item.product?.discountedPrice || item.product?.originalPrice,
           quantity: item.quantity || 1,
+          color: item.color || null,
+          size: item.size || null,
+          includeInstallation: item.includeInstallation || false,
           product: {
             id: item.productId || item.id || item.product?.id,
             title: item.name || item.title || item.product?.title,
@@ -105,16 +115,16 @@ export default function ApprovalModal({
 
       // Get client base URL for the approval link
       const clientBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      
+
       // For owner approval flow, only send owner email - admin email comes from backend
-      const response = await fetch('/api/orders/request-approval', {
+      const response = await fetch(APP_ROUTES.orderRequestApprovalApi, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ownerEmail: ownerEmail,
           adminEmail: null, // Admin email will be fetched from backend
           orderDetails,
-          userId: user?.id || 'guest',
+          userId: authUser?.id || user?.id || 'guest',
           requiresOwnerApproval: true, // This is owner approval flow
           clientBaseUrl, // Send client base URL so server can generate correct approval link
         }),
@@ -127,6 +137,39 @@ export default function ApprovalModal({
 
       const data = await response.json();
       setOrderNumber(data.orderNumber);
+
+      // Save shipping address if requested
+      if (saveAddress && selectedAddressId === 'new' && authUser?.id && shippingAddress) {
+        try {
+          // Dynamic import to avoid circular dependencies or early load issues
+          const { apiService: api } = await import('../../services/api/apiClient');
+          await api.user.addAddress({
+            type: 'shipping',
+            firstName: shippingAddress.firstName,
+            lastName: shippingAddress.lastName,
+            address1: shippingAddress.address1,
+            address2: shippingAddress.address2 || '',
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postalCode: shippingAddress.postalCode,
+            country: shippingAddress.country || 'Australia',
+            phone: shippingAddress.phone || '',
+            isDefault: false
+          });
+          console.log('[ApprovalModal] Address saved successfully');
+        } catch (addrErr) {
+          console.error('[ApprovalModal] Failed to save address:', addrErr);
+        }
+      }
+
+      // Clear cart after successful submission
+      try {
+        await clearCart();
+        console.log('[ApprovalModal] Cart cleared after successful submission');
+      } catch (clearErr) {
+        console.warn('[ApprovalModal] Failed to clear cart:', clearErr);
+      }
+
       setStep('success');
     } catch (err) {
       setError(err.message || 'An error occurred while processing your request');
@@ -143,7 +186,7 @@ export default function ApprovalModal({
     setError('');
     onClose();
     if (step === 'success') {
-      router.push('/orders'); // ✅ redirect to orders page
+      router.push(APP_ROUTES.orders); // ✅ redirect to orders page
     }
   };
 
@@ -163,7 +206,7 @@ export default function ApprovalModal({
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               aria-hidden="true"
             />
-            
+
             <motion.div
               key="modal"
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -173,69 +216,69 @@ export default function ApprovalModal({
               className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 z-10"
               onClick={(e) => e.stopPropagation()}
             >
-            <button
-              onClick={handleClose}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 cursor-pointer transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              <button
+                onClick={handleClose}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 cursor-pointer transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            {step === 'success' ? (
-              <div className="text-center py-6">
-                <div className="flex justify-center mb-4">
-                  <CheckCircle2 className="w-14 h-14 text-green-500" />
+              {step === 'success' ? (
+                <div className="text-center py-6">
+                  <div className="flex justify-center mb-4">
+                    <CheckCircle2 className="w-14 h-14 text-green-500" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Request Sent Successfully!
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600">
+                    An approval request has been sent to <span className="font-medium">{ownerEmail}</span> for
+                    Order #{orderNumber}. The owner will review your order first, then it will be sent to admin.
+                  </p>
+                  <button
+                    onClick={handleClose}
+                    className="mt-6 px-5 py-2.5 bg-[#0B4866] text-white rounded-lg font-medium cursor-pointer transition"
+                  >
+                    Close
+                  </button>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Request Sent Successfully!
-                </h2>
-                <p className="mt-2 text-sm text-gray-600">
-                  An approval request has been sent to <span className="font-medium">{ownerEmail}</span> for
-                  Order #{orderNumber}. The owner will review your order first, then it will be sent to admin.
-                </p>
-                <button
-                  onClick={handleClose}
-                  className="mt-6 px-5 py-2.5 bg-[#0B4866] text-white rounded-lg font-medium cursor-pointer transition"
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
-              <>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Request Owner Approval</h2>
-                <p className="text-sm text-gray-500 mb-5">
-                  Submit to owner first, then admin will review after owner approval.
-                </p>
+              ) : (
+                <>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Request Owner Approval</h2>
+                  <p className="text-sm text-gray-500 mb-5">
+                    Submit to owner first, then admin will review after owner approval.
+                  </p>
 
-                {error && (
-                  <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm">
-                    {error}
-                  </div>
-                )}
+                  {error && (
+                    <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm">
+                      {error}
+                    </div>
+                  )}
 
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-5">
-                    <label
-                      htmlFor="ownerEmail"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Owner's Email *
-                    </label>
-                    <input
-                      type="email"
-                      id="ownerEmail"
-                      value={ownerEmail}
-                      onChange={(e) => setOwnerEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 transition"
-                      placeholder="owner@example.com"
-                      required
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Enter the owner's email address who needs to approve first. After owner approval, the order will be sent to admin.
-                    </p>
-                  </div>
+                  <form onSubmit={handleSubmit}>
+                    <div className="mb-5">
+                      <label
+                        htmlFor="ownerEmail"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Owner's Email *
+                      </label>
+                      <input
+                        type="email"
+                        id="ownerEmail"
+                        value={ownerEmail}
+                        onChange={(e) => setOwnerEmail(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 transition"
+                        placeholder="owner@example.com"
+                        required
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Enter the owner's email address who needs to approve first. After owner approval, the order will be sent to admin.
+                      </p>
+                    </div>
 
-                  <div className="flex justify-between items-center mt-6">
-                    {/* <button
+                    <div className="flex justify-between items-center mt-6">
+                      {/* <button
                       type="button"
                       onClick={onContinueWithoutApproval}
                       disabled={isSubmitting}
@@ -243,27 +286,27 @@ export default function ApprovalModal({
                     >
                       Continue without approval
                     </button> */}
-                    <div className="space-x-3">
-                      <button
-                        type="button"
-                        onClick={handleClose}
-                        disabled={isSubmitting}
-                        className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isSubmitting || !ownerEmail}
-                        className="px-4 py-2 text-sm rounded-lg bg-[#0B4866] text-white font-medium hover:scale-102 transition ease-in-out focus:ring-2 disabled:opacity-50"
-                      >
-                        {isSubmitting ? 'Sending...' : 'Send Request'}
-                      </button>
+                      <div className="space-x-3">
+                        <button
+                          type="button"
+                          onClick={handleClose}
+                          disabled={isSubmitting}
+                          className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSubmitting || !ownerEmail}
+                          className="px-4 py-2 text-sm rounded-lg bg-[#0B4866] text-white font-medium hover:scale-102 transition ease-in-out focus:ring-2 disabled:opacity-50"
+                        >
+                          {isSubmitting ? 'Sending...' : 'Send Request'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </form>
-              </>
-            )}
+                  </form>
+                </>
+              )}
             </motion.div>
           </div>
         </div>

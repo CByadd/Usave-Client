@@ -12,7 +12,7 @@ export default function ApprovalModalWrapper() {
     <ApprovalModal
       isOpen={showApprovalModal}
       onClose={hideApproval}
-      onContinueWithoutApproval={approvalModalData?.onContinueWithoutApproval || (() => {})}
+      onContinueWithoutApproval={approvalModalData?.onContinueWithoutApproval || (() => { })}
       cartItems={approvalModalData?.cartItems || []}
       totalAmount={approvalModalData?.totalAmount || 0}
       flowType={approvalModalData?.flowType || 'owner'}
@@ -25,6 +25,8 @@ export default function ApprovalModalWrapper() {
       tax={approvalModalData?.tax || 0}
       shipping={approvalModalData?.shipping || 0}
       warranty={approvalModalData?.warranty || 0}
+      saveAddress={approvalModalData?.saveAddress || false}
+      selectedAddressId={approvalModalData?.selectedAddressId || 'new'}
     />
   );
 }

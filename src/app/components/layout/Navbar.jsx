@@ -31,7 +31,7 @@ const mainNavLinks = [
 const Navbar = () => {
   // Router
   const router = useRouter();
-  
+
   // State
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -56,7 +56,7 @@ const Navbar = () => {
     setIsMounted(true);
     setIsMountedClient(true);
     checkAuth();
-    
+
     // Fetch categories from API
     const fetchCategories = async () => {
       try {
@@ -70,7 +70,7 @@ const Navbar = () => {
         setCategoryLinks([]);
       }
     };
-    
+
     fetchCategories();
   }, [checkAuth]);
 
@@ -97,11 +97,11 @@ const Navbar = () => {
 
     const handleScroll = () => {
       if (ticking) return;
-      
+
       ticking = true;
       window.requestAnimationFrame(() => {
         const currentScrollY = window.scrollY;
-        
+
         // Only apply on desktop (window width >= 768px)
         if (window.innerWidth < 768) {
           if (isCategoryBarCollapsed) {
@@ -118,7 +118,7 @@ const Navbar = () => {
         const expandThreshold = 80;    // Scroll up past this to expand
         const minScrollDelta = 10;     // Minimum scroll delta to trigger state change
         const deadZone = 20;           // Dead zone around threshold to prevent rapid toggling
-        
+
         const scrollDelta = currentScrollY - lastScrollYRef;
         const absScrollDelta = Math.abs(scrollDelta);
 
@@ -165,7 +165,7 @@ const Navbar = () => {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     // Handle window resize to reset on mobile/desktop switch
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -264,7 +264,7 @@ const Navbar = () => {
   //         ))}
   //       </nav>
   //     </div>
-      
+
   //   </div>
   // );
 
@@ -312,7 +312,7 @@ const Navbar = () => {
       updatePosition();
       window.addEventListener('scroll', updatePosition, true);
       window.addEventListener('resize', updatePosition);
-      
+
       // Close menu when clicking outside
       const handleClickOutside = (e) => {
         if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) {
@@ -323,12 +323,12 @@ const Navbar = () => {
           }
         }
       };
-      
+
       // Use setTimeout to avoid immediate closure
       setTimeout(() => {
         document.addEventListener('click', handleClickOutside);
       }, 0);
-      
+
       return () => {
         window.removeEventListener('scroll', updatePosition, true);
         window.removeEventListener('resize', updatePosition);
@@ -339,62 +339,62 @@ const Navbar = () => {
     }
   }, [isAccountMenuOpen]);
 
- const renderUserMenu = () => {
-  // Get first two letters of name for profile circle
-  const getInitials = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-    } else if (user?.firstName) {
-      return user.firstName.slice(0, 2).toUpperCase();
-    } else if (user?.name) {
-      const nameParts = user.name.split(' ');
-      if (nameParts.length >= 2) {
-        return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+  const renderUserMenu = () => {
+    // Get first two letters of name for profile circle
+    const getInitials = () => {
+      if (user?.firstName && user?.lastName) {
+        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+      } else if (user?.firstName) {
+        return user.firstName.slice(0, 2).toUpperCase();
+      } else if (user?.name) {
+        const nameParts = user.name.split(' ');
+        if (nameParts.length >= 2) {
+          return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+        }
+        return user.name.slice(0, 2).toUpperCase();
       }
-      return user.name.slice(0, 2).toUpperCase();
-    }
-    return 'U';
-  };
+      return 'U';
+    };
 
-  return (
-    <div className="hidden md:block relative">
-      {isAuth ? (
-        <>
-          {/* Profile Circle - Show when authenticated */}
-          <button
-            ref={accountMenuRef}
-            type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#0B4866] text-white font-medium text-sm hover:bg-[#094058] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:ring-offset-2 cursor-pointer"
-            aria-label="User account"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsAccountMenuOpen(prev => !prev);
-            }}
-          >
-            {getInitials()}
-          </button>
-        </>
-      ) : (
-        <>
-          {/* Account Icon - Show when not authenticated */}
-          <button
-            type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none cursor-pointer"
-            aria-label="Sign in"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Desktop auth icon clicked');
-              openAuthDrawer('login');
-            }}
-          >
-            <UserRound size={22} className="text-gray-700" />
-          </button>
-        </>
-      )}
-    </div>
-  );
-};
+    return (
+      <div className="hidden md:block relative">
+        {isMounted && isAuth ? (
+          <>
+            {/* Profile Circle - Show when authenticated */}
+            <button
+              ref={accountMenuRef}
+              type="button"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-[#0B4866] text-white font-medium text-sm hover:bg-[#094058] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B4866] focus:ring-offset-2 cursor-pointer"
+              aria-label="User account"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAccountMenuOpen(prev => !prev);
+              }}
+            >
+              {getInitials()}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Account Icon - Show when not authenticated */}
+            <button
+              type="button"
+              className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors focus:outline-none cursor-pointer"
+              aria-label="Sign in"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Desktop auth icon clicked');
+                openAuthDrawer('login');
+              }}
+            >
+              <UserRound size={22} className="text-gray-700" />
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
 
 
 

@@ -28,17 +28,23 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
     setError('');
 
     const result = await login(formData.email, formData.password);
-    
+
     if (result.success) {
       showToast('Login successful', 'success');
       if (onClose) onClose();
       setFormData({ email: '', password: '' });
       window.location.reload();
     } else {
-      setError(result.error || 'Login failed');
-      showToast(result.error || 'Login failed', 'error');
+      const errorMsg = result.error || 'Login failed';
+      if (errorMsg.toLowerCase().includes('account not found')) {
+        showToast('Account not found. Please sign up to create an account.', 'info');
+        handleSwitchToRegister();
+      } else {
+        setError(errorMsg);
+        showToast(errorMsg, 'error');
+      }
     }
-    
+
     setIsLoading(false);
   };
 
@@ -50,7 +56,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   if (!isOpen) return null;
 
   return (
-   <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-md relative">
         <button
           onClick={onClose}

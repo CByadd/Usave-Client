@@ -10,7 +10,7 @@ const Hero = () => {
       <div className="absolute inset-0 -z-10  rounded-none md:rounded-2xl overflow-hidden">
         <Image
           src={HERO_IMG}
-          alt="Hero background"
+          alt="Premium Commercial Furniture and Interior Design Solutions"
           fill
           priority
           className="object-cover brightness-70"
@@ -20,14 +20,14 @@ const Hero = () => {
       {/* Overlay Content */}
       <div className="max-w-3xl mx-auto px-6 text-white flex flex-col items-center justify-center">
         <h1 className="text-4xl md:text-6xl font-medium mb-4 drop-shadow-lg font-serifx">
-          Discover
+          Discover Premium Commercial Furniture
         </h1>
         <p className="text-base md:text-xl max-w-md md:max-w-xl mb-8 opacity-80">
           Experience a uniquely curated selection of furniture, lighting, flooring, and designed objects in a distinctive space.
         </p>
         <Link href="/products">
- <button
-  className="
+          <button
+            className="
     relative z-10 px-8 py-3 bg-white border-none transition-all rounded-full font-semibold 
     shadow-lg w-[180px] text-gray-800 overflow-hidden
     hover:text-white hover:bg-transparent hover:border-white border-2
@@ -35,9 +35,9 @@ const Hero = () => {
     before:backdrop-blur-lg before:opacity-0 hover:before:opacity-100 
     before:transition-all before:duration-300 before:-z-10
   "
->
-  Shop Now
-</button>
+          >
+            Shop Now
+          </button>
 
 
         </Link>

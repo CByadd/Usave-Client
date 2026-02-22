@@ -17,7 +17,7 @@ function SearchPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', subcategory: '', inStock: false, color: '', size: '', collection: '' });
+  const [filters, setFilters] = useState({ sortBy: 'relevance', priceRange: { min: 0, max: 10000 }, category: '', subcategory: '', inStock: null, color: '', size: '', collection: '' });
   const [hasSearched, setHasSearched] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const router = useRouter();
@@ -38,7 +38,7 @@ function SearchPageContent() {
     const query = searchParams.get('q') || '';
     const category = searchParams.get('category') || '';
     const subcategory = searchParams.get('subcategory') || '';
-    
+
     // Update filters if category or subcategory is in URL
     if (category && category !== filters.category) {
       setFilters(prev => ({ ...prev, category }));
@@ -46,7 +46,7 @@ function SearchPageContent() {
     if (subcategory && subcategory !== filters.subcategory) {
       setFilters(prev => ({ ...prev, subcategory }));
     }
-    
+
     // Perform search if query is provided, or if only category/subcategory is provided
     if (query && query !== searchQuery) {
       handleSearch(query);
@@ -82,7 +82,7 @@ function SearchPageContent() {
         'newest': 'newest',
       };
       const mappedSortBy = filters.sortBy ? sortByMap[filters.sortBy] || filters.sortBy : 'relevance';
-      
+
       const results = await performSearch(query, filters, {
         color: filters.color,
         size: filters.size,
@@ -122,7 +122,7 @@ function SearchPageContent() {
         'newest': 'newest',
       };
       const mappedSortBy = filters.sortBy ? sortByMap[filters.sortBy] || filters.sortBy : 'relevance';
-      
+
       // Use a generic search query that matches all products, filtered by category and subcategory
       const results = await performSearch('*', { ...filters, category, subcategory }, {
         color: filters.color,
@@ -156,13 +156,13 @@ function SearchPageContent() {
   useEffect(() => {
     if (advancedFilters) {
       const newFilters = { ...filters };
-      
+
       // Map sortBy from store to filters (keep FilterDrawer format: price_asc, price_desc, etc.)
       if (advancedFilters.sortBy) {
         // Keep the FilterDrawer format - it will be mapped in performSearch
         newFilters.sortBy = advancedFilters.sortBy;
       }
-      
+
       // Map price range
       if (advancedFilters.minPrice || advancedFilters.maxPrice) {
         newFilters.priceRange = {
@@ -170,7 +170,7 @@ function SearchPageContent() {
           max: advancedFilters.maxPrice ? parseFloat(advancedFilters.maxPrice) : 10000,
         };
       }
-      
+
       // Map category, color
       if (advancedFilters.category !== undefined) {
         newFilters.category = advancedFilters.category;
@@ -178,9 +178,9 @@ function SearchPageContent() {
       if (advancedFilters.color !== undefined) {
         newFilters.color = advancedFilters.color;
       }
-      
+
       setFilters(newFilters);
-      
+
       // Re-search if we have a query or category
       if (hasSearched && (searchQuery || searchParams.get('category') || searchParams.get('subcategory'))) {
         if (searchQuery) {
@@ -215,14 +215,14 @@ function SearchPageContent() {
               // Get category and subcategory from URL params
               const category = searchParams.get('category');
               const subcategory = searchParams.get('subcategory');
-              
+
               // If there's a category but no search query, show category name
               if (category && !searchQuery) {
                 const categoryLabel = category
                   .split('-')
                   .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(' ');
-                
+
                 if (subcategory) {
                   const subcategoryLabel = subcategory
                     .split('-')
@@ -230,10 +230,10 @@ function SearchPageContent() {
                     .join(' ');
                   return <span className="font-medium">{subcategoryLabel} Products</span>;
                 }
-                
+
                 return <span className="font-medium">{categoryLabel} Products</span>;
               }
-              
+
               // If there's a search query, show search results
               if (searchQuery) {
                 return (
@@ -242,7 +242,7 @@ function SearchPageContent() {
                   </>
                 );
               }
-              
+
               // Default fallback
               return <span className="font-medium">All Products</span>;
             })()}
@@ -307,127 +307,126 @@ function SearchPageContent() {
         {products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {products.map((product) => (
-            <div
-              key={product.id}
-              className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-            >
-              <div className="relative bg-gray-50 p-6 aspect-square flex items-center justify-center">
-                {product.badge && (
-                  <div className={`absolute top-3 left-3 ${product.badgeColor} text-white text-xs font-semibold px-3 py-1 rounded`}>
-                    {product.badge}
-                  </div>
-                )}
-                <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition">
-                  <Heart size={20} />
-                </button>
-                <img
-                  src={product.image}
-                  alt={product.title}
-                  className="object-contain max-h-[250px] w-auto"
-                  loading="lazy"
-                />
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  setQuickViewProduct(product);
-                }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
-                  <Search size={16} />
-                  Quick View
-                </button>
-              </div>
-
-              <div className="p-4">
-                <Link href={`/products/${product.id}`} className="cursor-pointer">
-                  <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
-                    {product.title}
-                  </h3>
-                </Link>
-
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-gray-500 line-through text-sm">${product.originalPrice}.00</span>
-                  <span className="text-xl font-semibold text-gray-900">${product.discountedPrice}.00</span>
-                  {product.originalPrice > product.discountedPrice && (
-                    <span className="text-green-600 text-xs font-medium">
-                      Save {Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)}%
-                    </span>
+              <div
+                key={product.id}
+                className="group bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="relative bg-gray-50 p-6 aspect-square flex items-center justify-center">
+                  {product.badge && (
+                    <div className={`absolute top-3 left-3 ${product.badgeColor} text-white text-xs font-semibold px-3 py-1 rounded`}>
+                      {product.badge}
+                    </div>
                   )}
-                </div>
-
-                <div className="flex items-center gap-1 mb-3">
-                  <div className="flex text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i}>{i < Math.floor(product.rating) ? '★' : '☆'}</span>
-                    ))}
-                  </div>
-                  <span className="text-gray-500 text-xs ml-1">({product.reviews})</span>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <div className={`h-2 w-2 rounded-full ${product.inStock ? 'bg-green-500' : product.outOfStock ? 'bg-red-500' : 'bg-orange-500'}`}></div>
-                  <span className="text-sm text-gray-600">
-                    {product.inStock ? 'In Stock' : product.outOfStock ? 'Out Of Stock' : 'Low Stock'}
-                  </span>
-                </div>
-
-                <div className="flex gap-2">
-                  <button 
-                    type="button"
-                    onClick={async (e) => {
-                      if (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                      if (product.inStock === false) {
-                        showToast('This product is out of stock', 'error');
-                        return;
-                      }
-                      try {
-                        const productId = product.id || product.productId;
-                        const result = await addToCart(productId, 1);
-                        if (result?.success) {
-                          await loadCart();
-                          showToast('Item added to cart', 'success');
-                          router.push('/cart');
-                        } else {
-                          showToast(result.error || 'Failed to add to cart', 'error');
-                        }
-                      } catch (err) {
-                        console.error('[SearchPage] Quick shop error:', err);
-                        showToast(err.message || 'Failed to add to cart', 'error');
-                      }
-                    }}
-                    className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
-                  >
+                  <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-red-500 transition">
+                    <Heart size={20} />
+                  </button>
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    className="object-contain max-h-[250px] w-auto"
+                    loading="lazy"
+                  />
+                  <button onClick={(e) => {
+                    e.stopPropagation();
+                    setQuickViewProduct(product);
+                  }} className="absolute bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 shadow-lg">
                     <Search size={16} />
-                    Quick Shop
+                    Quick View
                   </button>
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      if (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                      // Open Quick View Modal to configure options before adding to cart
-                      if (product.inStock !== false) {
-                        setQuickViewProduct(product);
-                      }
-                    }}
-                    disabled={!product.inStock}
-                    className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
-                      !product.inStock 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : cartItems.some(c => c.productId === product.id || c.product?.id === product.id) 
-                          ? 'bg-green-600 hover:bg-green-700' 
+                </div>
+
+                <div className="p-4">
+                  <Link href={`/products/${product.id}`} className="cursor-pointer">
+                    <h3 className="text-base font-medium text-gray-800 mb-2 hover:text-[#0B4866] cursor-pointer">
+                      {product.title}
+                    </h3>
+                  </Link>
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-gray-500 line-through text-sm">${product.originalPrice}.00</span>
+                    <span className="text-xl font-semibold text-gray-900">${product.discountedPrice}.00</span>
+                    {product.originalPrice > product.discountedPrice && (
+                      <span className="text-green-600 text-xs font-medium">
+                        Save {Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)}%
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 mb-3">
+                    <div className="flex text-yellow-400">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i}>{i < Math.floor(product.rating) ? '★' : '☆'}</span>
+                      ))}
+                    </div>
+                    <span className="text-gray-500 text-xs ml-1">({product.reviews})</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className={`h-2 w-2 rounded-full ${product.inStock ? 'bg-green-500' : product.outOfStock ? 'bg-red-500' : 'bg-orange-500'}`}></div>
+                    <span className="text-sm text-gray-600">
+                      {product.inStock ? 'In Stock' : product.outOfStock ? 'Out Of Stock' : 'Low Stock'}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        if (e) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                        if (product.inStock === false) {
+                          showToast('This product is out of stock', 'error');
+                          return;
+                        }
+                        try {
+                          const productId = product.id || product.productId;
+                          const result = await addToCart(productId, 1);
+                          if (result?.success) {
+                            await loadCart();
+                            showToast('Item added to cart', 'success');
+                            router.push('/cart');
+                          } else {
+                            showToast(result.error || 'Failed to add to cart', 'error');
+                          }
+                        } catch (err) {
+                          console.error('[SearchPage] Quick shop error:', err);
+                          showToast(err.message || 'Failed to add to cart', 'error');
+                        }
+                      }}
+                      className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+                    >
+                      <Search size={16} />
+                      Quick Shop
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        if (e) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                        // Open Quick View Modal to configure options before adding to cart
+                        if (product.inStock !== false) {
+                          setQuickViewProduct(product);
+                        }
+                      }}
+                      disabled={!product.inStock}
+                      className={`flex-1 py-2.5 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${!product.inStock
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : cartItems.some(c => c.productId === product.id || c.product?.id === product.id)
+                          ? 'bg-green-600 hover:bg-green-700'
                           : 'bg-[#0B4866] hover:bg-[#094058]'
-                    }`}
-                  >
-                    <ShoppingCart size={16} />
-                    {!product.inStock ? 'Out of Stock' : cartItems.some(c => c.productId === product.id || c.product?.id === product.id) ? 'In Cart' : 'Add to cart'}
-                  </button>
+                        }`}
+                    >
+                      <ShoppingCart size={16} />
+                      {!product.inStock ? 'Out of Stock' : cartItems.some(c => c.productId === product.id || c.product?.id === product.id) ? 'In Cart' : 'Add to cart'}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
 
@@ -440,16 +439,16 @@ function SearchPageContent() {
         )}
 
         <div className="mt-12 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 py-8 md:py-12 border-t border-b border-gray-200">
-          <Link href="/places" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=kitchen" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">SHOP BY PLACES</h3>
-            <p className="text-xs md:text-sm text-gray-600">Rentals</p>
+            <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">KITCHEN</h3>
+            <p className="text-xs md:text-sm text-gray-600">Cooking</p>
           </Link>
-          <Link href="/places/living-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=lounges" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h18M9 3v2m6-2v2M5 9h14m-7 4h.01M8 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -458,16 +457,16 @@ function SearchPageContent() {
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">LIVING</h3>
             <p className="text-xs md:text-sm text-gray-600">Lounges</p>
           </Link>
-          <Link href="/places/dining-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=dining" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">DINING</h3>
-            <p className="text-xs md:text-sm text-gray-600">BBQ</p>
+            <p className="text-xs md:text-sm text-gray-600">Tables</p>
           </Link>
-          <Link href="/places/bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -480,7 +479,7 @@ function SearchPageContent() {
       </div>
 
       {/* Quick View Modal */}
-      <QuickViewModal 
+      <QuickViewModal
         product={quickViewProduct}
         isOpen={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}

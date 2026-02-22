@@ -23,23 +23,23 @@ const Footer = () => {
         setCategoryLinks([]);
       }
     };
-    
+
     fetchCategories();
   }, []);
 
   // Find categories for footer sections
-  const loungesCategory = categoryLinks.find(cat => 
-    cat.name.toUpperCase().includes('LOUNGES') || 
+  const loungesCategory = categoryLinks.find(cat =>
+    cat.name.toUpperCase().includes('LOUNGES') ||
     cat.name.toUpperCase().includes('LIVING ROOM') ||
     cat.name.toUpperCase().includes('LIVING-ROOM')
   );
-  const diningCategory = categoryLinks.find(cat => 
+  const diningCategory = categoryLinks.find(cat =>
     cat.name.toUpperCase().includes('DINING')
   );
-  const bedroomCategory = categoryLinks.find(cat => 
+  const bedroomCategory = categoryLinks.find(cat =>
     cat.name.toUpperCase().includes('BEDROOM')
   );
-  const outdoorCategory = categoryLinks.find(cat => 
+  const outdoorCategory = categoryLinks.find(cat =>
     cat.name.toUpperCase().includes('OUTDOOR')
   );
   return (
@@ -47,14 +47,14 @@ const Footer = () => {
       <div className="max-w-[95dvw] mx-auto px-6 grid md:grid-cols-6 gap-8 border-b border-gray-300 pb-8">
         {/* Left Section */}
         <div className="md:col-span-2">
-         <Image
+          <Image
             src={LOGO_NONE_BG}
             alt="Duffy's Furniture logo"
             width={125}
             height={50}
             className="mb-4"
-         
-         />
+
+          />
           <p className="text-sm text-gray-700 mb-4 leading-relaxed">
             Welcome to Duffy's Furniture, a family owned business in Far North
             Queensland - your go-to for electrical, bedding, and furniture brands
@@ -64,7 +64,7 @@ const Footer = () => {
           <div className="flex items-start gap-2 mb-2">
             <MapPin className="text-gray-700 mt-1" size={18} />
             <p className="text-sm">
-             5 Robert St, Atherton QLD 4883, Australia
+              5 Robert St, Atherton QLD 4883, Australia
             </p>
           </div>
           <div className="flex items-start gap-2">
@@ -73,162 +73,162 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Shop by Places */}
-        <div>
-          <Link href="/places" className="font-semibold text-[#00688B] mb-2 block hover:underline">
-            SHOP BY PLACES
+        {/* Shop by Category */}
+        {/* <div>
+          <Link href="/products" className="font-semibold text-[#00688B] mb-2 block hover:underline">
+            SHOP BY CATEGORY
           </Link>
           <ul className="space-y-1 text-sm">
             <li>
-              <Link href="/places?place=airbnb" className="text-gray-700 hover:text-[#00688B] transition-colors">
-                Airbnb/Rentals
+              <Link href="/search?category=kitchen" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Kitchen
               </Link>
             </li>
             <li>
-              <Link href="/places?place=luxury" className="text-gray-700 hover:text-[#00688B] transition-colors">
-                Luxury
+              <Link href="/search?category=bedroom" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Bedroom
               </Link>
             </li>
             <li>
-              <Link href="/places?place=resorts" className="text-gray-700 hover:text-[#00688B] transition-colors">
-                Resorts
+              <Link href="/search?category=lounges" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Living Room
               </Link>
             </li>
             <li>
-              <Link href="/places?place=resorts" className="text-gray-700 hover:text-[#00688B] transition-colors">
-                All
+              <Link href="/search?category=home-office" className="text-gray-700 hover:text-[#00688B] transition-colors">
+                Home Office
               </Link>
             </li>
           </ul>
-        </div>
+        </div> */}
 
         {/* Lounges */}
-<div>
-  {loungesCategory ? (
-    <>
-      <Link href={loungesCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
-        LOUNGES
-      </Link>
-      <ul className="space-y-1 text-sm">
-        {loungesCategory.subcategories && loungesCategory.subcategories.length > 0 ? (
-          loungesCategory.subcategories.map((sub) => (
-            <li key={sub.name}>
-              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
-                {sub.name}
+        <div>
+          {loungesCategory ? (
+            <>
+              <Link href={loungesCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+                LOUNGES
               </Link>
-            </li>
-          ))
-        ) : (
-          <li className="text-gray-500 text-xs">No subcategories available</li>
-        )}
-      </ul>
-    </>
-  ) : (
-    <>
-      <div className="font-semibold text-[#00688B] mb-2">LOUNGES</div>
-      <ul className="space-y-1 text-sm">
-        <li className="text-gray-500 text-xs">Loading...</li>
-      </ul>
-    </>
-  )}
-</div>
+              <ul className="space-y-1 text-sm">
+                {loungesCategory.subcategories && loungesCategory.subcategories.length > 0 ? (
+                  loungesCategory.subcategories.map((sub) => (
+                    <li key={sub.name}>
+                      <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                        {sub.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500 text-xs">No subcategories available</li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold text-[#00688B] mb-2">LOUNGES</div>
+              <ul className="space-y-1 text-sm">
+                <li className="text-gray-500 text-xs">Loading...</li>
+              </ul>
+            </>
+          )}
+        </div>
 
 
-       {/* Dining */}
-<div>
-  {diningCategory ? (
-    <>
-      <Link href={diningCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
-        DINING
-      </Link>
-      <ul className="space-y-1 text-sm">
-        {diningCategory.subcategories && diningCategory.subcategories.length > 0 ? (
-          diningCategory.subcategories.map((sub) => (
-            <li key={sub.name}>
-              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
-                {sub.name}
+        {/* Dining */}
+        <div>
+          {diningCategory ? (
+            <>
+              <Link href={diningCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+                DINING
               </Link>
-            </li>
-          ))
-        ) : (
-          <li className="text-gray-500 text-xs">No subcategories available</li>
-        )}
-      </ul>
-    </>
-  ) : (
-    <>
-      <div className="font-semibold text-[#00688B] mb-2">DINING</div>
-      <ul className="space-y-1 text-sm">
-        <li className="text-gray-500 text-xs">Loading...</li>
-      </ul>
-    </>
-  )}
-</div>
+              <ul className="space-y-1 text-sm">
+                {diningCategory.subcategories && diningCategory.subcategories.length > 0 ? (
+                  diningCategory.subcategories.map((sub) => (
+                    <li key={sub.name}>
+                      <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                        {sub.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500 text-xs">No subcategories available</li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold text-[#00688B] mb-2">DINING</div>
+              <ul className="space-y-1 text-sm">
+                <li className="text-gray-500 text-xs">Loading...</li>
+              </ul>
+            </>
+          )}
+        </div>
 
-    
+
 
 
         {/* Bedroom */}
-<div>
-  {bedroomCategory ? (
-    <>
-      <Link href={bedroomCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
-        BEDROOM
-      </Link>
-      <ul className="space-y-1 text-sm">
-        {bedroomCategory.subcategories && bedroomCategory.subcategories.length > 0 ? (
-          bedroomCategory.subcategories.map((sub) => (
-            <li key={sub.name}>
-              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
-                {sub.name}
+        <div>
+          {bedroomCategory ? (
+            <>
+              <Link href={bedroomCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+                BEDROOM
               </Link>
-            </li>
-          ))
-        ) : (
-          <li className="text-gray-500 text-xs">No subcategories available</li>
-        )}
-      </ul>
-    </>
-  ) : (
-    <>
-      <div className="font-semibold text-[#00688B] mb-2">BEDROOM</div>
-      <ul className="space-y-1 text-sm">
-        <li className="text-gray-500 text-xs">Loading...</li>
-      </ul>
-    </>
-  )}
-</div>
+              <ul className="space-y-1 text-sm">
+                {bedroomCategory.subcategories && bedroomCategory.subcategories.length > 0 ? (
+                  bedroomCategory.subcategories.map((sub) => (
+                    <li key={sub.name}>
+                      <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                        {sub.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500 text-xs">No subcategories available</li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold text-[#00688B] mb-2">BEDROOM</div>
+              <ul className="space-y-1 text-sm">
+                <li className="text-gray-500 text-xs">Loading...</li>
+              </ul>
+            </>
+          )}
+        </div>
 
-{/* Outdoor */}
-<div>
-  {outdoorCategory ? (
-    <>
-      <Link href={outdoorCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
-        OUTDOOR
-      </Link>
-      <ul className="space-y-1 text-sm">
-        {outdoorCategory.subcategories && outdoorCategory.subcategories.length > 0 ? (
-          outdoorCategory.subcategories.map((sub) => (
-            <li key={sub.name}>
-              <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
-                {sub.name}
+        {/* Outdoor */}
+        <div>
+          {outdoorCategory ? (
+            <>
+              <Link href={outdoorCategory.href} className="font-semibold text-[#00688B] mb-2 block hover:underline">
+                OUTDOOR
               </Link>
-            </li>
-          ))
-        ) : (
-          <li className="text-gray-500 text-xs">No subcategories available</li>
-        )}
-      </ul>
-    </>
-  ) : (
-    <>
-      <div className="font-semibold text-[#00688B] mb-2">OUTDOOR</div>
-      <ul className="space-y-1 text-sm">
-        <li className="text-gray-500 text-xs">Loading...</li>
-      </ul>
-    </>
-  )}
-</div>
+              <ul className="space-y-1 text-sm">
+                {outdoorCategory.subcategories && outdoorCategory.subcategories.length > 0 ? (
+                  outdoorCategory.subcategories.map((sub) => (
+                    <li key={sub.name}>
+                      <Link href={sub.href} className="text-gray-700 hover:text-[#00688B] hover:underline transition-colors cursor-pointer">
+                        {sub.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500 text-xs">No subcategories available</li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold text-[#00688B] mb-2">OUTDOOR</div>
+              <ul className="space-y-1 text-sm">
+                <li className="text-gray-500 text-xs">Loading...</li>
+              </ul>
+            </>
+          )}
+        </div>
 
 
       </div>
@@ -270,7 +270,7 @@ const Footer = () => {
 
       {/* Bottom Text */}
       <div className="text-center mt-4 text-sm text-gray-600">
-        © 2025 Duffy's Furniture. All rights reserved.
+         © {new Date().getFullYear()} Duffy&apos;s Furniture. All rights reserved.
       </div>
     </footer>
   );

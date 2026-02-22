@@ -4,21 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, isAuthenticated } from '../lib/auth';
 import { apiService } from '../services/api/apiClient';
-import OptimizedImage from '../components/shared/OptimizedImage';
 import Link from 'next/link';
+import { Star } from 'lucide-react';
+import { useReviewStore } from '../stores/useReviewStore';
 
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [reviewables, setReviewables] = useState([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const { openReviewModal } = useReviewStore();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const currentUser = getCurrentUser();
     const authenticated = isAuthenticated();
-    
+
     if (!authenticated || !currentUser) {
       router.push('/');
       return;
@@ -27,6 +31,7 @@ export default function AccountPage() {
     setUser(currentUser);
     setLoading(false);
     loadOrders();
+    loadReviewables();
   }, [router]);
 
   const loadOrders = async () => {
@@ -43,6 +48,49 @@ export default function AccountPage() {
       setOrdersLoading(false);
     }
   };
+
+  const loadReviewables = async () => {
+    setReviewLoading(true);
+    try {
+      const response = await apiService.reviews.getEligible();
+      if (response?.success) {
+        setReviewables(response?.data?.items || []);
+      } else {
+        setReviewables([]);
+      }
+    } catch (err) {
+      console.error('Error loading reviewable items:', err);
+      setReviewables([]);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleOpenReview = (orderId, orderNumber) => {
+    if (!orderId) return;
+    openReviewModal({ id: orderId, orderNumber }, handleReviewSubmitted);
+  };
+
+  const handleReviewSubmitted = () => {
+    loadOrders();
+    loadReviewables();
+  };
+
+  const reviewOrders = reviewables.reduce((acc, entry) => {
+    const key = entry.orderId;
+    if (!key) return acc;
+    if (!acc[key]) {
+      acc[key] = {
+        orderId: key,
+        orderNumber: entry.orderNumber,
+        count: 0,
+      };
+    }
+    acc[key].count += 1;
+    return acc;
+  }, {});
+
+  const reviewOrderList = Object.values(reviewOrders);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -174,12 +222,11 @@ export default function AccountPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">${order.total?.toFixed(2)}</p>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        order.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                      <span className={`px-2 py-1 text-xs rounded-full ${order.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                         order.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                        order.status === 'PENDING_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                          order.status === 'PENDING_APPROVAL' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                        }`}>
                         {order.status?.replace('_', ' ')}
                       </span>
                     </div>
@@ -189,8 +236,51 @@ export default function AccountPage() {
             </div>
           )}
         </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Pending Reviews</h2>
+            <Star className="text-amber-500" size={22} />
+          </div>
+
+          {reviewLoading ? (
+            <div className="text-center py-6">
+              <p className="text-gray-600">Checking delivered items...</p>
+            </div>
+          ) : reviewOrderList.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-gray-600">No delivered items waiting for review.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                You can review products only after order delivery.
+              </p>
+              {reviewOrderList.slice(0, 5).map((entry) => (
+                <div
+                  key={entry.orderId}
+                  className="flex items-center justify-between p-4 border border-amber-200 bg-amber-50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      Order #{entry.orderNumber || entry.orderId?.slice(-6)?.toUpperCase()}
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      {entry.count} item{entry.count > 1 ? 's' : ''} ready for review
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleOpenReview(entry.orderId, entry.orderNumber)}
+                    className="px-4 py-2 bg-[#0B4866] text-white rounded-lg hover:bg-[#093b54]"
+                  >
+                    Review now
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-

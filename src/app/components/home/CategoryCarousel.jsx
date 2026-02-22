@@ -43,6 +43,7 @@ const CategoryCarousel = () => {
         const response = await productService.getCategories();
         if (response?.success) {
           setCategories(response.data || []);
+          console.log("Fetched categories:", response.data);
         } else {
           setCategories([]);
         }
@@ -118,7 +119,7 @@ const CategoryCarousel = () => {
       <div
         ref={scrollRef}
         className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide gap-4 md:gap-5 px-2 pb-8"
-        style={{ 
+        style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
@@ -152,22 +153,22 @@ const CategoryCarousel = () => {
                     className="w-[70%] h-[80%] object-contain transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   />
-                  
+
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
-                  
+
                   {/* Content Overlay */}
                   <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6 text-white">
                     <h3 className="text-xl md:text-2xl font-bold mb-2 group-hover:translate-x-1 transition-transform duration-300">
                       {label}
                     </h3>
-                    
+
                     {count > 0 && (
                       <p className="text-xs md:text-sm text-gray-200 mb-3 opacity-90">
                         {count} {count === 1 ? 'product' : 'products'}
                       </p>
                     )}
-                    
+
                     {/* CTA Button */}
                     <div className="flex items-center gap-2 text-xs md:text-sm font-semibold mt-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                       <span>Explore</span>

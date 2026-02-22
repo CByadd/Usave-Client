@@ -18,9 +18,9 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
     collection: false,
     category: false
   });
-  
+
   const [cartItems, setCartItems] = useState([]);
-  
+
   useEffect(() => {
     const loadCart = async () => {
       await fetchCart();
@@ -54,7 +54,7 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
       const filters = {
         category: categoryName.toLowerCase(),
         page: 1,
-        limit: 12
+        limit: 100
       };
 
       if (selectedPriceRange) {
@@ -68,14 +68,14 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
 
       const response = await productService.getAllProducts(filters);
       const fetchedProducts = response.data?.products || [];
-      
+
       // Filter to only show available products (in stock)
-      const availableProducts = fetchedProducts.filter(product => 
-        product.inStock !== false && 
+      const availableProducts = fetchedProducts.filter(product =>
+        product.inStock !== false &&
         product.inStock !== undefined &&
         (product.stockQuantity === undefined || product.stockQuantity > 0)
       );
-      
+
       // Apply client-side sorting if needed
       let sortedProducts = [...availableProducts];
       if (selectedSort === 'price-low') {
@@ -106,7 +106,7 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
       const filters = {
         category: categoryName.toLowerCase(),
         page: nextPage,
-        limit: 12
+        limit: 100
       };
 
       if (selectedPriceRange) {
@@ -116,14 +116,14 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
 
       const response = await productService.getAllProducts(filters);
       const newItems = response.data?.products || [];
-      
+
       // Filter to only show available products (in stock)
-      const availableNewItems = newItems.filter(product => 
-        product.inStock !== false && 
+      const availableNewItems = newItems.filter(product =>
+        product.inStock !== false &&
         product.inStock !== undefined &&
         (product.stockQuantity === undefined || product.stockQuantity > 0)
       );
-      
+
       setProducts(prev => [...prev, ...availableNewItems]);
       setPage(nextPage);
       setTotalPages(response.data?.totalPages || nextPage);
@@ -209,41 +209,36 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
                 <div className="py-1">
                   <button
                     onClick={() => handleSortChange('relevance')}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedSort === 'relevance' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedSort === 'relevance' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
+                      }`}
                   >
                     Relevance
                   </button>
                   <button
                     onClick={() => handleSortChange('price-low')}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedSort === 'price-low' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedSort === 'price-low' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
+                      }`}
                   >
                     Price: Low to High
                   </button>
                   <button
                     onClick={() => handleSortChange('price-high')}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedSort === 'price-high' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedSort === 'price-high' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
+                      }`}
                   >
                     Price: High to Low
                   </button>
                   <button
                     onClick={() => handleSortChange('rating')}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedSort === 'rating' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedSort === 'rating' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
+                      }`}
                   >
                     Highest Rated
                   </button>
                   <button
                     onClick={() => handleSortChange('newest')}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedSort === 'newest' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedSort === 'newest' ? 'text-[#0B4866] font-medium' : 'text-gray-700'
+                      }`}
                   >
                     Newest First
                   </button>
@@ -255,11 +250,10 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
           <div className="relative filter-dropdown">
             <button
               onClick={() => toggleFilter('price')}
-              className={`px-3 md:px-4 py-2 border rounded-md text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 whitespace-nowrap ${
-                selectedPriceRange 
-                  ? 'border-[#0B4866] text-[#0B4866] bg-[#0B4866]/10' 
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`px-3 md:px-4 py-2 border rounded-md text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 whitespace-nowrap ${selectedPriceRange
+                ? 'border-[#0B4866] text-[#0B4866] bg-[#0B4866]/10'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
             >
               Price <ChevronDown size={14} className="md:w-4 md:h-4" />
               {selectedPriceRange && (
@@ -281,61 +275,55 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
                   )}
                   <button
                     onClick={() => handlePriceChange({ min: 0, max: 500 })}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedPriceRange?.min === 0 && selectedPriceRange?.max === 500 
-                        ? 'text-[#0B4866] font-medium' 
-                        : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedPriceRange?.min === 0 && selectedPriceRange?.max === 500
+                      ? 'text-[#0B4866] font-medium'
+                      : 'text-gray-700'
+                      }`}
                   >
                     Under $500
                   </button>
                   <button
                     onClick={() => handlePriceChange({ min: 500, max: 1000 })}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedPriceRange?.min === 500 && selectedPriceRange?.max === 1000 
-                        ? 'text-[#0B4866] font-medium' 
-                        : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedPriceRange?.min === 500 && selectedPriceRange?.max === 1000
+                      ? 'text-[#0B4866] font-medium'
+                      : 'text-gray-700'
+                      }`}
                   >
                     $500 - $1,000
                   </button>
                   <button
                     onClick={() => handlePriceChange({ min: 1000, max: 2000 })}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedPriceRange?.min === 1000 && selectedPriceRange?.max === 2000 
-                        ? 'text-[#0B4866] font-medium' 
-                        : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedPriceRange?.min === 1000 && selectedPriceRange?.max === 2000
+                      ? 'text-[#0B4866] font-medium'
+                      : 'text-gray-700'
+                      }`}
                   >
                     $1,000 - $2,000
                   </button>
                   <button
                     onClick={() => handlePriceChange({ min: 2000, max: 5000 })}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedPriceRange?.min === 2000 && selectedPriceRange?.max === 5000 
-                        ? 'text-[#0B4866] font-medium' 
-                        : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedPriceRange?.min === 2000 && selectedPriceRange?.max === 5000
+                      ? 'text-[#0B4866] font-medium'
+                      : 'text-gray-700'
+                      }`}
                   >
                     $2,000 - $5,000
                   </button>
                   <button
                     onClick={() => handlePriceChange({ min: 5000, max: 10000 })}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedPriceRange?.min === 5000 && selectedPriceRange?.max === 10000 
-                        ? 'text-[#0B4866] font-medium' 
-                        : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedPriceRange?.min === 5000 && selectedPriceRange?.max === 10000
+                      ? 'text-[#0B4866] font-medium'
+                      : 'text-gray-700'
+                      }`}
                   >
                     $5,000 - $10,000
                   </button>
                   <button
                     onClick={() => handlePriceChange({ min: 10000, max: 999999 })}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                      selectedPriceRange?.min === 10000 
-                        ? 'text-[#0B4866] font-medium' 
-                        : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedPriceRange?.min === 10000
+                      ? 'text-[#0B4866] font-medium'
+                      : 'text-gray-700'
+                      }`}
                   >
                     Over $10,000
                   </button>
@@ -377,7 +365,7 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
               </svg>
               <h2 className="text-2xl font-semibold text-gray-700 mb-2">No Available Products</h2>
               <p className="text-gray-500 mb-6">
-                We couldn't find any available products in the {categoryLabel || categoryName} category at the moment. 
+                We couldn't find any available products in the {categoryLabel || categoryName} category at the moment.
                 Please check back later or explore other categories.
               </p>
             </div>
@@ -416,16 +404,16 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
         )}
 
         <div className="mt-12 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 py-8 md:py-12 border-t border-b border-gray-200">
-          <Link href="/places" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=kitchen" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">SHOP BY PLACES</h3>
-            <p className="text-xs md:text-sm text-gray-600">Rentals</p>
+            <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">KITCHEN</h3>
+            <p className="text-xs md:text-sm text-gray-600">Cooking</p>
           </Link>
-          <Link href="/places/living-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=lounges" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5h18M9 3v2m6-2v2M5 9h14m-7 4h.01M8 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01M7 21h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -434,16 +422,16 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">LIVING</h3>
             <p className="text-xs md:text-sm text-gray-600">Lounges</p>
           </Link>
-          <Link href="/places/dining-room" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=dining" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm">DINING</h3>
-            <p className="text-xs md:text-sm text-gray-600">BBQ</p>
+            <p className="text-xs md:text-sm text-gray-600">Tables</p>
           </Link>
-          <Link href="/places/bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
+          <Link href="/search?category=bedroom" className="text-center hover:opacity-80 transition-opacity cursor-pointer">
             <div className="text-[#0B4866] mb-2 md:mb-3 flex justify-center">
               <svg className="w-8 h-8 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -456,7 +444,7 @@ const CategoryPage = ({ categoryName, categoryLabel }) => {
       </div>
 
       {/* Quick View Modal */}
-      <QuickViewModal 
+      <QuickViewModal
         product={quickViewProduct}
         isOpen={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
