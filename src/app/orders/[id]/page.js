@@ -249,8 +249,8 @@ export default function OrderDetailsPage() {
         </div>
 
         {/* Premium Status Flow Visualizer */}
-        <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/20 shadow-sm p-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-8 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
             <h2 className="text-xl font-bold text-[#0F172A]">Track Order</h2>
             <div className="flex items-center gap-3">
               <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border shadow-sm ${statusInfo.badgeClass}`}>
@@ -259,43 +259,97 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          <div className="relative flex items-center justify-between px-2">
-            {/* Progress Bar Background */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2 z-0 rounded-full"></div>
+          {/* Desktop View (Horizontal) */}
+          <div className="hidden md:block">
+            <div className="relative flex items-center justify-between px-2">
+              {/* Progress Bar Background */}
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2 z-0 rounded-full"></div>
 
-            {/* Active Progress Bar */}
+              {/* Active Progress Bar */}
+              <div
+                className="absolute top-1/2 left-0 h-1 bg-[#0ACF83] -translate-y-1/2 z-0 transition-all duration-1000 ease-in-out rounded-full"
+                style={{ width: `${((statusInfo.currentIndex !== null ? statusInfo.currentIndex : statusInfo.completedIndex) / (ORDER_STATUS_HIERARCHY.length - 1)) * 100}%` }}
+              ></div>
+
+              {ORDER_STATUS_HIERARCHY.map((step, idx) => {
+                const isCompleted = statusInfo.completedIndex >= idx;
+                const isCurrent = statusInfo.currentIndex === idx;
+
+                return (
+                  <div key={idx} className="relative z-10 flex flex-col items-center group">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${isCompleted
+                      ? 'bg-[#0ACF83] text-white shadow-lg shadow-emerald-500/20'
+                      : isCurrent
+                        ? 'bg-[#0B4866] text-white ring-4 ring-[#0B4866]/10 scale-110 shadow-lg'
+                        : 'bg-white text-slate-300 border-2 border-slate-100 shadow-sm'
+                      }`}>
+                      {isCompleted ? (
+                        <CheckCircle size={20} />
+                      ) : (
+                        <span className="text-sm font-bold">{idx + 1}</span>
+                      )}
+                    </div>
+                    <div className="absolute top-12 flex flex-col items-center min-w-[80px]">
+                      <span className={`text-[10px] font-black uppercase tracking-widest text-center whitespace-nowrap ${isCurrent ? 'text-[#0B4866]' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
+                        }`}>
+                        {step.label}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-[9px] text-slate-500 font-medium mt-1 animate-pulse">
+                          Current Stage
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Spacer for label height */}
+            <div className="h-12"></div>
+          </div>
+
+          {/* Mobile View (Vertical) */}
+          <div className="md:hidden space-y-0 relative">
+            {/* Vertical Line */}
+            <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-slate-100 z-0"></div>
+
+            {/* Active Vertical Line (Partial) */}
             <div
-              className="absolute top-1/2 left-0 h-1 bg-[#0ACF83] -translate-y-1/2 z-0 transition-all duration-1000 ease-in-out rounded-full"
-              style={{ width: `${((statusInfo.currentIndex !== null ? statusInfo.currentIndex : statusInfo.completedIndex) / (ORDER_STATUS_HIERARCHY.length - 1)) * 100}%` }}
+              className="absolute left-5 top-2 w-0.5 bg-[#0ACF83] z-0 transition-all duration-1000 ease-in-out"
+              style={{
+                height: `${((statusInfo.currentIndex !== null ? statusInfo.currentIndex : statusInfo.completedIndex) / (ORDER_STATUS_HIERARCHY.length - 1)) * 95}%`
+              }}
             ></div>
 
             {ORDER_STATUS_HIERARCHY.map((step, idx) => {
               const isCompleted = statusInfo.completedIndex >= idx;
               const isCurrent = statusInfo.currentIndex === idx;
-              const isPending = statusInfo.currentIndex < idx;
 
               return (
-                <div key={idx} className="relative z-10 flex flex-col items-center group">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${isCompleted
-                    ? 'bg-[#0ACF83] text-white shadow-lg shadow-emerald-500/20'
+                <div key={idx} className="relative z-10 flex items-start gap-4 pb-8 last:pb-0">
+                  <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center transition-all duration-500 ${isCompleted
+                    ? 'bg-[#0ACF83] text-white shadow-md'
                     : isCurrent
-                      ? 'bg-[#0B4866] text-white ring-4 ring-[#0B4866]/10 scale-110 shadow-lg'
-                      : 'bg-white text-slate-300 border-2 border-slate-100 shadow-sm'
+                      ? 'bg-[#0B4866] text-white ring-4 ring-[#0B4866]/10 scale-105 shadow-md'
+                      : 'bg-white text-slate-300 border-2 border-slate-100'
                     }`}>
                     {isCompleted ? (
-                      <CheckCircle size={20} />
+                      <CheckCircle size={18} />
                     ) : (
-                      <span className="text-sm font-bold">{idx + 1}</span>
+                      <span className="text-xs font-bold">{idx + 1}</span>
                     )}
                   </div>
-                  <div className="absolute top-12 flex flex-col items-center min-w-[80px]">
-                    <span className={`text-[10px] font-black uppercase tracking-widest text-center whitespace-nowrap ${isCurrent ? 'text-[#0B4866]' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
+                  <div className="flex flex-col pt-1">
+                    <span className={`text-xs font-black uppercase tracking-widest ${isCurrent ? 'text-[#0B4866]' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
                       }`}>
                       {step.label}
                     </span>
+                    <span className="text-[10px] text-slate-500 font-medium mt-0.5">
+                      {step.description}
+                    </span>
                     {isCurrent && (
-                      <span className="text-[9px] text-slate-500 font-medium mt-1 animate-pulse hidden md:block">
-                        Current Stage
+                      <span className="text-[9px] text-[#0B4866] font-bold mt-1 animate-pulse">
+                        CURRENT STAGE
                       </span>
                     )}
                   </div>
@@ -303,8 +357,6 @@ export default function OrderDetailsPage() {
               );
             })}
           </div>
-          {/* Spacer for label height */}
-          <div className="h-12"></div>
         </div>
 
         {error && (

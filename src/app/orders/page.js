@@ -622,80 +622,78 @@ function OrderCard({ order, onProceedToPay, onEditOrder, onReSendApproval, onRev
   const canReview = isOrderReviewEligible(order);
 
   const visibleImages =
-  items.length > 4 ? items.slice(0, 3) : items;
+    items.length > 4 ? items.slice(0, 3) : items;
 
-const remainingCount = items.length - 3;
+  const remainingCount = items.length - 3;
 
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl border border-gray-100 p-6 shadow-md hover:shadow-xl transition-all duration-300">
-      <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
+    <div className="bg-white/80 backdrop-blur rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-md hover:shadow-xl transition-all duration-300">
+      <div className="flex flex-col md:flex-row items-center sm:items-start gap-4 w-full">
         {/* Product Images */}
-      {/* Product Images */}
-<div
-  className={`
+        {/* Product Images */}
+        <div
+          className={`
     grid gap-2 flex-shrink-0
-    ${
-      items.length === 1
-        ? "grid-cols-1 w-28 h-28"
-        : items.length === 2
-        ? "grid-cols-2 w-28 h-28"
-        : "grid-cols-2 w-28 h-28"
-    }
+    ${items.length === 1
+              ? "grid-cols-1 w-24 h-24 sm:w-28 sm:h-28"
+              : items.length === 2
+                ? "grid-cols-2 w-24 h-24 sm:w-28 sm:h-28"
+                : "grid-cols-2 w-24 h-24 sm:w-28 sm:h-28"
+            }
   `}
->
-  {visibleImages.map((item, index) => (
-    <div
-      key={index}
-      className={`
+        >
+          {visibleImages.map((item, index) => (
+            <div
+              key={index}
+              className={`
         relative rounded-xl overflow-hidden bg-gray-100
         ring-1 ring-black/5
-        ${
-          items.length === 1
-            ? "col-span-1"
-            : items.length === 3 && index === 0
-            ? "row-span-2"
-            : ""
-        }
+        ${items.length === 1
+                  ? "col-span-1"
+                  : items.length === 3 && index === 0
+                    ? "row-span-2"
+                    : ""
+                }
       `}
-    >
-      {item.product?.image ? (
-        <OptimizedImage
-          src={item.product.image}
-          alt={item.product.title || item.product.name || "Product"}
-          fill
-          className="object-cover transition-transform duration-300 hover:scale-105"
-        />
-      ) : (
-        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200" />
-      )}
-    </div>
-  ))}
+            >
+              {item.product?.image ? (
+                <OptimizedImage
+                  src={item.product.image}
+                  alt={item.product.title || item.product.name || "Product"}
+                  fill
+                  className="object-cover transition-transform duration-300 hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200" />
+              )}
+            </div>
+          ))}
 
-  {/* +X stacked image */}
-  {items.length > 4 && (
-    <div className="relative rounded-xl overflow-hidden bg-gray-900 ring-1 ring-black/5">
-      <OptimizedImage
-        src={items[3]?.product?.image}
-        alt="More products"
-        fill
-        className="object-cover opacity-40"
-      />
-      <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-semibold backdrop-blur-sm">
-        +{remainingCount}
-      </div>
-    </div>
-  )}
-</div>
+          {/* +X stacked image */}
+          {items.length > 4 && (
+            <div className="relative rounded-xl overflow-hidden bg-gray-900 ring-1 ring-black/5">
+              <OptimizedImage
+                src={items[3]?.product?.image}
+                alt="More products"
+                fill
+                className="object-cover opacity-40"
+              />
+              <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold backdrop-blur-sm">
+                +{remainingCount}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Order Details */}
-        <div className="flex-1 min-w-0 w-full sm:w-auto">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 w-full">
-            <div className="flex-1 min-w-0 w-full sm:w-auto">
+        <div className="flex-1 min-w-0 w-full">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 w-full">
+            <div className="flex-1 min-w-0 w-full lg:w-auto">
               {/* Simplified Status Label and Progress */}
               <div className="mb-4">
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm ${statusInfo.badgeClass}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm whitespace-nowrap ${statusInfo.badgeClass}`}>
                       {statusInfo.label.toUpperCase()}
                     </span>
                     <span className="text-[10px] font-medium text-slate-400">
@@ -717,17 +715,17 @@ const remainingCount = items.length - 3;
               </div>
 
               {/* Order Number */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
                 Order #{order.orderNumber || `ORD${order.id.slice(-6).toUpperCase()}`}
               </h3>
 
               {/* Items */}
-              <p className="text-sm text-gray-600 mb-2 break-words">
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                 {formatItems(items)}
               </p>
 
               {/* Delivery Date */}
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-600 mb-3">
                 <span className="font-medium">Delivery Date:</span>{' '}
                 {order.deliveryDate
                   ? `${new Date(order.deliveryDate).toLocaleDateString('en-US', {
@@ -761,11 +759,11 @@ const remainingCount = items.length - 3;
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-2 flex-shrink-0 w-full lg:w-auto">
               {/* View Order - always visible */}
               <button
                 onClick={() => router.push(`/orders/${order.id}`)}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#094058] transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-[#0B4866] text-white rounded-lg font-medium hover:bg-[#094058] transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Eye size={16} />
                 View Order
@@ -774,7 +772,7 @@ const remainingCount = items.length - 3;
               {canReview && (
                 <button
                   onClick={() => onReviewOrder?.(order)}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-[#0B4866]/20 text-[#0B4866] rounded-lg font-medium hover:bg-[#0B4866]/10 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 border border-[#0B4866]/20 text-[#0B4866] rounded-lg font-medium hover:bg-[#0B4866]/10 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <Star size={16} />
                   {pendingReviewCount && pendingReviewCount > 1
@@ -783,25 +781,14 @@ const remainingCount = items.length - 3;
                 </button>
               )}
 
-              {/* Proceed to Pay - for approved orders with pending payment */}
-              {/* {status === 'APPROVED' && order.paymentStatus === 'PENDING' && (
-                <button
-                  onClick={() => onProceedToPay(order.id)}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#0F4C81] text-white rounded-lg font-medium hover:bg-[#0D3F6A] transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
-                >
-                  <CreditCard size={16} />
-                  Proceed to Pay
-                </button>
-              )} */}
-
               {/* Re-Send Approval - for rejected orders only */}
               {status === 'REJECTED' && (
                 <button
                   onClick={() => onReSendApproval(order.id)}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <RefreshCw size={16} />
-                  Re-Send Approval
+                  Re-Send
                 </button>
               )}
 
@@ -809,7 +796,7 @@ const remainingCount = items.length - 3;
               {(status === 'REJECTED' || order?.ownerRejected || order?.adminRejected) && (
                 <button
                   onClick={() => onEditOrder(order.id)}
-                  className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
                   <Edit size={16} />
                   Edit Order
